@@ -1,0 +1,6 @@
+[submodule "STM32CubeG0"]
+	path = STM32CubeG0
+	url = https://github.com/mmoskal/STM32CubeG0
+[submodule "STM32CubeF0"]
+	path = STM32CubeF0
+	url = https://github.com/mmoskal/STM32CubeF0

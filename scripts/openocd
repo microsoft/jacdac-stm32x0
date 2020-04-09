@@ -1,0 +1,19 @@
+#!/bin/sh
+
+S=STM32CubeG0/openocd
+case `uname -s` in
+  Darwin* )
+    P=$S/macOS/openocd
+    ;;
+  Linux* )
+    P=$S/linux/openocd.exe
+    ;;
+  MINGW* )
+    P=$S/win32/openocd
+    ;;
+  * )
+    echo "Unknown platform"
+    exit 1
+esac
+
+$P "$@"
