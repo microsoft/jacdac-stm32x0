@@ -47,12 +47,19 @@ CPPFLAGS = \
 LDFLAGS = -specs=nosys.specs -specs=nano.specs \
 	-T"$(LD_SCRIPT)" -Wl,-Map=$(BUILT)/output.map -Wl,--gc-sections
 
-all:
+all: $(JD_CORE)/jdlow.c
 	$(MAKE) -j8 $(BUILT)/binary.hex
 
 drop:
 	$(MAKE) TARGET=g031 all
 	$(MAKE) TARGET=f031 all
+
+$(JD_CORE)/jdlow.c:
+	if test -f ../pxt-common-packages/libs/jacdac/jdlow.c ; then \
+		ln -s ../pxt-common-packages/libs/jacdac jacdac-core; \
+	else \
+		ln -s pxt-common-packages/libs/jacdac jacdac-core; \
+	fi
 
 r: run
 l: flash-loop

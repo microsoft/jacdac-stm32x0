@@ -4,3 +4,6 @@
 [submodule "STM32CubeF0"]
 	path = STM32CubeF0
 	url = https://github.com/mmoskal/STM32CubeF0
+[submodule "pxt-common-packages"]
+	path = pxt-common-packages
+	url = https://github.com/microsoft/pxt-common-packages
