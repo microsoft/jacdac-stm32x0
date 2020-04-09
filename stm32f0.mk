@@ -21,6 +21,11 @@ $(HALPREF)/stm32f0xx_ll_rtc.c \
 $(HALPREF)/stm32f0xx_ll_spi.c \
 $(HALPREF)/stm32f0xx_ll_tim.c \
 $(HALPREF)/stm32f0xx_ll_usart.c \
-$(HALPREF)/stm32f0xx_ll_usb.c \
 $(HALPREF)/stm32f0xx_ll_utils.c \
+
+BMP = 1
+
+DEFINES += -D$(MCU)
+AS_SRC = STM32CubeF0/Drivers/CMSIS/Device/ST/STM32F0xx/Source/Templates/gcc/startup_$(MCU:STM32F%=stm32f%).s
+LD_SCRIPT = ld/$(MCU).ld
 

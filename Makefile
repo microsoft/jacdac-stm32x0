@@ -29,9 +29,6 @@ C_SRC += $(JD_CORE)/jdlow.c
 C_SRC += $(JD_CORE)/jdutil.c
 C_SRC += $(HALSRC)
 
-AS_SRC = targets/$(BASE_TARGET)/startup.s
-LD_SCRIPT = targets/$(BASE_TARGET)/linker.ld
-
 V = @
 
 OBJ = $(addprefix $(BUILT)/,$(C_SRC:.c=.o) $(AS_SRC:.s=.o))
