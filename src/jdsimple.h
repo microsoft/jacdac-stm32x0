@@ -94,6 +94,11 @@ void alloc_init(void);
 void *alloc(uint32_t size);
 void alloc_stack_check();
 
+// bitbang_spi.c
+void bspi_send(const void *src, uint32_t len);
+void bspi_recv(void *dst, uint32_t len);
+
+
 extern uint32_t now;
 
 // check if given timestamp is already in the past, regardless of overflows on 'now'
