@@ -6,16 +6,14 @@ TARGET ?= jdm-v3
 
 JD_CORE = jacdac-core
 
-CUBE = STM32Cube$(SERIES)
-DRV = $(CUBE)/Drivers
-DEFINES = -DUSE_FULL_ASSERT -DUSE_FULL_LL_DRIVER -DSTM32$(SERIES) -DDEVICE_DMESG_BUFFER_SIZE=1024
+DEFINES += -DDEVICE_DMESG_BUFFER_SIZE=1024
 WARNFLAGS = -Wall -Wno-strict-aliasing
 CFLAGS = $(DEFINES) \
 	-mthumb -mfloat-abi=soft  \
 	-Os -g3 -Wall -ffunction-sections -fdata-sections \
 	$(WARNFLAGS)
 BUILT = built/$(TARGET)
-HEADERS = $(wildcard src/*.h) $(wildcard $(JD_CORE)/*.h) $(wildcard targets/$(TARGET)/*.h)
+HEADERS = $(wildcard src/*.h) $(wildcard $(PLATFORM)/*.h) $(wildcard $(JD_CORE)/*.h) $(wildcard targets/$(TARGET)/*.h)
 
 include targets/$(TARGET)/config.mk
 BASE_TARGET ?= $(TARGET)
@@ -24,7 +22,8 @@ ifneq ($(BMP),)
 BMP_PORT = $(shell ls -1 /dev/cu.usbmodem????????1 | head -1)
 endif
 
-C_SRC += $(wildcard src/*.c) 
+C_SRC += $(wildcard src/*.c)
+C_SRC += $(wildcard $(PLATFORM)/*.c)
 C_SRC += $(JD_CORE)/jdlow.c
 C_SRC += $(JD_CORE)/jdutil.c
 C_SRC += $(HALSRC)
@@ -33,13 +32,10 @@ V = @
 
 OBJ = $(addprefix $(BUILT)/,$(C_SRC:.c=.o) $(AS_SRC:.s=.o))
 
-CPPFLAGS = \
-	-I$(DRV)/STM32$(SERIES)xx_HAL_Driver/Inc \
-	-I$(DRV)/STM32$(SERIES)xx_HAL_Driver/Inc/Legacy \
-	-I$(DRV)/CMSIS/Device/ST/STM32$(SERIES)xx/Include \
-	-I$(DRV)/CMSIS/Include \
+CPPFLAGS += \
 	-Itargets/$(TARGET) \
 	-Itargets/$(BASE_TARGET) \
+	-I$(PLATFORM) \
 	-Isrc \
 	-I$(JD_CORE) \
 	-I$(BUILT)

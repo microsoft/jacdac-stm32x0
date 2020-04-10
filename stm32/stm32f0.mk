@@ -25,7 +25,17 @@ $(HALPREF)/stm32f0xx_ll_utils.c \
 
 BMP = 1
 
-DEFINES += -D$(MCU)
-AS_SRC = STM32CubeF0/Drivers/CMSIS/Device/ST/STM32F0xx/Source/Templates/gcc/startup_$(MCU:STM32F%=stm32f%).s
-LD_SCRIPT = ld/$(MCU).ld
+PLATFORM = stm32
 
+# TODO move some of this to common stm32.mk
+DEFINES += -D$(MCU)
+AS_SRC = $(DRV)/CMSIS/Device/ST/STM32F0xx/Source/Templates/gcc/startup_$(MCU:STM32F%=stm32f%).s
+LD_SCRIPT = ld/$(MCU).ld
+CUBE = stm32/STM32Cube$(SERIES)
+DRV = $(CUBE)/Drivers
+CPPFLAGS += 	\
+	-I$(DRV)/STM32$(SERIES)xx_HAL_Driver/Inc \
+	-I$(DRV)/STM32$(SERIES)xx_HAL_Driver/Inc/Legacy \
+	-I$(DRV)/CMSIS/Device/ST/STM32$(SERIES)xx/Include \
+	-I$(DRV)/CMSIS/Include
+DEFINES += -DUSE_FULL_ASSERT -DUSE_FULL_LL_DRIVER -DSTM32$(SERIES)
