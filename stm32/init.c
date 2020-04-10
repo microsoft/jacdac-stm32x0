@@ -1,5 +1,7 @@
 #include "jdstm.h"
 
+void tim_update_prescaler(void);
+
 void NMI_Handler(void) {}
 
 void HardFault_Handler(void) {
@@ -11,8 +13,6 @@ void SVC_Handler(void) {}
 void PendSV_Handler(void) {}
 
 void SysTick_Handler(void) {}
-
-uint32_t SystemCoreClock;
 
 static void enable_nrst_pin() {
 #ifdef FLASH_OPTR_NRST_MODE
@@ -61,9 +61,21 @@ static void enable_nrst_pin() {
 #endif
 }
 
-static void setup_clock() {
-    // in low-power mode we do not use PLL, so there's nothing to setup
-#ifndef LOW_POWER
+bool clk_is_pll() {
+    return LL_RCC_GetSysClkSource() == LL_RCC_SYS_CLKSOURCE_PLL;
+}
+
+void clk_set_pll(int on) {
+    if (!on) {
+        LL_RCC_SetSysClkSource(LL_RCC_SYS_CLKSOURCE_HSI);
+        while (LL_RCC_GetSysClkSource() != LL_RCC_SYS_CLKSOURCE_HSI)
+            ;
+        cpu_mhz = HSI_MHZ;
+        LL_FLASH_SetLatency(LL_FLASH_LATENCY_0);
+        LL_FLASH_DisablePrefetch();
+        tim_update_prescaler();
+        return;
+    }
 
 #if defined(STM32G0)
     LL_FLASH_SetLatency(LL_FLASH_LATENCY_2);
@@ -75,7 +87,7 @@ static void setup_clock() {
 #error "clock?"
 #endif
 
-    // LL_FLASH_EnablePrefetch(); // TODO
+    LL_FLASH_EnablePrefetch();
 
     LL_RCC_PLL_Enable();
 #ifdef RCC_PLLCFGR_PLLREN
@@ -84,22 +96,25 @@ static void setup_clock() {
     while (LL_RCC_PLL_IsReady() != 1)
         ;
 
-    LL_RCC_SetAHBPrescaler(LL_RCC_SYSCLK_DIV_1);
+    // LL_RCC_SetAHBPrescaler(LL_RCC_SYSCLK_DIV_1);
 
     LL_RCC_SetSysClkSource(LL_RCC_SYS_CLKSOURCE_PLL);
     while (LL_RCC_GetSysClkSource() != LL_RCC_SYS_CLKSOURCE_STATUS_PLL)
         ;
 
-    LL_RCC_SetAPB1Prescaler(LL_RCC_APB1_DIV_1);
-#endif
+    cpu_mhz = PLL_MHZ;
+    tim_update_prescaler();
+
+    // LL_RCC_SetAPB1Prescaler(LL_RCC_APB1_DIV_1);
 }
 
-void SystemClock_Config(void) {
-    setup_clock();
+uint8_t cpu_mhz;
 
-    SystemCoreClock = CPU_MHZ * 1000000;
-    LL_InitTick(SystemCoreClock, 1000U);
-    LL_SYSTICK_SetClkSource(LL_SYSTICK_CLKSOURCE_HCLK);
+void SystemClock_Config(void) {
+    cpu_mhz = HSI_MHZ;
+
+    // LL_InitTick(cpu_mhz * 1000000, 1000U);
+    // LL_SYSTICK_SetClkSource(LL_SYSTICK_CLKSOURCE_HCLK);
 
     enable_nrst_pin();
 }

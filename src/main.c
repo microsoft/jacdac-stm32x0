@@ -79,17 +79,7 @@ int main(void) {
 
     jd_init();
 
-#if 0
-    target_wait_us(5000000);
-    led_set(0);
-    LL_PWR_SetPowerMode(LL_PWR_MODE_STOP_LPREGU);
-    LL_LPM_EnableDeepSleep();
-    __WFI();
-#endif
-
-#ifdef LOW_POWER
     rtc_init();
-#endif
 
     app_init_services();
 
@@ -116,11 +106,9 @@ int main(void) {
 
         app_process();
 
-#ifdef LOW_POWER
         if (!led_off_time && !start_time) {
-            rtc_sleep();
+            pwr_sleep();
         }
-#endif
     }
 }
 

@@ -20,6 +20,4 @@
 
 #include "stm32g0xx_hal_rcc.h"
 
-#define CPU_MHZ 64
-
 #endif

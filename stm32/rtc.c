@@ -1,6 +1,5 @@
 #include "jdstm.h"
 
-#ifdef LOW_POWER
 static volatile uint64_t last_alrm;
 static volatile uint8_t is_led_off_alrm, was_led_off_alrm;
 static cb_t cb;
@@ -145,35 +144,25 @@ void rtc_init() {
     rtc_config(1, presc);
 }
 
-void setup_clock(void);
-
 void rtc_sleep() {
-    if (!presc) {
-        __WFI();
-        return;
-    }
+    __WFI();
+}
 
-    // only go to sleep when JD asked us to run the tick()
-    if (cb == NULL || jd_is_busy())
-        return;
-
+void rtc_deepsleep() {
 #if 0
     // 6uA
     rtc_config(100, 10000);
     LL_PWR_ClearFlag_SB();
     LL_PWR_ClearFlag_WU();
     LL_PWR_SetPowerMode(LL_PWR_MODE_STANDBY);
-#else
-    LL_PWR_SetPowerMode(LL_PWR_MODE_STOP_LPREGU);
-    // LL_PWR_SetPowerMode(LL_PWR_MODE_STOP_MAINREGU);
 #endif
+
+    LL_PWR_SetPowerMode(LL_PWR_MODE_STOP_LPREGU);
     LL_LPM_EnableDeepSleep();
 
     for (;;) {
-        pin_set(PIN_P1, 0);
         __WFI();
         if (!was_led_off_alrm)
             break;
     }
 }
-#endif

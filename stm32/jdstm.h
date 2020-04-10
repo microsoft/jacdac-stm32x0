@@ -15,4 +15,11 @@
 
 #include "jdsimple.h"
 
+extern uint8_t cpu_mhz;
+
+#define exti_disable(pin) LL_EXTI_DisableIT_0_31(pin)
+#define exti_enable(pin) LL_EXTI_EnableIT_0_31(pin)
+#define exti_enable(pin) LL_EXTI_EnableIT_0_31(pin)
+#define exti_clear(pin) LL_EXTI_ClearFallingFlag_0_31(pin)
+
 #endif

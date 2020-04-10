@@ -28,15 +28,12 @@ void tim_set_timer(int delta, cb_t cb) {
     if (delta < 10)
         delta = 10;
 
-#ifdef LOW_POWER
     if (delta >= 10000) {
         timer_cb = NULL;
         rtc_set_cb(cb);
         return;
     }
-
     rtc_set_cb(NULL);
-#endif
 
     target_disable_irq();
     timer_cb = cb;
@@ -47,8 +44,6 @@ void tim_set_timer(int delta, cb_t cb) {
 }
 
 void tim_init() {
-    uint32_t tim_prescaler = __LL_TIM_CALC_PSC(CPU_MHZ * 1000000, 1000000);
-
     LL_TIM_InitTypeDef TIM_InitStruct = {0};
 
     /* Peripheral clock enable */
@@ -57,7 +52,7 @@ void tim_init() {
     NVIC_SetPriority(TIMx_IRQn, 2);
     NVIC_EnableIRQ(TIMx_IRQn);
 
-    TIM_InitStruct.Prescaler = tim_prescaler;
+    TIM_InitStruct.Prescaler = cpu_mhz - 1;
     TIM_InitStruct.CounterMode = LL_TIM_COUNTERMODE_UP;
     TIM_InitStruct.Autoreload = 0xffff;
     TIM_InitStruct.ClockDivision = LL_TIM_CLOCKDIVISION_DIV1;
@@ -74,6 +69,7 @@ void tim_init() {
     LL_TIM_ClearFlag_UPDATE(TIMx);
     LL_TIM_EnableIT_UPDATE(TIMx);
 
+#if 0
     LL_TIM_OC_InitTypeDef TIM_OC_InitStruct = {0};
     TIM_OC_InitStruct.OCMode = LL_TIM_OCMODE_FROZEN;
     TIM_OC_InitStruct.OCState = LL_TIM_OCSTATE_DISABLE;
@@ -82,16 +78,13 @@ void tim_init() {
     TIM_OC_InitStruct.OCPolarity = LL_TIM_OCPOLARITY_HIGH;
     LL_TIM_OC_Init(TIM3, LL_TIM_CHANNEL_CH1, &TIM_OC_InitStruct);
     LL_TIM_OC_DisableFast(TIM3, LL_TIM_CHANNEL_CH1);
+#endif
 
     LL_TIM_EnableIT_CC1(TIMx);
 
     LL_TIM_EnableCounter(TIMx);
 
     tim_set_timer(5000, NULL);
-
-    /* Configure the Cortex-M SysTick source to have 1ms time base */
-    // LL_Init1msTick(SystemCoreClock);
-    //    LL_mDelay(200);
 }
 
 void TIMx_IRQHandler() {
@@ -116,4 +109,9 @@ void TIMx_IRQHandler() {
 
     if (f)
         f();
+}
+
+void tim_update_prescaler() {
+    LL_TIM_DisableCounter(TIMx);
+    LL_TIM_SetPrescaler(TIMx, cpu_mhz - 1);
 }

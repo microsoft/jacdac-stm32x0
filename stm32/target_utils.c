@@ -14,9 +14,9 @@ void target_wait_cycles(int n) {
 
 void target_wait_us(uint32_t n) {
 #ifdef STM32G0
-    n = n * CPU_MHZ / 3;
+    n = n * cpu_mhz / 3;
 #elif defined(STM32F0)
-    n = n * CPU_MHZ / 4;
+    n = n * cpu_mhz / 4;
 #else
 #error "define clock rate"
 #endif

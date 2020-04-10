@@ -23,14 +23,14 @@ struct PinPWM {
 };
 
 static const struct PinPWM pins[] = {
-    {PA_1, 2, LL_GPIO_AF_2, TIM2},  // LED on jdm-v2
-    {PA_3, 4, LL_GPIO_AF_2, TIM2},  // POWER on jdm-v2
+    {PA_1, 2, LL_GPIO_AF_2, TIM2}, // LED on jdm-v2
+    {PA_3, 4, LL_GPIO_AF_2, TIM2}, // POWER on jdm-v2
     //{PA_6, 1, LL_GPIO_AF_5, TIM16}, // SERVO on jdm-v2,3 - doesn't seem to work, TIM3 works
-    {PA_6, 1, LL_GPIO_AF_1, TIM3}, // SERVO on jdm-v2,3
+    {PA_6, 1, LL_GPIO_AF_1, TIM3},  // SERVO on jdm-v2,3
     {PA_11, 4, LL_GPIO_AF_2, TIM1}, // POWER on jdm-v3
     {PA_15, 1, LL_GPIO_AF_2, TIM2}, // LED on jdm-v3 (TIM2_CH1_ETR?)
     {PB_0, 3, LL_GPIO_AF_1, TIM3},  // GLO0 on jdm-v3, also TIM1:2N
-    {PB_1, 1, LL_GPIO_AF_0, TIM14}, // GLO0 on jdm-v3; also TIM3:4, TIM1:3N
+    {PB_1, 1, LL_GPIO_AF_0, TIM14}, // GLO1 on jdm-v3; also TIM3:4, TIM1:3N
 };
 
 static const struct PinPWM *lookup_pwm(uint8_t pin) {
@@ -48,6 +48,7 @@ static const struct TimDesc *lookup_tim(TIM_TypeDef *tim) {
     return NULL;
 }
 
+// prescaler=1 -> 8MHz; prescaler=8 -> 1MHz
 uint8_t pwm_init(uint8_t pin, uint32_t period, uint32_t duty, uint8_t prescaler) {
     const struct PinPWM *pwm = lookup_pwm(pin);
     if (!pwm)
@@ -72,8 +73,7 @@ uint8_t pwm_init(uint8_t pin, uint32_t period, uint32_t duty, uint8_t prescaler)
 
     TIMx->CR1 = LL_TIM_COUNTERMODE_UP | LL_TIM_CLOCKDIVISION_DIV1; // default anyways
 
-    // set to 1us
-    LL_TIM_SetPrescaler(TIMx, (CPU_MHZ / 8 * prescaler) - 1);
+    LL_TIM_SetPrescaler(TIMx, (PLL_MHZ / 8 * prescaler) - 1);
     LL_TIM_SetAutoReload(TIMx, period - 1);
 
     LL_TIM_GenerateEvent_UPDATE(TIMx);
@@ -123,4 +123,14 @@ void pwm_set_duty(uint8_t pwm, uint32_t duty) {
     if (pwm >= sizeof(pins) / sizeof(pins[0]))
         jd_panic();
     WRITE_REG(*(&pins[pwm].tim->CCR1 + pins[pwm].ch - 1), duty);
+}
+
+void pwm_enable(uint8_t pwm, bool enabled) {
+    pwm--;
+    if (pwm >= sizeof(pins) / sizeof(pins[0]))
+        jd_panic();
+    if (enabled)
+        pin_setup_output_af(pins[pwm].pin, pins[pwm].af);
+    else
+        pin_setup_output(pins[pwm].pin);
 }

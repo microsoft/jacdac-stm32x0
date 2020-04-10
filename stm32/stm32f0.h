@@ -26,10 +26,7 @@
 #define __HAL_RCC_ADC_CLK_ENABLE __HAL_RCC_ADC1_CLK_ENABLE
 #define __HAL_RCC_ADC_CLK_DISABLE __HAL_RCC_ADC1_CLK_DISABLE
 
-#ifdef LOW_POWER
-#define CPU_MHZ 8
-#else
-#define CPU_MHZ 48
-#endif
+#define HSI_MHZ 8
+#define PLL_MHZ 48
 
 #endif

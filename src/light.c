@@ -41,7 +41,8 @@ static struct light_state state;
 static uint32_t *pxbuffer;
 static uint16_t pxbuffer_allocated;
 static uint32_t nextFrame;
-static uint8_t in_tx, inited, service_number;
+static volatile uint8_t in_tx;
+static uint8_t inited, service_number;
 
 static uint32_t anim_step, anim_value;
 static uint8_t anim_flag;
@@ -138,6 +139,7 @@ static bool is_enabled() {
 
 static void show();
 static void tx_done() {
+    pwr_leave_pll();
     if (in_tx == 2) {
         in_tx = 0;
         show();
@@ -154,11 +156,13 @@ static void show() {
     target_disable_irq();
     if (in_tx) {
         in_tx = 2;
+        target_enable_irq();
     } else {
         in_tx = 1;
+        target_enable_irq();
+        pwr_enter_pll();
         px_tx(pxbuffer, PX_WORDS(state.numpixels) << 2, tx_done);
     }
-    target_enable_irq();
 }
 
 static void set_all(uint32_t color) {

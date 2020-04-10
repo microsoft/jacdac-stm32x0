@@ -30,6 +30,7 @@ struct pwm_light_state {
     // internal state;
     uint32_t step_start_time;
     uint32_t nextFrame;
+    uint8_t is_on;
 };
 
 REG_DEFINITION(                                           //
@@ -56,7 +57,22 @@ void pwm_light_init(uint8_t service_num) {
 
     state.max_iterations = 0xffff;
     state.intensity = 0;
-    state.pwm_pin = pwm_init(PIN_GLO1, PWM_PERIOD, PWM_PERIOD - 1, 1);
+}
+
+static void set_pwr(int on) {
+    if (state.is_on == on)
+        return;
+    if (on) {
+        pwr_enter_pll();
+        if (!state.pwm_pin)
+            state.pwm_pin = pwm_init(PIN_GLO1, PWM_PERIOD, PWM_PERIOD - 1, 1);
+        pwm_enable(state.pwm_pin, 1);
+    } else {
+        pin_set(PIN_GLO1, 1);
+        pwm_enable(state.pwm_pin, 0);
+        pwr_leave_pll();
+    }
+    state.is_on = on;
 }
 
 void pwm_light_process() {
@@ -98,7 +114,13 @@ void pwm_light_process() {
 
     step_intensity = ((uint32_t)step_intensity * state.intensity) >> 16;
     int v = step_intensity >> (16 - PWM_PERIOD_BITS);
-    pwm_set_duty(state.pwm_pin, PWM_PERIOD - v);
+
+    if (v == 0) {
+        set_pwr(0);
+    } else {
+        set_pwr(1);
+        pwm_set_duty(state.pwm_pin, PWM_PERIOD - v);
+    }
 }
 
 void pwm_light_handle_packet(jd_packet_t *pkt) {
