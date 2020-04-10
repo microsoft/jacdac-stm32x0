@@ -140,5 +140,5 @@ void fail_and_reset() {
         led_toggle();
         target_wait_us(70000);
     }
-    NVIC_SystemReset();
+    target_reset();
 }

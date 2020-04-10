@@ -31,7 +31,7 @@ void ctrl_handle_pkt(jd_packet_t *pkt) {
         identify(7);
         break;
     case JD_CMD_CTRL_RESET:
-        NVIC_SystemReset();
+        target_reset();
         break;
     }
 }

@@ -5,14 +5,6 @@
 #include <string.h>
 #include <stdbool.h>
 
-#if defined(STM32F0)
-#include "stm32f0.h"
-#elif defined(STM32G0)
-#include "stm32g0.h"
-#else
-#error "invalid CPU"
-#endif
-
 #include "board.h"
 #include "dmesg.h"
 #include "pinnames.h"
@@ -42,6 +34,7 @@ RAM_FUNC
 void target_wait_cycles(int n);
 uint32_t random_int(int max);
 void dump_pkt(jd_packet_t *pkt, const char *msg);
+void target_reset();
 
 // exti.c
 #define EXTI_FALLING 0x01
