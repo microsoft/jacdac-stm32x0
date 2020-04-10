@@ -94,6 +94,7 @@ $(BUILT)/%.o: %.c
 	$(V)$(CC) $(CFLAGS) $(CPPFLAGS) -o $@ -c $<
 
 $(wildcard $(BUILT)/src/*.o): $(HEADERS)
+$(wildcard $(BUILT)/$(PLATFORM)/*.o): $(HEADERS)
 $(wildcard $(BUILT)/$(JD_CORE)/*.o): $(HEADERS)
 
 $(BUILT)/%.o: %.s
