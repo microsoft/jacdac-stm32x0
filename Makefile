@@ -13,7 +13,12 @@ CFLAGS = $(DEFINES) \
 	-Os -g3 -Wall -ffunction-sections -fdata-sections \
 	$(WARNFLAGS)
 BUILT = built/$(TARGET)
-HEADERS = $(wildcard src/*.h) $(wildcard $(PLATFORM)/*.h) $(wildcard $(JD_CORE)/*.h) $(wildcard targets/$(TARGET)/*.h)
+CONFIG_DEPS = \
+	$(wildcard src/*.h) \
+	$(wildcard $(PLATFORM)/*.h) \
+	$(wildcard $(JD_CORE)/*.h) \
+	$(wildcard targets/$(TARGET)/*.h) \
+	targets/$(TARGET)/config.mk
 
 include targets/$(TARGET)/config.mk
 BASE_TARGET ?= $(TARGET)
@@ -93,9 +98,9 @@ $(BUILT)/%.o: %.c
 	@echo CC $<
 	$(V)$(CC) $(CFLAGS) $(CPPFLAGS) -o $@ -c $<
 
-$(wildcard $(BUILT)/src/*.o): $(HEADERS)
-$(wildcard $(BUILT)/$(PLATFORM)/*.o): $(HEADERS)
-$(wildcard $(BUILT)/$(JD_CORE)/*.o): $(HEADERS)
+$(wildcard $(BUILT)/src/*.o): $(CONFIG_DEPS)
+$(wildcard $(BUILT)/$(PLATFORM)/*.o): $(CONFIG_DEPS)
+$(wildcard $(BUILT)/$(JD_CORE)/*.o): $(CONFIG_DEPS)
 
 $(BUILT)/%.o: %.s
 	@mkdir -p $(dir $@)
@@ -110,12 +115,6 @@ $(BUILT)/binary.hex: $(BUILT)/binary.elf
 	@echo HEX $<
 	$(PREFIX)objcopy -O ihex $< $@
 	$(PREFIX)size $<
-
-$(BUILT)/addata.h: $(BUILT)/genad
-	./$(BUILT)/genad > "$@"
-
-$(BUILT)/genad: genad/genad.c $(HEADERS)
-	cc -Isrc -o "$@" $<
 
 clean:
 	rm -rf built
