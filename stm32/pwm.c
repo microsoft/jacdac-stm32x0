@@ -25,7 +25,8 @@ struct PinPWM {
 static const struct PinPWM pins[] = {
     {PA_1, 2, LL_GPIO_AF_2, TIM2},  // LED on jdm-v2
     {PA_3, 4, LL_GPIO_AF_2, TIM2},  // POWER on jdm-v2
-    {PA_6, 1, LL_GPIO_AF_5, TIM16}, // SERVO on jdm-v2,3
+    //{PA_6, 1, LL_GPIO_AF_5, TIM16}, // SERVO on jdm-v2,3 - doesn't seem to work, TIM3 works
+    {PA_6, 1, LL_GPIO_AF_1, TIM3}, // SERVO on jdm-v2,3
     {PA_11, 4, LL_GPIO_AF_2, TIM1}, // POWER on jdm-v3
     {PA_15, 1, LL_GPIO_AF_2, TIM2}, // LED on jdm-v3 (TIM2_CH1_ETR?)
     {PB_0, 3, LL_GPIO_AF_1, TIM3},  // GLO0 on jdm-v3, also TIM1:2N
@@ -114,10 +115,11 @@ uint8_t pwm_init(uint8_t pin, uint32_t period, uint32_t duty, uint8_t prescaler)
     LL_TIM_EnableCounter(TIMx);
     LL_TIM_GenerateEvent_UPDATE(TIMx);
 
-    return pwm - pins;
+    return pwm - pins + 1;
 }
 
 void pwm_set_duty(uint8_t pwm, uint32_t duty) {
+    pwm--;
     if (pwm >= sizeof(pins) / sizeof(pins[0]))
         jd_panic();
     WRITE_REG(*(&pins[pwm].tim->CCR1 + pins[pwm].ch - 1), duty);
