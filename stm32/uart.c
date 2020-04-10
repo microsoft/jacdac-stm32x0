@@ -127,11 +127,11 @@ static void DMA_Init(void) {
 
 static void USART_UART_Init(void) {
 #if USART_IDX == 2
+    LL_RCC_SetUSARTClockSource(LL_RCC_USART2_CLKSOURCE_HSI);
     __HAL_RCC_USART2_CLK_ENABLE();
-    __HAL_RCC_GPIOA_CLK_ENABLE();
 #elif USART_IDX == 1
+    LL_RCC_SetUSARTClockSource(LL_RCC_USART1_CLKSOURCE_HSI);
     __HAL_RCC_USART1_CLK_ENABLE();
-    __HAL_RCC_GPIOB_CLK_ENABLE();
 #else
 #error "bad usart"
 #endif
@@ -181,14 +181,15 @@ static void USART_UART_Init(void) {
     LL_DMA_EnableIT_TC(DMA1, LL_DMA_CHANNEL_5);
     LL_DMA_EnableIT_TE(DMA1, LL_DMA_CHANNEL_5);
 
-#ifdef LOW_POWER
     USARTx->CR1 = LL_USART_DATAWIDTH_8B | LL_USART_PARITY_NONE | LL_USART_OVERSAMPLING_8 |
                   LL_USART_DIRECTION_TX;
-    USARTx->BRR = CPU_MHZ * 2; // ->1MHz
-#else
+    USARTx->BRR = HSI_MHZ * 2; // ->1MHz
+
+#ifndef STM32F0
+    #error "maybe can use 16 oversampling if HSI_MHZ is 16"
     USARTx->CR1 = LL_USART_DATAWIDTH_8B | LL_USART_PARITY_NONE | LL_USART_OVERSAMPLING_16 |
                   LL_USART_DIRECTION_TX;
-    USARTx->BRR = CPU_MHZ; // ->1MHz
+    USARTx->BRR = HSI_MHZ; // ->1MHz
 #endif
 
     USARTx->CR2 = LL_USART_STOPBITS_1;
