@@ -63,3 +63,4 @@ extern const host_service_t host_accelerometer;
 extern const host_service_t host_light;
 extern const host_service_t host_pwm_light;
 extern const host_service_t host_crank;
+extern const host_service_t host_servo;
