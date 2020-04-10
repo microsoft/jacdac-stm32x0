@@ -8,7 +8,7 @@
 #define NOP1 asm volatile("nop \n nop \n nop")
 #else
 #define NOP0 target_wait_cycles(1)
-#define NOP1 target_wait_cycles(5)
+#define NOP1 target_wait_cycles(7)
 #endif
 
 #define SEND_BIT(n, wait0, wait1)                                                                  \
