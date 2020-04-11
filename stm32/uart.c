@@ -256,7 +256,10 @@ int uart_start_tx(const void *data, uint32_t numbytes) {
     LL_GPIO_ResetOutputPin(PIN_PORT, PIN_PIN);
     gpio_probe_and_set(PIN_PORT, PIN_PIN, PIN_MODER | PIN_PORT->MODER);
     if (!(PIN_PORT->MODER & PIN_MODER)) {
-        exti_trigger(jd_line_falling);
+        // this is equivalent to irq priority when running from EXTI
+        target_disable_irq();
+        jd_line_falling();
+        target_enable_irq();
         return -1;
     }
     target_wait_us(11);

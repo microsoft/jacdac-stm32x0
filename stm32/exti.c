@@ -1,7 +1,6 @@
 #include "jdstm.h"
 
 static cb_t callbacks[16];
-static cb_t trigger_cb;
 
 static void check_line(int ln) {
     uint32_t pin = 1 << ln;
@@ -12,34 +11,25 @@ static void check_line(int ln) {
 }
 
 void EXTI0_1_IRQHandler() {
-    cb_t f = trigger_cb;
-    if (f) {
-        trigger_cb = NULL;
-        f();
-    }
+    rtc_sync_time();
     check_line(0);
     check_line(1);
 }
 
 void EXTI2_3_IRQHandler() {
+    rtc_sync_time();
     check_line(2);
     check_line(3);
 }
 
 void EXTI4_15_IRQHandler() {
+    rtc_sync_time();
     // first check UART line, to speed up handling
     check_line(UART_PIN & 0xf);
 
     // check the rest of the lines (this includes UART line, but it's fine)
     for (int i = 4; i <= 15; ++i)
         check_line(i);
-}
-
-// run cb at EXTI IRQ priority
-void exti_trigger(cb_t cb) {
-    trigger_cb = cb;
-    NVIC_SetPendingIRQ(EXTI0_1_IRQn);
-    // LL_EXTI_GenerateSWI_0_31(1);
 }
 
 #ifndef STM32F0
