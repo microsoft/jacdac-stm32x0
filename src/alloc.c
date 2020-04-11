@@ -42,5 +42,6 @@ void *alloc(uint32_t size) {
     aptr += size;
     if ((uint32_t)aptr > HEAP_END)
         fail_and_reset();
+    memset(r, 0, size << 2);
     return r;
 }
