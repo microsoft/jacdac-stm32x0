@@ -31,9 +31,14 @@
 void bspi_send(const void *src, uint32_t len) {
     for (int i = 0; i < len; ++i) {
         uint8_t b = ((uint8_t *)src)[i];
-        for (int j = 7; j >= 0; j--) {
-            SEND_BIT(j, PLL_NOP0, PLL_NOP1);
-        }
+        if (pwr_in_pll())
+            for (int j = 7; j >= 0; j--) {
+                SEND_BIT(j, PLL_NOP0, PLL_NOP1);
+            }
+        else
+            for (int j = 7; j >= 0; j--) {
+                SEND_BIT(j, LP_NOP0, LP_NOP1);
+            }
     }
     pin_set(PIN_ACC_MOSI, 0);
 }
@@ -41,9 +46,14 @@ void bspi_send(const void *src, uint32_t len) {
 void bspi_recv(void *dst, uint32_t len) {
     for (int i = 0; i < len; ++i) {
         uint8_t b = 0x00;
-        for (int j = 7; j >= 0; j--) {
-            RECV_BIT(j, PLL_NOP0, PLL_NOP1);
-        }
+        if (pwr_in_pll())
+            for (int j = 7; j >= 0; j--) {
+                RECV_BIT(j, PLL_NOP0, PLL_NOP1);
+            }
+        else
+            for (int j = 7; j >= 0; j--) {
+                RECV_BIT(j, LP_NOP0, LP_NOP1);
+            }
         ((uint8_t *)dst)[i] = b;
     }
 }
