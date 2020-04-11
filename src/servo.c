@@ -43,7 +43,8 @@ void servo_process() {}
 void servo_handle_packet(jd_packet_t *pkt) {
     if (handle_reg(&state, pkt, servo_regs)) {
         set_pwr(!!state.intensity);
-        pwm_set_duty(state.pwm_pin, state.pulse);
+        if (state.is_on)
+            pwm_set_duty(state.pwm_pin, state.pulse);
     }
 }
 
