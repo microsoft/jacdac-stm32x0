@@ -96,6 +96,8 @@ int main(void) {
             if (timeLeft <= 0) {
                 led_off_time = 0;
                 led_set(0);
+            } else if (timeLeft < 1000) {
+                continue; // don't sleep
             }
         }
 
