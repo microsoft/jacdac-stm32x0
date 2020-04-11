@@ -6,6 +6,7 @@
 #define TIMx_CLK_EN() __HAL_RCC_TIM17_CLK_ENABLE()
 
 static volatile uint64_t timeoff;
+static volatile cb_t timer_cb;
 
 // takes around 1us
 uint64_t tim_get_micros() {
@@ -18,7 +19,20 @@ uint64_t tim_get_micros() {
     }
 }
 
-static volatile cb_t timer_cb;
+cb_t tim_steal_callback(uint32_t *usec) {
+    cb_t f;
+    f = timer_cb;
+    if (f) {
+        uint16_t delta = LL_TIM_OC_GetCompareCH1(TIMx) - TIMx->CNT;
+        *usec = delta;
+        if (500 <= delta && delta <= 10000) {
+            timer_cb = NULL;
+        } else {
+            f = NULL;
+        }
+    }
+    return f;
+}
 
 void tim_forward(int us) {
     timeoff += us;
@@ -28,13 +42,7 @@ void tim_set_timer(int delta, cb_t cb) {
     if (delta < 10)
         delta = 10;
 
-    if (delta >= 10000) {
-        timer_cb = NULL;
-        rtc_set_cb(cb);
-        return;
-    }
-    rtc_set_cb(NULL);
-
+    rtc_cancel_cb();
     target_disable_irq();
     timer_cb = cb;
     uint16_t nextTrig = TIMx->CNT + (unsigned)delta;

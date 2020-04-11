@@ -1,77 +1,75 @@
 #include "jdstm.h"
 
-static volatile uint64_t last_alrm;
-static volatile uint8_t is_led_off_alrm, was_led_off_alrm;
+#define US_TICK_SCALE 20
+#define TICK_US_SCALE 10
+#define US_TO_TICKS(us) (((us)*ticksPerUs) >> US_TICK_SCALE)
+#define TICKS_TO_US(t) (((t)*usPerTick) >> TICK_US_SCALE)
+
+static uint32_t ticksPerUs, usPerTick;
+static uint16_t presc;
+static uint16_t lastSetSleep;
 static cb_t cb;
-static uint16_t presc, led_val;
 
-void rtc_set_cb(cb_t f) {
+static void rtc_set(uint32_t delta_us, cb_t f) {
+    if (delta_us > 10000)
+        jd_panic();
+    uint32_t delta_tick = US_TO_TICKS(delta_us);
+    if (delta_tick < 20)
+        delta_tick = 20;
+
     cb = f;
-}
 
-static void program_alrm(uint16_t val) {
-    if (val >= presc - 1)
-        return;
-
-    // LL_RTC_DisableWriteProtection(RTC);
     LL_RTC_ALMA_Disable(RTC);
     while (!LL_RTC_IsActiveFlag_ALRAW(RTC))
         ;
-    LL_RTC_ALMA_SetSubSecond(RTC, val);
+
+    uint32_t v = LL_RTC_TIME_GetSubSecond(RTC);
+    lastSetSleep = v;
+    uint32_t nv = v + presc - delta_tick; // the timer counts back; also don't underflow
+    if (nv >= presc)
+        nv -= presc; // make sure it's in range
+
+    LL_RTC_ALMA_SetSubSecond(RTC, nv);
+    LL_RTC_ClearFlag_ALRA(RTC);
+    LL_EXTI_ClearFlag_0_31(LL_EXTI_LINE_17);
+    NVIC_ClearPendingIRQ(RTC_IRQn);
     LL_RTC_ALMA_Enable(RTC);
-    // LL_RTC_EnableWriteProtection(RTC);
+    pin_set(PIN_P1, 1);
+    pin_set(PIN_P1, 0);
 }
 
-void rtc_set_led_duty(int val) {
-    int tmp = val * presc >> 10;
-    if (tmp < 5)
-        led_val = 0;
-    else
-        led_val = presc - tmp;
+void rtc_cancel_cb() {
+    cb = NULL;
+}
+
+void rtc_sync_time() {
+    pin_set(PIN_P1, 0);
+    pin_set(PIN_P0, 1);
+    target_disable_irq();
+    if ((lastSetSleep >> 15) == 0) {
+        int d = lastSetSleep + presc - LL_RTC_TIME_GetSubSecond(RTC);
+        if (d >= presc)
+            d -= presc;
+        tim_forward(TICKS_TO_US(d));
+        lastSetSleep = 0xffff;
+    }
+    target_enable_irq();
+    pin_set(PIN_P0, 0);
 }
 
 void RTC_IRQHandler(void) {
-    pin_set(PIN_P1, 1);
+    rtc_sync_time();
 
     if (LL_RTC_IsActiveFlag_ALRA(RTC) != 0) {
         LL_RTC_ClearFlag_ALRA(RTC);
 
-        if (is_led_off_alrm) {
-            program_alrm(0);
-            pin_set(PIN_P0, 0);
-            led_set(0);
-            is_led_off_alrm = 0;
-            was_led_off_alrm = 1;
-            // around 20us if pin access optimized
-        } else {
-            if (led_val) {
-                is_led_off_alrm = 1;
-                program_alrm(led_val);
-                pin_set(PIN_P0, 1);
-                led_set(1);
-            }
+        target_disable_irq();
+        cb_t f = cb;
+        cb = NULL;
+        target_enable_irq();
 
-            uint64_t now = tim_get_micros();
-            if (last_alrm) {
-                uint32_t d = now - last_alrm;
-                // if it appears the timer was off while we were sleeping
-                if (d < RTC_ALRM_US * 8 / 10) {
-                    // move it forward
-                    tim_forward(last_alrm + RTC_ALRM_US - now);
-                    now = last_alrm + RTC_ALRM_US;
-                }
-            }
-            last_alrm = now;
-
-            target_disable_irq();
-            cb_t f = cb;
-            cb = NULL;
-            target_enable_irq();
-
-            was_led_off_alrm = 0;
-            if (f)
-                f();
-        }
+        if (f)
+            f();
     }
 
     // Clear the EXTI's Flag for RTC Alarm
@@ -127,28 +125,57 @@ static void rtc_config(uint8_t p0, uint16_t p1) {
     // LL_RTC_EnableWriteProtection(RTC);
 }
 
+// with more than 4000 it overflows!
 #define CALIB_CYCLES 1024
 
 void rtc_init() {
+    target_disable_irq();
     rtc_config(1, CALIB_CYCLES);
     uint64_t t0 = tim_get_micros();
-    target_disable_irq();
     while (LL_RTC_IsActiveFlag_ALRA(RTC) == 0)
         ;
     uint32_t d = (tim_get_micros() - t0) + 20;
     target_enable_irq();
 
-    presc = CALIB_CYCLES * RTC_ALRM_US / d;
-    DMESG("rtc: c=%d p=%d", d, presc);
+    ticksPerUs = (1 << US_TICK_SCALE) * CALIB_CYCLES / d;
+    usPerTick = d * CALIB_CYCLES / (1 << TICK_US_SCALE);
 
+    uint32_t ten_ms = US_TO_TICKS(10000);
+    DMESG("rtc: 10ms = %d ticks", ten_ms);
+    // we're expecting around 400, but there's large drift possible
+    if (!(300 <= ten_ms && ten_ms <= 500))
+        jd_panic();
+
+    // use a little more than 10ms, so we don't have issues with wrap around
+    presc = US_TO_TICKS(12000);
     rtc_config(1, presc);
 }
 
-void rtc_sleep() {
+void rtc_sleep(bool forceShallow) {
+    if (forceShallow) {
+        __WFI();
+        return;
+    }
+
+    target_disable_irq();
+    uint32_t usec;
+    cb_t f = tim_steal_callback(&usec);
+    if (!f) {
+        target_enable_irq();
+        __WFI();
+        return;
+    }
+
+    rtc_set(usec, f);
+    LL_PWR_SetPowerMode(LL_PWR_MODE_STOP_LPREGU);
+    LL_LPM_EnableDeepSleep();
+    pin_set(PIN_P1, 1);
     __WFI();
+    target_enable_irq();
+    rtc_sync_time();      // likely already happened in ISR, but doesn't hurt to check again
+    LL_LPM_EnableSleep(); // i.e., no deep
 }
 
-void rtc_deepsleep() {
 #if 0
     // 6uA
     rtc_config(100, 10000);
@@ -156,13 +183,3 @@ void rtc_deepsleep() {
     LL_PWR_ClearFlag_WU();
     LL_PWR_SetPowerMode(LL_PWR_MODE_STANDBY);
 #endif
-
-    LL_PWR_SetPowerMode(LL_PWR_MODE_STOP_LPREGU);
-    LL_LPM_EnableDeepSleep();
-
-    for (;;) {
-        __WFI();
-        if (!was_led_off_alrm)
-            break;
-    }
-}

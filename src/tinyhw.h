@@ -6,7 +6,6 @@
 #define EXTI_FALLING 0x01
 #define EXTI_RISING 0x02
 void exti_set_callback(uint8_t pin, cb_t callback, uint32_t flags);
-void exti_trigger(cb_t cb);
 
 // dspi.c
 void dspi_init(void);
@@ -32,12 +31,7 @@ void adc_init_random(void);
 
 // rtc.c
 void rtc_init(void);
-void rtc_sleep(void);
-void rtc_deepsleep(void);
-void rtc_set_cb(cb_t cb);
-void rtc_set_led_duty(int val); // 0-1000
-
-void tim_forward(int us);
+void rtc_sleep(bool forceShallow);
 
 // pwm.c
 uint8_t pwm_init(uint8_t pin, uint32_t period, uint32_t duty, uint8_t prescaler);

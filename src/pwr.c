@@ -17,9 +17,5 @@ void pwr_leave_pll() {
 }
 
 void pwr_sleep() {
-    if (pll_cnt || jd_is_busy()) {
-        rtc_sleep();
-    } else {
-        rtc_deepsleep();
-    }
+    rtc_sleep(pll_cnt || jd_is_busy());
 }
