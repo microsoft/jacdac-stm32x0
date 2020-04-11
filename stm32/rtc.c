@@ -44,7 +44,6 @@ void rtc_cancel_cb() {
 
 void rtc_sync_time() {
     pin_set(PIN_P1, 0);
-    pin_set(PIN_P0, 1);
     target_disable_irq();
     if ((lastSetSleep >> 15) == 0) {
         int d = lastSetSleep + presc - LL_RTC_TIME_GetSubSecond(RTC);
@@ -54,7 +53,6 @@ void rtc_sync_time() {
         lastSetSleep = 0xffff;
     }
     target_enable_irq();
-    pin_set(PIN_P0, 0);
 }
 
 void RTC_IRQHandler(void) {

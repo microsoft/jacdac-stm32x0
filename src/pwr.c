@@ -2,7 +2,13 @@
 
 static uint8_t pll_cnt;
 
+bool pwr_in_pll() {
+    return pll_cnt > 0;
+}
+
 void pwr_enter_pll() {
+    if (target_in_irq())
+        jd_panic(); // should not be called in ISR handler
     if (pll_cnt == 0)
         clk_set_pll(1);
     pll_cnt++;

@@ -1,20 +1,5 @@
 #include "jdsimple.h"
 
-static int8_t irq_disabled;
-
-void target_enable_irq() {
-    irq_disabled--;
-    if (irq_disabled <= 0) {
-        irq_disabled = 0;
-        asm volatile("cpsie i" : : : "memory");
-    }
-}
-
-void target_disable_irq() {
-    asm volatile("cpsid i" : : : "memory");
-    irq_disabled++;
-}
-
 /**
  * Performs an in buffer reverse of a given char array.
  *

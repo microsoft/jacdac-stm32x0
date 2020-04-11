@@ -4,7 +4,7 @@
 #define LIGHT_TYPE_SK9822 1
 
 #define DEFAULT_INTENSITY 15
-#define DEFAULT_NUMPIXELS 14
+#define DEFAULT_NUMPIXELS 15
 #define DEFAULT_MAXPOWER 200
 
 #define FRAME_TIME 50000
@@ -41,7 +41,7 @@ static struct light_state state;
 static uint32_t *pxbuffer;
 static uint16_t pxbuffer_allocated;
 static uint32_t nextFrame;
-static volatile uint8_t in_tx;
+static volatile uint8_t in_tx, dirty;
 static uint8_t inited, service_number;
 
 static uint32_t anim_step, anim_value;
@@ -137,32 +137,12 @@ static bool is_enabled() {
     return state.numpixels > 0 && state.intensity > 0;
 }
 
-static void show();
-static void tx_done() {
-    pwr_leave_pll();
-    if (in_tx == 2) {
-        in_tx = 0;
-        show();
-    } else {
-        in_tx = 0;
-    }
-}
-
 static void set(uint32_t index, uint32_t color) {
     px_set(pxbuffer, index, state.intensity, color);
 }
 
 static void show() {
-    target_disable_irq();
-    if (in_tx) {
-        in_tx = 2;
-        target_enable_irq();
-    } else {
-        in_tx = 1;
-        target_enable_irq();
-        pwr_enter_pll();
-        px_tx(pxbuffer, PX_WORDS(state.numpixels) << 2, tx_done);
-    }
+    dirty = 1;
 }
 
 static void set_all(uint32_t color) {
@@ -340,6 +320,11 @@ static cb_t animations[] = {
     anim_sparkle,
 };
 
+static void tx_done() {
+    pwr_leave_pll();
+    in_tx = 0;
+}
+
 void light_process() {
     // we always check timer to avoid problem with timer overflows
     bool should = should_sample(&nextFrame, FRAME_TIME);
@@ -349,6 +334,13 @@ void light_process() {
 
     if (should)
         anim_frame();
+
+    if (dirty && !in_tx) {
+        dirty = 0;
+        in_tx = 1;
+        pwr_enter_pll();
+        px_tx(pxbuffer, PX_WORDS(state.numpixels) << 2, tx_done);
+    }
 }
 
 static void sync_config() {

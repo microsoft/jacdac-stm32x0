@@ -44,6 +44,7 @@ void alloc_stack_check();
 void pwr_enter_pll(void);
 void pwr_leave_pll(void);
 void pwr_sleep(void);
+bool pwr_in_pll(void);
 
 extern uint32_t now;
 

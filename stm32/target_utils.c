@@ -61,3 +61,22 @@ uint64_t device_id() {
 void target_reset() {
     NVIC_SystemReset();
 }
+
+static int8_t irq_disabled;
+
+void target_enable_irq() {
+    irq_disabled--;
+    if (irq_disabled <= 0) {
+        irq_disabled = 0;
+        asm volatile("cpsie i" : : : "memory");
+    }
+}
+
+void target_disable_irq() {
+    asm volatile("cpsid i" : : : "memory");
+    irq_disabled++;
+}
+
+int target_in_irq() {
+    return (SCB->ICSR & SCB_ICSR_VECTACTIVE_Msk) != 0;
+}
