@@ -83,32 +83,23 @@ int main(void) {
 
     app_init_services();
 
-    led_off_time = tim_get_micros() + 200000;
-
-    // we run without sleep at the beginning to allow connecting debugger
-    // uint64_t start_time = led_off_time + 3000000;
-    uint64_t start_time = led_off_time;
-
-    // rtc_set_led_duty(200);
+    led_blink(200000); // initial/reset blink
 
     while (1) {
         uint64_t now_long = tim_get_micros();
         now = (uint32_t)now_long;
 
-        if (led_off_time && now_long > led_off_time) {
-            led_off_time = 0;
-            led_set(0);
-        }
-
-        if (start_time && now_long > start_time) {
-            start_time = 0;
-        }
-
         app_process();
 
-        if (!led_off_time && !start_time) {
-            pwr_sleep();
+        if (led_off_time) {
+            int timeLeft = led_off_time - now_long;
+            if (timeLeft <= 0) {
+                led_off_time = 0;
+                led_set(0);
+            }
         }
+
+        pwr_sleep();
     }
 }
 
