@@ -122,4 +122,5 @@ void TIMx_IRQHandler() {
 void tim_update_prescaler() {
     LL_TIM_DisableCounter(TIMx);
     LL_TIM_SetPrescaler(TIMx, cpu_mhz - 1);
+    LL_TIM_EnableCounter(TIMx);
 }
