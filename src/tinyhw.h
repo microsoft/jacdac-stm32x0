@@ -1,5 +1,7 @@
 #pragma once
 
+#include "hwconfig.h"
+
 #define RAM_FUNC __attribute__((noinline, long_call, section(".data")))
 
 // exti.c
@@ -58,3 +60,8 @@ int target_in_irq(void);
 // init.c
 bool clk_is_pll(void);
 void clk_set_pll(int on);
+
+
+// flash.c
+void flash_program(void *dst, const void *src, uint32_t len);
+void flash_erase(void *page_addr);
