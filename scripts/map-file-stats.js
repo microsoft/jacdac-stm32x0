@@ -24,6 +24,7 @@ for (let line of fs.readFileSync(process.argv[2], "utf8").split(/\r?\n/)) {
   if (!addr || !size) continue
   let name = m[3]
   if (/load address/.test(name)) continue
+  if (name == "xr" || name == "xrw") continue
   name = name.replace(/.*\/lib/, "lib")
   //    .replace(/\(.*/, "") // can remove
 
@@ -46,7 +47,12 @@ function order(isram) {
   return k
 }
 
-for (let k of order(true).concat(order(false))) {
+for (let k of order(true)) {
   console.log(k, sums[k])
 }
 
+console.log("\n")
+
+for (let k of order(false)) {
+  console.log(k, sums[k])
+}

@@ -67,15 +67,19 @@ l: flash-loop
 
 run: all flash
 
+ONCE ?= 1
+
 flash: prep-built-gdb
 ifeq ($(BMP),)
 	$(OPENOCD) -c "program $(BUILT)/binary.elf verify reset exit"
 else
+ifeq ($(ONCE),)
 	echo "set {int}0xe000ed0c = 0x5fa0004" >> built/debug.gdb
 	echo "detach" >> built/debug.gdb
 	echo "monitor swdp_scan" >> built/debug.gdb
 	echo "attach 1" >> built/debug.gdb
 	echo "bt" >> built/debug.gdb
+endif
 	echo "load" >> built/debug.gdb
 	echo "quit" >> built/debug.gdb
 	arm-none-eabi-gdb --command=built/debug.gdb < /dev/null 2>&1 | tee built/flash.log
@@ -123,3 +127,7 @@ $(BUILT)/binary.hex: $(BUILT)/binary.elf
 
 clean:
 	rm -rf built
+
+st: stats
+stats:
+	@node scripts/map-file-stats.js  built/$(TARGET)/output.map
