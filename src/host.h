@@ -32,11 +32,6 @@
 
 typedef struct srv_state srv_t;
 
-int srv_handle_reg(srv_t *state, jd_packet_t *pkt, const uint16_t sdesc[]);
-
-// keep sampling at period, using state at *sample
-bool should_sample(uint32_t *sample, uint32_t period);
-
 typedef void (*srv_pkt_cb_t)(srv_t *state, jd_packet_t *pkt);
 typedef void (*srv_cb_t)(srv_t *state);
 
@@ -52,8 +47,7 @@ typedef struct _srv_vt srv_vt_t;
     const srv_vt_t *vt;                                                                            \
     uint8_t service_number;                                                                        \
     uint8_t instance_idx
-
-#define REG_SRV REG_BYTES(JD_REG_PADDING, 6)
+#define REG_SRV_BASE REG_BYTES(JD_REG_PADDING, 6)
 
 struct srv_state_common {
     SRV_COMMON;
@@ -61,6 +55,7 @@ struct srv_state_common {
 typedef struct srv_state_common srv_common_t;
 
 srv_t *srv_alloc(const srv_vt_t *vt);
+int srv_handle_reg(srv_t *state, jd_packet_t *pkt, const uint16_t sdesc[]);
 
 #define SRV_DEF(id, service_cls)                                                                   \
     static const srv_vt_t id##_vt = {                                                              \
@@ -75,17 +70,15 @@ srv_t *srv_alloc(const srv_vt_t *vt);
     if (!state)                                                                                    \
         return;
 
-// sensor helpers
-struct _sensor_state {
-    SRV_COMMON;
-    uint8_t is_streaming : 1;
-    uint32_t streaming_interval;
-    uint32_t next_sample;
-};
-typedef struct _sensor_state sensor_state_t;
+#define SENSOR_COMMON                                                                              \
+    SRV_COMMON;                                                                                    \
+    uint8_t is_streaming : 1;                                                                      \
+    uint32_t streaming_interval;                                                                   \
+    uint32_t next_streaming
+#define REG_SENSOR_BASE REG_BYTES(JD_REG_PADDING, 16)
 
-int sensor_handle_packet(sensor_state_t *state, jd_packet_t *pkt);
-int sensor_should_stream(sensor_state_t *state);
-int sensor_handle_packet_simple(sensor_state_t *state, jd_packet_t *pkt, const void *sample,
+int sensor_handle_packet(srv_t *state, jd_packet_t *pkt);
+int sensor_should_stream(srv_t *state);
+int sensor_handle_packet_simple(srv_t *state, jd_packet_t *pkt, const void *sample,
                                 uint32_t sample_size);
-void sensor_process_simple(sensor_state_t *state, const void *sample, uint32_t sample_size);
+void sensor_process_simple(srv_t *state, const void *sample, uint32_t sample_size);

@@ -3,69 +3,6 @@
 //#define LOG DMESG
 #define LOG(...) ((void)0)
 
-bool should_sample(uint32_t *sample, uint32_t period) {
-    if (in_future(*sample))
-        return false;
-
-    *sample += period;
-
-    if (!in_future(*sample))
-        // we lost some samples
-        *sample = now + period;
-
-    return true;
-}
-
-REG_DEFINITION(                         //
-    sensor_regs,                        //
-    REG_SRV,                            //
-    REG_BIT(JD_REG_IS_STREAMING),       //
-    REG_U32(JD_REG_STREAMING_INTERVAL), //
-    REG_U32(JD_REG_PADDING),            // next_sample not accesible
-);
-
-int sensor_handle_packet(sensor_state_t *state, jd_packet_t *pkt) {
-    int r = srv_handle_reg((srv_t *)state, pkt, sensor_regs);
-    switch (r) {
-    case JD_REG_IS_STREAMING:
-        if (state->is_streaming) {
-            if (state->streaming_interval == 0)
-                state->streaming_interval = 100;
-            state->next_sample = now;
-        }
-        break;
-    case JD_REG_STREAMING_INTERVAL:
-        if (state->streaming_interval < 20)
-            state->streaming_interval = 20;
-        if (state->streaming_interval > 100000)
-            state->streaming_interval = 100000;
-        break;
-    }
-    return r;
-}
-
-void sensor_process_simple(sensor_state_t *state, const void *sample, uint32_t sample_size) {
-    if (sensor_should_stream(state))
-        txq_push(state->service_number, JD_CMD_GET_REG | JD_REG_READING, sample, sample_size);
-}
-
-int sensor_handle_packet_simple(sensor_state_t *state, jd_packet_t *pkt, const void *sample,
-                                uint32_t sample_size) {
-    int r = sensor_handle_packet(state, pkt);
-
-    if (pkt->service_command == (JD_CMD_GET_REG | JD_REG_READING)) {
-        txq_push(pkt->service_number, pkt->service_command, sample, sample_size);
-        r = -JD_REG_READING;
-    }
-
-    return r;
-}
-
-int sensor_should_stream(sensor_state_t *state) {
-    if (!state->is_streaming)
-        return false;
-    return should_sample(&state->next_sample, state->streaming_interval * 1000);
-}
 
 #define REG_IS_SIGNED(r) ((r) <= 4 && !((r)&1))
 static const uint8_t regSize[16] = {1, 1, 2, 2, 4, 4, 4, 8, 1};

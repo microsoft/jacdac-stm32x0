@@ -12,7 +12,7 @@ struct srv_state {
 
 REG_DEFINITION(               //
     servo_regs,               //
-    REG_SRV,                  //
+    REG_SRV_BASE,                  //
     REG_U32(JD_REG_VALUE),    //
     REG_U8(JD_REG_INTENSITY), //
 )

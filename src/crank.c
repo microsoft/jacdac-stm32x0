@@ -1,7 +1,7 @@
 #include "jdsimple.h"
 
 struct srv_state {
-    sensor_state_t sensor;
+    SENSOR_COMMON;
     uint8_t state, inited;
     int32_t sample, position;
     uint32_t nextSample;
@@ -24,7 +24,7 @@ static void update(srv_t *state) {
 }
 
 static void maybe_init(srv_t *state) {
-    if (state->sensor.is_streaming && !state->inited) {
+    if (state->is_streaming && !state->inited) {
         state->inited = true;
         pin_setup_input(PIN_P0, 1);
         pin_setup_input(PIN_P1, 1);
@@ -38,11 +38,11 @@ void crank_process(srv_t *state) {
     if (should_sample(&state->nextSample, 997) && state->inited)
         update(state);
 
-    sensor_process_simple(&state->sensor, &state->sample, sizeof(state->sample));
+    sensor_process_simple(state, &state->sample, sizeof(state->sample));
 }
 
 void crank_handle_packet(srv_t *state, jd_packet_t *pkt) {
-    sensor_handle_packet_simple(&state->sensor, pkt, &state->sample, sizeof(state->sample));
+    sensor_handle_packet_simple(state, pkt, &state->sample, sizeof(state->sample));
 }
 
 SRV_DEF(crank, JD_SERVICE_CLASS_ROTARY_ENCODER);

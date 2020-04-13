@@ -57,7 +57,7 @@ struct ShakeHistory {
 };
 
 struct srv_state {
-    sensor_state_t sensor;
+    SENSOR_COMMON;
 
     uint8_t sigma;
     uint8_t impulseSigma;
@@ -70,12 +70,11 @@ struct srv_state {
 
 #define sample state->sample
 #define shake state->shake
-#define sensor state->sensor
 
 static void emit_event(srv_t *state, int ev) {
     if (ev & ~0xff)
         jd_panic();
-    txq_push(sensor.service_number, JD_CMD_EVENT, &ev, 4);
+    txq_push(state->service_number, JD_CMD_EVENT, &ev, 4);
 }
 
 static void emit_g_event(srv_t *state, int ev) {
@@ -227,11 +226,11 @@ void acc_process(srv_t *state) {
 
     process_events(state);
 
-    sensor_process_simple(&sensor, &sample, sizeof(sample));
+    sensor_process_simple(state, &sample, sizeof(sample));
 }
 
 void acc_handle_packet(srv_t *state, jd_packet_t *pkt) {
-    sensor_handle_packet_simple(&sensor, pkt, &sample, sizeof(sample));
+    sensor_handle_packet_simple(state, pkt, &sample, sizeof(sample));
 }
 
 SRV_DEF(acc, JD_SERVICE_CLASS_ACCELEROMETER);

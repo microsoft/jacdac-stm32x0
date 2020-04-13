@@ -66,3 +66,6 @@ static inline bool in_past(uint32_t moment) {
 static inline bool in_future(uint32_t moment) {
     return ((moment - now) >> 29) == 0;
 }
+
+// keep sampling at period, using state at *sample
+bool should_sample(uint32_t *sample, uint32_t period);

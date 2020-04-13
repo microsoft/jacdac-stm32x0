@@ -20,7 +20,7 @@
 
 REG_DEFINITION(                   //
     light_regs,                   //
-    REG_SRV,                      //
+    REG_SRV_BASE,                      //
     REG_U8(JD_REG_INTENSITY),     //
     REG_U8(LIGHT_REG_LIGHTTYPE),  //
     REG_U16(LIGHT_REG_NUMPIXELS), //

@@ -38,7 +38,7 @@ struct srv_state {
 
 REG_DEFINITION(                                           //
     pwm_light_regs,                                       //
-    REG_SRV,                                              //
+    REG_SRV_BASE,                                              //
     REG_U16(JD_REG_INTENSITY),                            //
     REG_U16(JD_REG_MAX_POWER),                            //
     REG_U16(PWM_REG_CURR_ITERATION),                      //
