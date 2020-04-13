@@ -2,7 +2,8 @@ SERIES = F0
 CFLAGS += -mcpu=cortex-m0
 
 #OPENOCD = openocd -f interface/stlink-v2-1.cfg -f target/stm32f0x.cfg
-OPENOCD = ./scripts/openocd -s ./scripts -f cmsis-dap.cfg -f stm32f0x.cfg
+#OPENOCD = ./scripts/openocd -s ./scripts -f cmsis-dap.cfg -f stm32f0x.cfg
+OPENOCD = openocd -f interface/cmsis-dap.cfg -f target/stm32f0x.cfg
 
 HALPREF = $(DRV)/STM32F0xx_HAL_Driver/Src
 HALSRC =  \

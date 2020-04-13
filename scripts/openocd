@@ -1,6 +1,6 @@
 #!/bin/sh
 
-S=STM32CubeG0/openocd
+S=stm32/STM32CubeG0/openocd
 case `uname -s` in
   Darwin* )
     P=$S/macOS/openocd
