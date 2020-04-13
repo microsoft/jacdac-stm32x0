@@ -57,6 +57,15 @@ void pin_setup_output_af(int pin, int af) {
     LL_GPIO_Init(PORT(pin), &GPIO_InitStruct);
 }
 
+void pin_pulse(int pin, int times) {
+    if ((uint8_t)pin == 0xff)
+        return;
+    while (times--) {
+        LL_GPIO_SetOutputPin(PORT(pin), PIN(pin));
+        LL_GPIO_ResetOutputPin(PORT(pin), PIN(pin));
+    }
+}
+
 void pin_set(int pin, int v) {
     if ((uint8_t)pin == 0xff)
         return;

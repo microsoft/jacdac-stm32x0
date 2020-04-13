@@ -25,6 +25,7 @@ int pin_get(int pin);
 void pin_setup_input(int pin, int pull);
 void pin_setup_output_af(int pin, int af);
 void pin_setup_analog_input(int pin);
+void pin_pulse(int pin, int times);
 
 // adc.c
 void adc_init_random(void);
