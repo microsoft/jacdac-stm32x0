@@ -1,13 +1,13 @@
 #include "jdsimple.h"
 
-static uint8_t pll_cnt;
+static uint8_t pll_cnt, tim_cnt;
 
 bool pwr_in_pll() {
     return pll_cnt > 0;
 }
 
 void pwr_enter_pll() {
-    if (target_in_irq())
+    if (target_in_irq() || pll_cnt == 0xff)
         jd_panic(); // should not be called in ISR handler
     if (pll_cnt == 0)
         clk_set_pll(1);
@@ -22,6 +22,18 @@ void pwr_leave_pll() {
         clk_set_pll(0);
 }
 
+void pwr_enter_tim() {
+    if (target_in_irq() || tim_cnt == 0xff)
+        jd_panic(); // should not be called in ISR handler
+    tim_cnt++;
+}
+
+void pwr_leave_tim() {
+    if (!tim_cnt)
+        jd_panic();
+    tim_cnt--;
+}
+
 void pwr_sleep() {
-    rtc_sleep(pll_cnt || jd_is_busy());
+    rtc_sleep(pll_cnt || tim_cnt || jd_is_busy());
 }

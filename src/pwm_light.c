@@ -54,14 +54,15 @@ static void set_pwr(srv_t *state, int on) {
     if (state->is_on == on)
         return;
     if (on) {
-        pwr_enter_pll();
+        pwr_enter_tim();
+        // set prescaler to 1 - as fast as possible
         if (!state->pwm_pin)
             state->pwm_pin = pwm_init(PIN_GLO1, PWM_PERIOD, PWM_PERIOD - 1, 1);
         pwm_enable(state->pwm_pin, 1);
     } else {
         pin_set(PIN_GLO1, 1);
         pwm_enable(state->pwm_pin, 0);
-        pwr_leave_pll();
+        pwr_leave_tim();
     }
     state->is_on = on;
 }

@@ -65,3 +65,5 @@ void clk_set_pll(int on);
 // flash.c
 void flash_program(void *dst, const void *src, uint32_t len);
 void flash_erase(void *page_addr);
+
+extern uint8_t cpu_mhz;
