@@ -48,7 +48,6 @@ REG_DEFINITION(                                           //
     REG_BYTES(PWM_REG_STEPS, MAX_STEPS * sizeof(step_t)), //
 )
 
-static const uint16_t glow[] = {0xffff, 1500, 0x0f00, 1500, 0xffff, 0};
 static const uint16_t stable[] = {0xffff, 10000, 0xffff, 0};
 
 static void set_pwr(srv_t *state, int on) {
@@ -116,7 +115,7 @@ void pwm_light_process(srv_t *state) {
 }
 
 void pwm_light_handle_packet(srv_t *state, jd_packet_t *pkt) {
-    switch (handle_reg(state, pkt, pwm_light_regs)) {
+    switch (srv_handle_reg(state, pkt, pwm_light_regs)) {
     case PWM_REG_STEPS:
         state->curr_iteration = 0;
         state->step_start_time = tim_get_micros() >> 10;
@@ -131,7 +130,6 @@ void pwm_light_init() {
     state->max_steps = MAX_STEPS;
 
     memcpy(state->steps, stable, sizeof(stable));
-    // memcpy(state->steps, glow, sizeof(glow));
 
     state->max_iterations = 0xffff;
     state->intensity = 0;

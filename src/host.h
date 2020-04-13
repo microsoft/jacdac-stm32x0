@@ -30,12 +30,12 @@
 
 #define REG_DEFINITION(name, ...) static const uint16_t name[] = {__VA_ARGS__ JD_REG_END};
 
-int handle_reg(void *state, jd_packet_t *pkt, const uint16_t sdesc[]);
+typedef struct srv_state srv_t;
+
+int srv_handle_reg(srv_t *state, jd_packet_t *pkt, const uint16_t sdesc[]);
 
 // keep sampling at period, using state at *sample
 bool should_sample(uint32_t *sample, uint32_t period);
-
-typedef struct srv_state srv_t;
 
 typedef void (*srv_pkt_cb_t)(srv_t *state, jd_packet_t *pkt);
 typedef void (*srv_cb_t)(srv_t *state);
@@ -86,3 +86,6 @@ typedef struct _sensor_state sensor_state_t;
 
 int sensor_handle_packet(sensor_state_t *state, jd_packet_t *pkt);
 int sensor_should_stream(sensor_state_t *state);
+int sensor_handle_packet_simple(sensor_state_t *state, jd_packet_t *pkt, const void *sample,
+                                uint32_t sample_size);
+void sensor_process_simple(sensor_state_t *state, const void *sample, uint32_t sample_size);

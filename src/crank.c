@@ -38,16 +38,11 @@ void crank_process(srv_t *state) {
     if (should_sample(&state->nextSample, 997) && state->inited)
         update(state);
 
-    if (sensor_should_stream(&state->sensor))
-        txq_push(state->sensor.service_number, JD_CMD_GET_REG | JD_REG_READING, &state->sample,
-                 sizeof(state->sample));
+    sensor_process_simple(&state->sensor, &state->sample, sizeof(state->sample));
 }
 
 void crank_handle_packet(srv_t *state, jd_packet_t *pkt) {
-    sensor_handle_packet(&state->sensor, pkt);
-
-    if (pkt->service_command == (JD_CMD_GET_REG | JD_REG_READING))
-        txq_push(pkt->service_number, pkt->service_command, &state->sample, sizeof(state->sample));
+    sensor_handle_packet_simple(&state->sensor, pkt, &state->sample, sizeof(state->sample));
 }
 
 SRV_DEF(crank, JD_SERVICE_CLASS_ROTARY_ENCODER);

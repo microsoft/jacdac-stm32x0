@@ -211,7 +211,8 @@ static void process_events(srv_t *state) {
         }
 
         // If we've reached threshold, update our record and raise the relevant event...
-        if (state->currentGesture != state->lastGesture && state->sigma >= ACCELEROMETER_GESTURE_DAMPING) {
+        if (state->currentGesture != state->lastGesture &&
+            state->sigma >= ACCELEROMETER_GESTURE_DAMPING) {
             state->lastGesture = state->currentGesture;
             emit_event(state, state->lastGesture);
         }
@@ -226,23 +227,14 @@ void acc_process(srv_t *state) {
 
     process_events(state);
 
-    if (sensor_should_stream(&sensor))
-        txq_push(sensor.service_number, JD_CMD_GET_REG | JD_REG_READING, &sample, sizeof(sample));
+    sensor_process_simple(&sensor, &sample, sizeof(sample));
 }
 
 void acc_handle_packet(srv_t *state, jd_packet_t *pkt) {
-    // dump_pkt(pkt, "ACC");
-    // DMESG("Acc st=%x %dus %d %d", sensor.status, sensor.streaming_interval, sensor.next_sample,
-    // now);
-
-    sensor_handle_packet(&sensor, pkt);
-
-    if (pkt->service_command == (JD_CMD_GET_REG | JD_REG_READING))
-        txq_push(pkt->service_number, pkt->service_command, &sample, sizeof(sample));
+    sensor_handle_packet_simple(&sensor, pkt, &sample, sizeof(sample));
 }
 
 SRV_DEF(acc, JD_SERVICE_CLASS_ACCELEROMETER);
-
 void acc_init() {
     SRV_ALLOC(acc);
     acc_hw_init();

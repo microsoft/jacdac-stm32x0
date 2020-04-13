@@ -386,7 +386,7 @@ void light_handle_packet(srv_t *state, jd_packet_t *pkt) {
         start_animation(pkt);
         break;
     default:
-        handle_reg(&state, pkt, light_regs);
+        srv_handle_reg(state, pkt, light_regs);
         break;
     }
 }

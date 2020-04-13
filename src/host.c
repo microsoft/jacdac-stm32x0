@@ -25,7 +25,7 @@ REG_DEFINITION(                         //
 );
 
 int sensor_handle_packet(sensor_state_t *state, jd_packet_t *pkt) {
-    int r = handle_reg(state, pkt, sensor_regs);
+    int r = srv_handle_reg((srv_t *)state, pkt, sensor_regs);
     switch (r) {
     case JD_REG_IS_STREAMING:
         if (state->is_streaming) {
@@ -44,6 +44,23 @@ int sensor_handle_packet(sensor_state_t *state, jd_packet_t *pkt) {
     return r;
 }
 
+void sensor_process_simple(sensor_state_t *state, const void *sample, uint32_t sample_size) {
+    if (sensor_should_stream(state))
+        txq_push(state->service_number, JD_CMD_GET_REG | JD_REG_READING, sample, sample_size);
+}
+
+int sensor_handle_packet_simple(sensor_state_t *state, jd_packet_t *pkt, const void *sample,
+                                uint32_t sample_size) {
+    int r = sensor_handle_packet(state, pkt);
+
+    if (pkt->service_command == (JD_CMD_GET_REG | JD_REG_READING)) {
+        txq_push(pkt->service_number, pkt->service_command, sample, sample_size);
+        r = -JD_REG_READING;
+    }
+
+    return r;
+}
+
 int sensor_should_stream(sensor_state_t *state) {
     if (!state->is_streaming)
         return false;
@@ -53,7 +70,7 @@ int sensor_should_stream(sensor_state_t *state) {
 #define REG_IS_SIGNED(r) ((r) <= 4 && !((r)&1))
 static const uint8_t regSize[16] = {1, 1, 2, 2, 4, 4, 4, 8, 1};
 
-int handle_reg(void *state, jd_packet_t *pkt, const uint16_t sdesc[]) {
+int srv_handle_reg(srv_t *state, jd_packet_t *pkt, const uint16_t sdesc[]) {
     bool is_get = (pkt->service_command >> 12) == (JD_CMD_GET_REG >> 12);
     bool is_set = (pkt->service_command >> 12) == (JD_CMD_SET_REG >> 12);
     if (!is_get && !is_set)
