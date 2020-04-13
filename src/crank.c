@@ -1,69 +1,57 @@
 #include "jdsimple.h"
 
-static sensor_state_t sensor;
-static int32_t sample, position;
-static uint8_t state, inited;
-static uint32_t nextSample;
-
-void crank_init(uint8_t service_num) {
-    sensor.service_number = service_num;
-}
+struct srv_state {
+    sensor_state_t sensor;
+    uint8_t state, inited;
+    int32_t sample, position;
+    uint32_t nextSample;
+};
 
 const static int8_t posMap[] = {0, +1, -1, +2, -1, 0, -2, +1, +1, -2, 0, -1, +2, -1, +1, 0};
-static void update(void) {
+static void update(srv_t *state) {
     // based on comments in https://github.com/PaulStoffregen/Encoder/blob/master/Encoder.h
-    uint16_t s = state & 3;
+    uint16_t s = state->state & 3;
     if (pin_get(PIN_P0))
         s |= 4;
     if (pin_get(PIN_P1))
         s |= 8;
 
-    state = (s >> 2);
+    state->state = (s >> 2);
     if (posMap[s]) {
-        position += posMap[s];
-        sample = position >> 2;
+        state->position += posMap[s];
+        state->sample = state->position >> 2;
     }
 }
 
-static void maybe_init() {
-    if (sensor.is_streaming && !inited) {
-        inited = true;
+static void maybe_init(srv_t *state) {
+    if (state->sensor.is_streaming && !state->inited) {
+        state->inited = true;
         pin_setup_input(PIN_P0, 1);
         pin_setup_input(PIN_P1, 1);
-        update();
+        update(state);
     }
 }
 
-void crank_process() {
-    maybe_init();
+void crank_process(srv_t *state) {
+    maybe_init(state);
 
-    if (should_sample(&nextSample, 997) && inited)
-        update();
+    if (should_sample(&state->nextSample, 997) && state->inited)
+        update(state);
 
-#if 0
-    static int last;
-    if (sample != last) {
-        DMESG("s:%d", sample);
-        pin_set(PIN_SERVO, 1);
-        pin_set(PIN_SERVO, 0);
-    }
-    last = sample;
-#endif
-
-    if (sensor_should_stream(&sensor))
-        txq_push(sensor.service_number, JD_CMD_GET_REG | JD_REG_READING, &sample, sizeof(sample));
+    if (sensor_should_stream(&state->sensor))
+        txq_push(state->sensor.service_number, JD_CMD_GET_REG | JD_REG_READING, &state->sample,
+                 sizeof(state->sample));
 }
 
-void crank_handle_packet(jd_packet_t *pkt) {
-    sensor_handle_packet(&sensor, pkt);
+void crank_handle_packet(srv_t *state, jd_packet_t *pkt) {
+    sensor_handle_packet(&state->sensor, pkt);
 
     if (pkt->service_command == (JD_CMD_GET_REG | JD_REG_READING))
-        txq_push(pkt->service_number, pkt->service_command, &sample, sizeof(sample));
+        txq_push(pkt->service_number, pkt->service_command, &state->sample, sizeof(state->sample));
 }
 
-const host_service_t host_crank = {
-    .service_class = JD_SERVICE_CLASS_ROTARY_ENCODER,
-    .init = crank_init,
-    .process = crank_process,
-    .handle_pkt = crank_handle_packet,
-};
+SRV_DEF(crank, JD_SERVICE_CLASS_ROTARY_ENCODER);
+
+void crank_init() {
+    SRV_ALLOC(crank);
+}

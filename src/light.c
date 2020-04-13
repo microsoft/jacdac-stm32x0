@@ -18,6 +18,11 @@
 
 #define LIGHT_CMD_START_ANIMATION 0x80
 
+// we only ever expect one instance of this; keep state static
+struct srv_state {
+    SRV_COMMON;
+};
+
 struct light_state {
     uint8_t intensity;
     uint8_t lighttype;
@@ -48,13 +53,6 @@ static uint32_t anim_step, anim_value;
 static uint8_t anim_flag;
 static cb_t anim_fn;
 static uint32_t anim_end;
-
-void light_init(uint8_t service_num) {
-    service_number = service_num;
-    state.intensity = DEFAULT_INTENSITY;
-    state.numpixels = DEFAULT_NUMPIXELS;
-    state.maxpower = DEFAULT_MAXPOWER;
-}
 
 static inline uint32_t rgb(uint8_t r, uint8_t g, uint8_t b) {
     return (r << 16) | (g << 8) | b;
@@ -325,7 +323,7 @@ static void tx_done() {
     in_tx = 0;
 }
 
-void light_process() {
+void light_process(srv_t *ctx) {
     // we always check timer to avoid problem with timer overflows
     bool should = should_sample(&nextFrame, FRAME_TIME);
 
@@ -380,7 +378,7 @@ static void start_animation(jd_packet_t *pkt) {
     }
 }
 
-void light_handle_packet(jd_packet_t *pkt) {
+void light_handle_packet(srv_t *ctx, jd_packet_t *pkt) {
     switch (pkt->service_command) {
     case LIGHT_CMD_START_ANIMATION:
         sync_config();
@@ -392,9 +390,13 @@ void light_handle_packet(jd_packet_t *pkt) {
     }
 }
 
-const host_service_t host_light = {
-    .service_class = JD_SERVICE_CLASS_LIGHT,
-    .init = light_init,
-    .process = light_process,
-    .handle_pkt = light_handle_packet,
-};
+SRV_DEF(light, JD_SERVICE_CLASS_LIGHT);
+void light_init() {
+    {
+        SRV_ALLOC(light);
+        service_number = state->service_number;
+    }
+    state.intensity = DEFAULT_INTENSITY;
+    state.numpixels = DEFAULT_NUMPIXELS;
+    state.maxpower = DEFAULT_MAXPOWER;
+}

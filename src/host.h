@@ -35,10 +35,50 @@ int handle_reg(void *state, jd_packet_t *pkt, const uint16_t sdesc[]);
 // keep sampling at period, using state at *sample
 bool should_sample(uint32_t *sample, uint32_t period);
 
+typedef struct srv_state srv_t;
+
+typedef void (*srv_pkt_cb_t)(srv_t *state, jd_packet_t *pkt);
+typedef void (*srv_cb_t)(srv_t *state);
+
+struct _srv_vt {
+    uint32_t service_class;
+    uint16_t state_size;
+    srv_cb_t process;
+    srv_pkt_cb_t handle_pkt;
+};
+typedef struct _srv_vt srv_vt_t;
+
+#define SRV_COMMON                                                                                 \
+    const srv_vt_t *vt;                                                                            \
+    uint8_t service_number;                                                                        \
+    uint8_t instance_idx
+
+#define REG_SRV REG_BYTES(JD_REG_PADDING, 6)
+
+struct srv_state_common {
+    SRV_COMMON;
+};
+typedef struct srv_state_common srv_common_t;
+
+srv_t *srv_alloc(const srv_vt_t *vt);
+
+#define SRV_DEF(id, service_cls)                                                                   \
+    static const srv_vt_t id##_vt = {                                                              \
+        .service_class = service_cls,                                                              \
+        .state_size = sizeof(srv_t),                                                               \
+        .process = id##_process,                                                                   \
+        .handle_pkt = id##_handle_packet,                                                          \
+    }
+
+#define SRV_ALLOC(id)                                                                              \
+    srv_t *state = srv_alloc(&id##_vt);                                                            \
+    if (!state)                                                                                    \
+        return;
+
 // sensor helpers
 struct _sensor_state {
+    SRV_COMMON;
     uint8_t is_streaming : 1;
-    uint8_t service_number;
     uint32_t streaming_interval;
     uint32_t next_sample;
 };
@@ -46,21 +86,3 @@ typedef struct _sensor_state sensor_state_t;
 
 int sensor_handle_packet(sensor_state_t *state, jd_packet_t *pkt);
 int sensor_should_stream(sensor_state_t *state);
-
-typedef void (*pkt_handler_t)(jd_packet_t *pkt);
-typedef void (*service_fn_t)(uint8_t service_num);
-
-struct _host_service {
-    uint32_t service_class;
-    service_fn_t init;
-    cb_t process;
-    pkt_handler_t handle_pkt;
-};
-typedef struct _host_service host_service_t;
-
-extern const host_service_t host_ctrl;
-extern const host_service_t host_accelerometer;
-extern const host_service_t host_light;
-extern const host_service_t host_pwm_light;
-extern const host_service_t host_crank;
-extern const host_service_t host_servo;

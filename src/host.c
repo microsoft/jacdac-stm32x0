@@ -18,8 +18,8 @@ bool should_sample(uint32_t *sample, uint32_t period) {
 
 REG_DEFINITION(                         //
     sensor_regs,                        //
+    REG_SRV,                            //
     REG_BIT(JD_REG_IS_STREAMING),       //
-    REG_U8(JD_REG_PADDING),             // service_number not accessible
     REG_U32(JD_REG_STREAMING_INTERVAL), //
     REG_U32(JD_REG_PADDING),            // next_sample not accesible
 );
@@ -95,7 +95,7 @@ int handle_reg(void *state, jd_packet_t *pkt, const uint16_t sdesc[]) {
             offset = (offset + align) & ~align;
         }
 
-        LOG("%x:%d:%d",(sd & 0xfff),offset,regsz);
+        LOG("%x:%d:%d", (sd & 0xfff), offset, regsz);
 
         if ((sd & 0xfff) == reg) {
             uint8_t *sptr = (uint8_t *)state + offset;

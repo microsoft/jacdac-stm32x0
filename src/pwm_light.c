@@ -19,7 +19,9 @@ typedef struct {
     uint16_t duration; // in ms
 } __attribute__((aligned(4))) step_t;
 
-struct pwm_light_state {
+struct srv_state {
+    SRV_COMMON;
+
     uint16_t intensity;
     uint16_t maxpower;
     uint16_t curr_iteration;
@@ -27,7 +29,8 @@ struct pwm_light_state {
     uint8_t max_steps;
     uint8_t pwm_pin;
     step_t steps[MAX_STEPS];
-    // internal state;
+
+    // internal state
     uint32_t step_start_time;
     uint32_t nextFrame;
     uint8_t is_on;
@@ -35,6 +38,7 @@ struct pwm_light_state {
 
 REG_DEFINITION(                                           //
     pwm_light_regs,                                       //
+    REG_SRV,                                              //
     REG_U16(JD_REG_INTENSITY),                            //
     REG_U16(JD_REG_MAX_POWER),                            //
     REG_U16(PWM_REG_CURR_ITERATION),                      //
@@ -47,45 +51,33 @@ REG_DEFINITION(                                           //
 static const uint16_t glow[] = {0xffff, 1500, 0x0f00, 1500, 0xffff, 0};
 static const uint16_t stable[] = {0xffff, 10000, 0xffff, 0};
 
-static struct pwm_light_state state;
-
-void pwm_light_init(uint8_t service_num) {
-    state.max_steps = MAX_STEPS;
-
-    memcpy(state.steps, stable, sizeof(stable));
-    memcpy(state.steps, glow, sizeof(glow));
-
-    state.max_iterations = 0xffff;
-    state.intensity = 0;
-}
-
-static void set_pwr(int on) {
-    if (state.is_on == on)
+static void set_pwr(srv_t *state, int on) {
+    if (state->is_on == on)
         return;
     if (on) {
         pwr_enter_pll();
-        if (!state.pwm_pin)
-            state.pwm_pin = pwm_init(PIN_GLO1, PWM_PERIOD, PWM_PERIOD - 1, 1);
-        pwm_enable(state.pwm_pin, 1);
+        if (!state->pwm_pin)
+            state->pwm_pin = pwm_init(PIN_GLO1, PWM_PERIOD, PWM_PERIOD - 1, 1);
+        pwm_enable(state->pwm_pin, 1);
     } else {
         pin_set(PIN_GLO1, 1);
-        pwm_enable(state.pwm_pin, 0);
+        pwm_enable(state->pwm_pin, 0);
         pwr_leave_pll();
     }
-    state.is_on = on;
+    state->is_on = on;
 }
 
-void pwm_light_process() {
-    if (!should_sample(&state.nextFrame, UPDATE_US))
+void pwm_light_process(srv_t *state) {
+    if (!should_sample(&state->nextFrame, UPDATE_US))
         return;
 
     int step_intensity = -1;
 
-    while (state.curr_iteration <= state.max_iterations) {
+    while (state->curr_iteration <= state->max_iterations) {
         uint32_t tm = tim_get_micros() >> 10;
-        uint32_t delta = tm - state.step_start_time;
+        uint32_t delta = tm - state->step_start_time;
         uint32_t pos = 0;
-        step_t *st = &state.steps[0];
+        step_t *st = &state->steps[0];
         for (int i = 0; i < MAX_STEPS; ++i) {
             unsigned d = st[i].duration;
             if (d == 0)
@@ -105,36 +97,42 @@ void pwm_light_process() {
         if (step_intensity >= 0 || pos == 0)
             break;
 
-        state.curr_iteration++;
-        state.step_start_time = tm;
+        state->curr_iteration++;
+        state->step_start_time = tm;
     }
 
     if (step_intensity < 0)
         step_intensity = 0;
 
-    step_intensity = ((uint32_t)step_intensity * state.intensity) >> 16;
+    step_intensity = ((uint32_t)step_intensity * state->intensity) >> 16;
     int v = step_intensity >> (16 - PWM_PERIOD_BITS);
 
     if (v == 0) {
-        set_pwr(0);
+        set_pwr(state, 0);
     } else {
-        set_pwr(1);
-        pwm_set_duty(state.pwm_pin, PWM_PERIOD - v);
+        set_pwr(state, 1);
+        pwm_set_duty(state->pwm_pin, PWM_PERIOD - v);
     }
 }
 
-void pwm_light_handle_packet(jd_packet_t *pkt) {
-    switch (handle_reg(&state, pkt, pwm_light_regs)) {
+void pwm_light_handle_packet(srv_t *state, jd_packet_t *pkt) {
+    switch (handle_reg(state, pkt, pwm_light_regs)) {
     case PWM_REG_STEPS:
-        state.curr_iteration = 0;
-        state.step_start_time = tim_get_micros() >> 10;
+        state->curr_iteration = 0;
+        state->step_start_time = tim_get_micros() >> 10;
         break;
     }
 }
 
-const host_service_t host_pwm_light = {
-    .service_class = JD_SERVICE_CLASS_PWM_LIGHT,
-    .init = pwm_light_init,
-    .process = pwm_light_process,
-    .handle_pkt = pwm_light_handle_packet,
-};
+SRV_DEF(pwm_light, JD_SERVICE_CLASS_PWM_LIGHT);
+void pwm_light_init() {
+    SRV_ALLOC(pwm_light);
+
+    state->max_steps = MAX_STEPS;
+
+    memcpy(state->steps, stable, sizeof(stable));
+    // memcpy(state->steps, glow, sizeof(glow));
+
+    state->max_iterations = 0xffff;
+    state->intensity = 0;
+}

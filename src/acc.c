@@ -56,33 +56,36 @@ struct ShakeHistory {
     uint8_t timer;
 };
 
-static sensor_state_t sensor;
-static struct Point sample;
-static struct ShakeHistory shake;
-static uint32_t nextSample;
-static uint16_t g_events;
-static uint8_t sigma, impulseSigma;
-static uint16_t currentGesture, lastGesture;
+struct srv_state {
+    sensor_state_t sensor;
 
-void acc_init(uint8_t service_num) {
-    sensor.service_number = service_num;
-    acc_hw_init();
-}
+    uint8_t sigma;
+    uint8_t impulseSigma;
+    uint16_t g_events;
+    uint16_t currentGesture, lastGesture;
+    uint32_t nextSample;
+    struct Point sample;
+    struct ShakeHistory shake;
+};
 
-static void emit_event(int ev) {
+#define sample state->sample
+#define shake state->shake
+#define sensor state->sensor
+
+static void emit_event(srv_t *state, int ev) {
     if (ev & ~0xff)
         jd_panic();
     txq_push(sensor.service_number, JD_CMD_EVENT, &ev, 4);
 }
 
-static void emit_g_event(int ev) {
-    if (g_events & (1 << ev))
+static void emit_g_event(srv_t *state, int ev) {
+    if (state->g_events & (1 << ev))
         return;
-    g_events |= 1 << ev;
-    emit_event(ev);
+    state->g_events |= 1 << ev;
+    emit_event(state, ev);
 }
 
-static uint16_t instantaneousPosture(uint32_t force) {
+static uint16_t instantaneousPosture(srv_t *state, uint32_t force) {
     bool shakeDetected = false;
 
     // Test for shake events.
@@ -171,64 +174,63 @@ static uint16_t instantaneousPosture(uint32_t force) {
 }
 
 #define G(g) ((g * 1024) * (g * 1024))
-static void process_events() {
+static void process_events(srv_t *state) {
     // works up to 16g
     uint32_t force = sample.x * sample.x + sample.y * sample.y + sample.z * sample.z;
 
     if (force > G(2)) {
-        impulseSigma = 0;
+        state->impulseSigma = 0;
         if (force > G(2))
-            emit_g_event(ACCELEROMETER_EVT_2G);
+            emit_g_event(state, ACCELEROMETER_EVT_2G);
         if (force > G(3))
-            emit_g_event(ACCELEROMETER_EVT_3G);
+            emit_g_event(state, ACCELEROMETER_EVT_3G);
         if (force > G(6))
-            emit_g_event(ACCELEROMETER_EVT_6G);
+            emit_g_event(state, ACCELEROMETER_EVT_6G);
         if (force > G(8))
-            emit_g_event(ACCELEROMETER_EVT_8G);
+            emit_g_event(state, ACCELEROMETER_EVT_8G);
     }
 
-    if (impulseSigma < 5)
-        impulseSigma++;
+    if (state->impulseSigma < 5)
+        state->impulseSigma++;
     else
-        g_events = 0;
+        state->g_events = 0;
 
     // Determine what it looks like we're doing based on the latest sample...
-    uint16_t g = instantaneousPosture(force);
+    uint16_t g = instantaneousPosture(state, force);
 
     if (g == ACCELEROMETER_EVT_SHAKE) {
-        emit_event(ACCELEROMETER_EVT_SHAKE);
+        emit_event(state, ACCELEROMETER_EVT_SHAKE);
     } else {
         // Perform some low pass filtering to reduce jitter from any detected effects
-        if (g == currentGesture) {
-            if (sigma < ACCELEROMETER_GESTURE_DAMPING)
-                sigma++;
+        if (g == state->currentGesture) {
+            if (state->sigma < ACCELEROMETER_GESTURE_DAMPING)
+                state->sigma++;
         } else {
-            currentGesture = g;
-            sigma = 0;
+            state->currentGesture = g;
+            state->sigma = 0;
         }
 
         // If we've reached threshold, update our record and raise the relevant event...
-        if (currentGesture != lastGesture && sigma >= ACCELEROMETER_GESTURE_DAMPING) {
-            lastGesture = currentGesture;
-            emit_event(lastGesture);
+        if (state->currentGesture != state->lastGesture && state->sigma >= ACCELEROMETER_GESTURE_DAMPING) {
+            state->lastGesture = state->currentGesture;
+            emit_event(state, state->lastGesture);
         }
     }
 }
 
-void acc_process() {
-    if (!should_sample(&nextSample, SAMPLING_PERIOD))
+void acc_process(srv_t *state) {
+    if (!should_sample(&state->nextSample, SAMPLING_PERIOD))
         return;
 
     acc_hw_get(&sample.x);
 
-    process_events();
+    process_events(state);
 
     if (sensor_should_stream(&sensor))
-        txq_push(sensor.service_number, JD_CMD_GET_REG | JD_REG_READING, &sample,
-                 sizeof(sample));
+        txq_push(sensor.service_number, JD_CMD_GET_REG | JD_REG_READING, &sample, sizeof(sample));
 }
 
-void acc_handle_packet(jd_packet_t *pkt) {
+void acc_handle_packet(srv_t *state, jd_packet_t *pkt) {
     // dump_pkt(pkt, "ACC");
     // DMESG("Acc st=%x %dus %d %d", sensor.status, sensor.streaming_interval, sensor.next_sample,
     // now);
@@ -239,9 +241,9 @@ void acc_handle_packet(jd_packet_t *pkt) {
         txq_push(pkt->service_number, pkt->service_command, &sample, sizeof(sample));
 }
 
-const host_service_t host_accelerometer = {
-    .service_class = JD_SERVICE_CLASS_ACCELEROMETER,
-    .init = acc_init,
-    .process = acc_process,
-    .handle_pkt = acc_handle_packet,
-};
+SRV_DEF(acc, JD_SERVICE_CLASS_ACCELEROMETER);
+
+void acc_init() {
+    SRV_ALLOC(acc);
+    acc_hw_init();
+}
