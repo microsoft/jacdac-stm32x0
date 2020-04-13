@@ -42,6 +42,14 @@ void *alloc(uint32_t size);
 void alloc_stack_check();
 void *alloc_emergency_area(uint32_t size);
 
+// kv.c
+void kv_init(void);
+void kv_set(uint32_t key, uint32_t val);
+bool kv_has(uint32_t key);
+uint32_t kv_get(uint32_t key);
+uint32_t kv_get_defl(uint32_t key, uint32_t defl);
+
+
 // pwr.c
 void pwr_enter_pll(void);
 void pwr_leave_pll(void);
