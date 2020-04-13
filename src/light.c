@@ -18,22 +18,9 @@
 
 #define LIGHT_CMD_START_ANIMATION 0x80
 
-// we only ever expect one instance of this; keep state static
-struct srv_state {
-    SRV_COMMON;
-};
-
-struct light_state {
-    uint8_t intensity;
-    uint8_t lighttype;
-    uint16_t numpixels;
-    uint16_t maxpower;
-    uint16_t duration;
-    uint32_t color;
-};
-
 REG_DEFINITION(                   //
     light_regs,                   //
+    REG_SRV,                      //
     REG_U8(JD_REG_INTENSITY),     //
     REG_U8(LIGHT_REG_LIGHTTYPE),  //
     REG_U16(LIGHT_REG_NUMPIXELS), //
@@ -42,17 +29,30 @@ REG_DEFINITION(                   //
     REG_U32(LIGHT_REG_COLOR),     //
 )
 
-static struct light_state state;
-static uint32_t *pxbuffer;
-static uint16_t pxbuffer_allocated;
-static uint32_t nextFrame;
-static volatile uint8_t in_tx, dirty;
-static uint8_t inited, service_number;
+struct srv_state {
+    SRV_COMMON;
 
-static uint32_t anim_step, anim_value;
-static uint8_t anim_flag;
-static cb_t anim_fn;
-static uint32_t anim_end;
+    uint8_t intensity;
+    uint8_t lighttype;
+    uint16_t numpixels;
+    uint16_t maxpower;
+    uint16_t duration;
+    uint32_t color;
+
+    uint32_t *pxbuffer;
+    uint16_t pxbuffer_allocated;
+    uint32_t nextFrame;
+    volatile uint8_t in_tx;
+    volatile uint8_t dirty;
+    uint8_t inited;
+
+    uint8_t anim_flag;
+    uint32_t anim_step, anim_value;
+    cb_t anim_fn;
+    uint32_t anim_end;
+};
+
+static srv_t *state;
 
 static inline uint32_t rgb(uint8_t r, uint8_t g, uint8_t b) {
     return (r << 16) | (g << 8) | b;
@@ -132,46 +132,46 @@ static int isin(uint8_t theta) {
 }
 
 static bool is_enabled() {
-    return state.numpixels > 0 && state.intensity > 0;
+    return state->numpixels > 0 && state->intensity > 0;
 }
 
 static void set(uint32_t index, uint32_t color) {
-    px_set(pxbuffer, index, state.intensity, color);
+    px_set(state->pxbuffer, index, state->intensity, color);
 }
 
 static void show() {
-    dirty = 1;
+    state->dirty = 1;
 }
 
 static void set_all(uint32_t color) {
-    for (int i = 0; i < state.numpixels; ++i)
+    for (int i = 0; i < state->numpixels; ++i)
         set(i, color);
 }
 
 static void anim_set_all() {
-    anim_fn = NULL;
-    set_all(state.color);
+    state->anim_fn = NULL;
+    set_all(state->color);
     show();
 }
 
 static void anim_start(cb_t fn, uint32_t duration) {
-    anim_fn = fn;
+    state->anim_fn = fn;
     if (duration == 0)
-        anim_end = 0;
+        state->anim_end = 0;
     else
-        anim_end = now + duration * 1000;
+        state->anim_end = now + duration * 1000;
 }
 static void anim_finished() {
-    if (anim_end == 0)
-        anim_fn = NULL;
+    if (state->anim_end == 0)
+        state->anim_fn = NULL;
 }
 
 static void anim_frame() {
-    if (anim_fn) {
-        anim_fn();
+    if (state->anim_fn) {
+        state->anim_fn();
         show();
-        if (anim_end && in_past(anim_end)) {
-            anim_fn = NULL;
+        if (state->anim_end && in_past(state->anim_end)) {
+            state->anim_fn = NULL;
         }
     }
 }
@@ -181,18 +181,19 @@ static void anim_frame() {
 // ---------------------------------------------------------------------------------------
 
 static void rainbow_step() {
-    for (int i = 0; i < state.numpixels; ++i)
-        set(i, hsv(((unsigned)(i * 256) / (state.numpixels - 1) + anim_value) & 0xff, 0xff, 0xff));
-    anim_value += anim_step;
-    if (anim_value >= 0xff) {
-        anim_value = 0;
+    for (int i = 0; i < state->numpixels; ++i)
+        set(i, hsv(((unsigned)(i * 256) / (state->numpixels - 1) + state->anim_value) & 0xff, 0xff,
+                   0xff));
+    state->anim_value += state->anim_step;
+    if (state->anim_value >= 0xff) {
+        state->anim_value = 0;
         anim_finished();
     }
 }
 static void anim_rainbow() {
-    anim_value = 0;
-    anim_step = 128U / state.numpixels + 1;
-    anim_start(rainbow_step, state.duration);
+    state->anim_value = 0;
+    state->anim_step = 128U / state->numpixels + 1;
+    anim_start(rainbow_step, state->duration);
 }
 
 // ---------------------------------------------------------------------------------------
@@ -200,24 +201,24 @@ static void anim_rainbow() {
 // ---------------------------------------------------------------------------------------
 
 static void running_lights_step() {
-    if (anim_value >= state.numpixels * 2) {
-        anim_value = 0;
+    if (state->anim_value >= state->numpixels * 2) {
+        state->anim_value = 0;
         anim_finished();
         return;
     }
 
-    anim_value++;
-    for (int i = 0; i < state.numpixels; ++i) {
-        int level = (state.intensity * ((isin(i + anim_value) * 127) + 128)) >> 8;
-        px_set(pxbuffer, i, level, state.color);
+    state->anim_value++;
+    for (int i = 0; i < state->numpixels; ++i) {
+        int level = (state->intensity * ((isin(i + state->anim_value) * 127) + 128)) >> 8;
+        px_set(state->pxbuffer, i, level, state->color);
     }
 }
 
 static void anim_running_lights() {
-    anim_value = 0;
-    if (!state.color)
-        state.color = 0xff0000;
-    anim_start(running_lights_step, state.duration);
+    state->anim_value = 0;
+    if (!state->color)
+        state->color = 0xff0000;
+    anim_start(running_lights_step, state->duration);
 }
 
 // ---------------------------------------------------------------------------------------
@@ -225,30 +226,30 @@ static void anim_running_lights() {
 // ---------------------------------------------------------------------------------------
 
 static void sparkle_step() {
-    if (anim_value == 0)
+    if (state->anim_value == 0)
         set_all(0);
-    anim_value++;
+    state->anim_value++;
 
-    if (anim_step < 0) {
-        anim_step = random_int(state.numpixels - 1);
-        set(anim_step, state.color);
+    if (state->anim_step < 0) {
+        state->anim_step = random_int(state->numpixels - 1);
+        set(state->anim_step, state->color);
     } else {
-        set(anim_step, 0);
-        anim_step = -1;
+        set(state->anim_step, 0);
+        state->anim_step = -1;
     }
 
-    if (anim_value > 50) {
+    if (state->anim_value > 50) {
         anim_finished();
-        anim_value = 0;
+        state->anim_value = 0;
     }
 }
 
 static void anim_sparkle() {
-    anim_value = 0;
-    anim_step = -1;
-    if (!state.color)
-        state.color = 0xffffff;
-    anim_start(sparkle_step, state.duration);
+    state->anim_value = 0;
+    state->anim_step = -1;
+    if (!state->color)
+        state->color = 0xffffff;
+    anim_start(sparkle_step, state->duration);
 }
 
 // ---------------------------------------------------------------------------------------
@@ -256,52 +257,52 @@ static void anim_sparkle() {
 // ---------------------------------------------------------------------------------------
 
 static void color_wipe_step() {
-    if (anim_value < state.numpixels) {
-        set(anim_value, anim_flag ? state.color : 0);
-        anim_value++;
+    if (state->anim_value < state->numpixels) {
+        set(state->anim_value, state->anim_flag ? state->color : 0);
+        state->anim_value++;
     } else {
-        anim_flag = !anim_flag;
-        anim_value = 0;
-        if (anim_flag)
+        state->anim_flag = !state->anim_flag;
+        state->anim_value = 0;
+        if (state->anim_flag)
             anim_finished();
     }
 }
 
 static void anim_color_wipe() {
-    anim_value = 0;
-    anim_flag = 1;
-    if (!state.color)
-        state.color = 0x0000ff;
-    anim_start(color_wipe_step, state.duration);
+    state->anim_value = 0;
+    state->anim_flag = 1;
+    if (!state->color)
+        state->color = 0x0000ff;
+    anim_start(color_wipe_step, state->duration);
 }
 
 // ---------------------------------------------------------------------------------------
 // theatre chase
 // ---------------------------------------------------------------------------------------
 static void theatre_chase_step() {
-    if (anim_value < 10) {
-        if (anim_step < 3) {
-            for (int i = 0; i < state.numpixels; i += 3)
-                set(i + anim_step, anim_flag ? state.color : 0);
-            anim_flag = !anim_flag;
-            anim_step++;
+    if (state->anim_value < 10) {
+        if (state->anim_step < 3) {
+            for (int i = 0; i < state->numpixels; i += 3)
+                set(i + state->anim_step, state->anim_flag ? state->color : 0);
+            state->anim_flag = !state->anim_flag;
+            state->anim_step++;
         } else {
-            anim_step = 0;
+            state->anim_step = 0;
         }
-        anim_value++;
+        state->anim_value++;
     } else {
-        anim_value = 0;
+        state->anim_value = 0;
         anim_finished();
     }
 }
 
 static void anim_theatre_chase() {
-    anim_value = 0;
-    anim_step = 0;
-    anim_flag = 0;
-    if (!state.color)
-        state.color = 0xff0000;
-    anim_start(theatre_chase_step, state.duration);
+    state->anim_value = 0;
+    state->anim_step = 0;
+    state->anim_flag = 0;
+    if (!state->color)
+        state->color = 0xff0000;
+    anim_start(theatre_chase_step, state->duration);
 }
 
 // ---------------------------------------------------------------------------------------
@@ -320,12 +321,12 @@ static cb_t animations[] = {
 
 static void tx_done() {
     pwr_leave_pll();
-    in_tx = 0;
+    state->in_tx = 0;
 }
 
-void light_process(srv_t *ctx) {
+void light_process() {
     // we always check timer to avoid problem with timer overflows
-    bool should = should_sample(&nextFrame, FRAME_TIME);
+    bool should = should_sample(&state->nextFrame, FRAME_TIME);
 
     if (!is_enabled())
         return;
@@ -333,11 +334,11 @@ void light_process(srv_t *ctx) {
     if (should)
         anim_frame();
 
-    if (dirty && !in_tx) {
-        dirty = 0;
-        in_tx = 1;
+    if (state->dirty && !state->in_tx) {
+        state->dirty = 0;
+        state->in_tx = 1;
         pwr_enter_pll();
-        px_tx(pxbuffer, PX_WORDS(state.numpixels) << 2, tx_done);
+        px_tx(state->pxbuffer, PX_WORDS(state->numpixels) << 2, tx_done);
     }
 }
 
@@ -348,15 +349,15 @@ static void sync_config() {
         return;
     }
 
-    if (!inited) {
-        inited = true;
+    if (!state->inited) {
+        state->inited = true;
         px_init();
     }
 
-    int needed = PX_WORDS(state.numpixels);
-    if (needed > pxbuffer_allocated) {
-        pxbuffer_allocated = needed;
-        pxbuffer = alloc(needed * 4);
+    int needed = PX_WORDS(state->numpixels);
+    if (needed > state->pxbuffer_allocated) {
+        state->pxbuffer_allocated = needed;
+        state->pxbuffer = alloc(needed * 4);
     }
 
     pin_set(PIN_PWR, 0);
@@ -369,16 +370,16 @@ static void start_animation(jd_packet_t *pkt) {
     if (anim < sizeof(animations) / sizeof(animations[0])) {
         cb_t f = animations[anim];
         if (f) {
-            anim_step = 0;
-            anim_flag = 0;
-            anim_value = 0;
+            state->anim_step = 0;
+            state->anim_flag = 0;
+            state->anim_value = 0;
             LOG("start anim %d", anim);
             f();
         }
     }
 }
 
-void light_handle_packet(srv_t *ctx, jd_packet_t *pkt) {
+void light_handle_packet(srv_t *state, jd_packet_t *pkt) {
     switch (pkt->service_command) {
     case LIGHT_CMD_START_ANIMATION:
         sync_config();
@@ -392,11 +393,13 @@ void light_handle_packet(srv_t *ctx, jd_packet_t *pkt) {
 
 SRV_DEF(light, JD_SERVICE_CLASS_LIGHT);
 void light_init() {
+    srv_t *tmp;
     {
         SRV_ALLOC(light);
-        service_number = state->service_number;
+        tmp = state;
     }
-    state.intensity = DEFAULT_INTENSITY;
-    state.numpixels = DEFAULT_NUMPIXELS;
-    state.maxpower = DEFAULT_MAXPOWER;
+    state = tmp; // there is global singleton state
+    state->intensity = DEFAULT_INTENSITY;
+    state->numpixels = DEFAULT_NUMPIXELS;
+    state->maxpower = DEFAULT_MAXPOWER;
 }
