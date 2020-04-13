@@ -1,10 +1,15 @@
 #include "jdsimple.h"
 
-static jd_frame_t sendFrame[2];
+static jd_frame_t *sendFrame;
 static uint8_t bufferPtr, isSending;
 
 int txq_is_idle() {
     return !isSending && sendFrame[bufferPtr].size == 0;
+}
+
+void txq_init(void) {
+    if (!sendFrame)
+        sendFrame = alloc(sizeof(jd_frame_t) * 2);
 }
 
 void *txq_push(unsigned service_num, unsigned service_cmd, const void *data,

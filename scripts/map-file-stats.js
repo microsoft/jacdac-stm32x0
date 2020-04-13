@@ -47,12 +47,12 @@ function order(isram) {
   return k
 }
 
-for (let k of order(true)) {
+for (let k of order(false)) {
   console.log(k, sums[k])
 }
 
 console.log("\n")
 
-for (let k of order(false)) {
+for (let k of order(true)) {
   console.log(k, sums[k])
 }

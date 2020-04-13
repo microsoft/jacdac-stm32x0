@@ -31,6 +31,7 @@ void app_process(void);
 void app_init_services(void);
 
 // txq.c
+void txq_init(void);
 void txq_flush(void);
 int txq_is_idle(void);
 void *txq_push(unsigned service_num, unsigned service_cmd, const void *data, unsigned service_size);

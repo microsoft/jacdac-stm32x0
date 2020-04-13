@@ -77,6 +77,7 @@ int main(void) {
 
     adc_init_random(); // 300b
 
+    txq_init();
     jd_init();
 
     rtc_init();
