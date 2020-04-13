@@ -66,9 +66,7 @@ void pin_pulse(int pin, int times) {
     }
 }
 
-void pin_set(int pin, int v) {
-    if ((uint8_t)pin == 0xff)
-        return;
+void _pin_set(int pin, int v) {
     if (v)
         LL_GPIO_SetOutputPin(PORT(pin), PIN(pin));
     else

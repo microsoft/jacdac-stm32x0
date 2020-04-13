@@ -17,7 +17,12 @@ void px_set(const void *data, uint32_t index, uint8_t intensity, uint32_t color)
 #define PX_WORDS(NUM_PIXELS) (((NUM_PIXELS)*9 + 8) / 4)
 
 // pins.c
-void pin_set(int pin, int v);
+void _pin_set(int pin, int v);
+static inline void pin_set(int pin, int v) {
+    if ((uint8_t)pin == 0xff)
+        return;
+    _pin_set(pin, v);
+}
 void pin_setup_output(int pin);
 void pin_toggle(int pin);
 int pin_get(int pin);
