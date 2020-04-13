@@ -10,6 +10,9 @@ static uint16_t presc;
 static uint16_t lastSetSleep;
 static cb_t cb;
 
+#define PIN_PWR_STATE -1
+#define PIN_PWR_LOG -1
+
 static void rtc_set(uint32_t delta_us, cb_t f) {
     if (delta_us > 10000)
         jd_panic();
@@ -34,8 +37,7 @@ static void rtc_set(uint32_t delta_us, cb_t f) {
     LL_EXTI_ClearFlag_0_31(LL_EXTI_LINE_17);
     NVIC_ClearPendingIRQ(RTC_IRQn);
     LL_RTC_ALMA_Enable(RTC);
-    pin_set(PIN_P1, 1);
-    pin_set(PIN_P1, 0);
+    // pin_pulse(PIN_PWR_LOG, 1);
 }
 
 void rtc_cancel_cb() {
@@ -43,7 +45,7 @@ void rtc_cancel_cb() {
 }
 
 void rtc_sync_time() {
-    pin_set(PIN_P1, 0);
+    pin_set(PIN_PWR_STATE, 1);
     target_disable_irq();
     if ((lastSetSleep >> 15) == 0) {
         int d = lastSetSleep + presc - LL_RTC_TIME_GetSubSecond(RTC);
@@ -151,6 +153,7 @@ void rtc_init() {
 
 void rtc_sleep(bool forceShallow) {
     if (forceShallow) {
+        pin_pulse(PIN_PWR_LOG, 1);
         __WFI();
         return;
     }
@@ -160,24 +163,27 @@ void rtc_sleep(bool forceShallow) {
     cb_t f = tim_steal_callback(&usec);
     if (!f) {
         target_enable_irq();
+        pin_pulse(PIN_PWR_LOG, 2);
         __WFI();
         return;
     }
 
     rtc_set(usec, f);
     LL_PWR_SetPowerMode(LL_PWR_MODE_STOP_LPREGU);
+
+// enable to test power in stand by; should be around 3.2uA
+#if 0
+    LL_RTC_ALMA_Disable(RTC);
+    pin_pulse(PIN_P1, 5);
+    LL_PWR_ClearFlag_SB();
+    LL_PWR_ClearFlag_WU();
+    LL_PWR_SetPowerMode(LL_PWR_MODE_STANDBY);
+#endif
+
     LL_LPM_EnableDeepSleep();
-    pin_set(PIN_P1, 1);
+    pin_set(PIN_PWR_STATE, 0);
     __WFI();
     target_enable_irq();
     rtc_sync_time();      // likely already happened in ISR, but doesn't hurt to check again
     LL_LPM_EnableSleep(); // i.e., no deep
 }
-
-#if 0
-    // 6uA
-    rtc_config(100, 10000);
-    LL_PWR_ClearFlag_SB();
-    LL_PWR_ClearFlag_WU();
-    LL_PWR_SetPowerMode(LL_PWR_MODE_STANDBY);
-#endif
