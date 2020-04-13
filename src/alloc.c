@@ -4,12 +4,12 @@
 #define STACK_BASE ((uint32_t)&_estack)
 #define HEAP_BASE ((uint32_t)&_end)
 #define HEAP_END (STACK_BASE - STACK_SIZE)
+#define HEAP_SIZE (HEAP_END - HEAP_BASE)
 
 extern uint32_t _end;
 extern uint32_t _estack;
 
 static uint32_t *aptr;
-
 static uint16_t maxStack;
 
 void alloc_stack_check() {
@@ -44,4 +44,10 @@ void *alloc(uint32_t size) {
         fail_and_reset();
     memset(r, 0, size << 2);
     return r;
+}
+
+void *alloc_emergency_area(uint32_t size) {
+    if (size > HEAP_SIZE)
+        jd_panic();
+    return (void *)HEAP_BASE;
 }

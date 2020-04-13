@@ -39,6 +39,7 @@ void *txq_push(unsigned service_num, unsigned service_cmd, const void *data, uns
 void alloc_init(void);
 void *alloc(uint32_t size);
 void alloc_stack_check();
+void *alloc_emergency_area(uint32_t size);
 
 // pwr.c
 void pwr_enter_pll(void);
