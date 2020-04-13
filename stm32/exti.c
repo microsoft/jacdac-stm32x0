@@ -24,8 +24,11 @@ void EXTI2_3_IRQHandler() {
 
 void EXTI4_15_IRQHandler() {
     rtc_sync_time();
+
+#ifdef UART_PIN
     // first check UART line, to speed up handling
     check_line(UART_PIN & 0xf);
+#endif
 
     // check the rest of the lines (this includes UART line, but it's fine)
     for (int i = 4; i <= 15; ++i)
