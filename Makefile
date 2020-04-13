@@ -71,6 +71,11 @@ flash: prep-built-gdb
 ifeq ($(BMP),)
 	$(OPENOCD) -c "program $(BUILT)/binary.elf verify reset exit"
 else
+	echo "set {int}0xe000ed0c = 0x5fa0004" >> built/debug.gdb
+	echo "detach" >> built/debug.gdb
+	echo "monitor swdp_scan" >> built/debug.gdb
+	echo "attach 1" >> built/debug.gdb
+	echo "bt" >> built/debug.gdb
 	echo "load" >> built/debug.gdb
 	echo "quit" >> built/debug.gdb
 	arm-none-eabi-gdb --command=built/debug.gdb < /dev/null 2>&1 | tee built/flash.log
@@ -83,7 +88,7 @@ flash-loop: all
 prep-built-gdb:
 	echo "file $(BUILT)/binary.elf" > built/debug.gdb
 ifeq ($(BMP),)
-	echo "target extended-remote | $(OPENOCD) -f gdbdebug.cfg" >> built/debug.gdb
+	echo "target extended-remote | $(OPENOCD) -f scripts/gdbdebug.cfg" >> built/debug.gdb
 else
 	echo "target extended-remote $(BMP_PORT)" >> built/debug.gdb
 	echo "monitor swdp_scan" >> built/debug.gdb

@@ -83,7 +83,12 @@ int main(void) {
 
     app_init_services();
 
-    led_blink(200000); // initial/reset blink
+    led_blink(200000); // initial (on reset) blink
+
+    // When BMP attaches, and we're in deep sleep mode, it will scan us as generic Cortex-M0.
+    // The flashing scripts scans once, resets the target (using NVIC), and scans again.
+    // The delay is so that the second scan detects us as the right kind of chip.
+    uint32_t startup_wait = tim_get_micros() + 300000;
 
     while (1) {
         uint64_t now_long = tim_get_micros();
@@ -99,6 +104,13 @@ int main(void) {
             } else if (timeLeft < 1000) {
                 continue; // don't sleep
             }
+        }
+
+        if (startup_wait) {
+            if (in_future(startup_wait))
+                continue; // no sleep
+            else
+                startup_wait = 0;
         }
 
         pwr_sleep();
