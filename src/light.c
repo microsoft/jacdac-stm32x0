@@ -20,7 +20,7 @@
 
 REG_DEFINITION(                   //
     light_regs,                   //
-    REG_SRV_BASE,                      //
+    REG_SRV_BASE,                 //
     REG_U8(JD_REG_INTENSITY),     //
     REG_U8(LIGHT_REG_LIGHTTYPE),  //
     REG_U16(LIGHT_REG_NUMPIXELS), //
@@ -48,11 +48,11 @@ struct srv_state {
 
     uint8_t anim_flag;
     uint32_t anim_step, anim_value;
-    cb_t anim_fn;
+    srv_cb_t anim_fn;
     uint32_t anim_end;
 };
 
-static srv_t *state;
+static srv_t *state_;
 
 static inline uint32_t rgb(uint8_t r, uint8_t g, uint8_t b) {
     return (r << 16) | (g << 8) | b;
@@ -131,45 +131,45 @@ static int isin(uint8_t theta) {
     return y;
 }
 
-static bool is_enabled() {
+static bool is_enabled(srv_t *state) {
     return state->numpixels > 0 && state->intensity > 0;
 }
 
-static void set(uint32_t index, uint32_t color) {
+static void set(srv_t *state, uint32_t index, uint32_t color) {
     px_set(state->pxbuffer, index, state->intensity, color);
 }
 
-static void show() {
+static void show(srv_t *state) {
     state->dirty = 1;
 }
 
-static void set_all(uint32_t color) {
+static void set_all(srv_t *state, uint32_t color) {
     for (int i = 0; i < state->numpixels; ++i)
-        set(i, color);
+        set(state, i, color);
 }
 
-static void anim_set_all() {
+static void anim_set_all(srv_t *state) {
     state->anim_fn = NULL;
-    set_all(state->color);
-    show();
+    set_all(state, state->color);
+    show(state);
 }
 
-static void anim_start(cb_t fn, uint32_t duration) {
+static void anim_start(srv_t *state, srv_cb_t fn, uint32_t duration) {
     state->anim_fn = fn;
     if (duration == 0)
         state->anim_end = 0;
     else
         state->anim_end = now + duration * 1000;
 }
-static void anim_finished() {
+static void anim_finished(srv_t *state) {
     if (state->anim_end == 0)
         state->anim_fn = NULL;
 }
 
-static void anim_frame() {
+static void anim_frame(srv_t *state) {
     if (state->anim_fn) {
-        state->anim_fn();
-        show();
+        state->anim_fn(state);
+        show(state);
         if (state->anim_end && in_past(state->anim_end)) {
             state->anim_fn = NULL;
         }
@@ -180,30 +180,31 @@ static void anim_frame() {
 // rainbow
 // ---------------------------------------------------------------------------------------
 
-static void rainbow_step() {
+static void rainbow_step(srv_t *state) {
     for (int i = 0; i < state->numpixels; ++i)
-        set(i, hsv(((unsigned)(i * 256) / (state->numpixels - 1) + state->anim_value) & 0xff, 0xff,
-                   0xff));
+        set(state, i,
+            hsv(((unsigned)(i * 256) / (state->numpixels - 1) + state->anim_value) & 0xff, 0xff,
+                0xff));
     state->anim_value += state->anim_step;
     if (state->anim_value >= 0xff) {
         state->anim_value = 0;
-        anim_finished();
+        anim_finished(state);
     }
 }
-static void anim_rainbow() {
+static void anim_rainbow(srv_t *state) {
     state->anim_value = 0;
     state->anim_step = 128U / state->numpixels + 1;
-    anim_start(rainbow_step, state->duration);
+    anim_start(state, rainbow_step, state->duration);
 }
 
 // ---------------------------------------------------------------------------------------
 // running lights
 // ---------------------------------------------------------------------------------------
 
-static void running_lights_step() {
+static void running_lights_step(srv_t *state) {
     if (state->anim_value >= state->numpixels * 2) {
         state->anim_value = 0;
-        anim_finished();
+        anim_finished(state);
         return;
     }
 
@@ -214,76 +215,76 @@ static void running_lights_step() {
     }
 }
 
-static void anim_running_lights() {
+static void anim_running_lights(srv_t *state) {
     state->anim_value = 0;
     if (!state->color)
         state->color = 0xff0000;
-    anim_start(running_lights_step, state->duration);
+    anim_start(state, running_lights_step, state->duration);
 }
 
 // ---------------------------------------------------------------------------------------
 // sparkle
 // ---------------------------------------------------------------------------------------
 
-static void sparkle_step() {
+static void sparkle_step(srv_t *state) {
     if (state->anim_value == 0)
-        set_all(0);
+        set_all(state, 0);
     state->anim_value++;
 
     if (state->anim_step < 0) {
         state->anim_step = random_int(state->numpixels - 1);
-        set(state->anim_step, state->color);
+        set(state, state->anim_step, state->color);
     } else {
-        set(state->anim_step, 0);
+        set(state, state->anim_step, 0);
         state->anim_step = -1;
     }
 
     if (state->anim_value > 50) {
-        anim_finished();
+        anim_finished(state);
         state->anim_value = 0;
     }
 }
 
-static void anim_sparkle() {
+static void anim_sparkle(srv_t *state) {
     state->anim_value = 0;
     state->anim_step = -1;
     if (!state->color)
         state->color = 0xffffff;
-    anim_start(sparkle_step, state->duration);
+    anim_start(state, sparkle_step, state->duration);
 }
 
 // ---------------------------------------------------------------------------------------
 // color wipe
 // ---------------------------------------------------------------------------------------
 
-static void color_wipe_step() {
+static void color_wipe_step(srv_t *state) {
     if (state->anim_value < state->numpixels) {
-        set(state->anim_value, state->anim_flag ? state->color : 0);
+        set(state, state->anim_value, state->anim_flag ? state->color : 0);
         state->anim_value++;
     } else {
         state->anim_flag = !state->anim_flag;
         state->anim_value = 0;
         if (state->anim_flag)
-            anim_finished();
+            anim_finished(state);
     }
 }
 
-static void anim_color_wipe() {
+static void anim_color_wipe(srv_t *state) {
     state->anim_value = 0;
     state->anim_flag = 1;
     if (!state->color)
         state->color = 0x0000ff;
-    anim_start(color_wipe_step, state->duration);
+    anim_start(state, color_wipe_step, state->duration);
 }
 
 // ---------------------------------------------------------------------------------------
 // theatre chase
 // ---------------------------------------------------------------------------------------
-static void theatre_chase_step() {
+static void theatre_chase_step(srv_t *state) {
     if (state->anim_value < 10) {
         if (state->anim_step < 3) {
             for (int i = 0; i < state->numpixels; i += 3)
-                set(i + state->anim_step, state->anim_flag ? state->color : 0);
+                set(state, i + state->anim_step, state->anim_flag ? state->color : 0);
             state->anim_flag = !state->anim_flag;
             state->anim_step++;
         } else {
@@ -292,23 +293,23 @@ static void theatre_chase_step() {
         state->anim_value++;
     } else {
         state->anim_value = 0;
-        anim_finished();
+        anim_finished(state);
     }
 }
 
-static void anim_theatre_chase() {
+static void anim_theatre_chase(srv_t *state) {
     state->anim_value = 0;
     state->anim_step = 0;
     state->anim_flag = 0;
     if (!state->color)
         state->color = 0xff0000;
-    anim_start(theatre_chase_step, state->duration);
+    anim_start(state, theatre_chase_step, state->duration);
 }
 
 // ---------------------------------------------------------------------------------------
 // ---------------------------------------------------------------------------------------
 
-static cb_t animations[] = {
+static srv_cb_t animations[] = {
     NULL,
     anim_set_all,
     anim_rainbow,
@@ -321,18 +322,18 @@ static cb_t animations[] = {
 
 static void tx_done() {
     pwr_leave_pll();
-    state->in_tx = 0;
+    state_->in_tx = 0;
 }
 
-void light_process() {
+void light_process(srv_t *state) {
     // we always check timer to avoid problem with timer overflows
     bool should = should_sample(&state->nextFrame, FRAME_TIME);
 
-    if (!is_enabled())
+    if (!is_enabled(state))
         return;
 
     if (should)
-        anim_frame();
+        anim_frame(state);
 
     if (state->dirty && !state->in_tx) {
         state->dirty = 0;
@@ -342,8 +343,8 @@ void light_process() {
     }
 }
 
-static void sync_config() {
-    if (!is_enabled()) {
+static void sync_config(srv_t *state) {
+    if (!is_enabled(state)) {
         // PIN_PWR has reverse polarity
         pin_set(PIN_PWR, 1);
         return;
@@ -363,18 +364,18 @@ static void sync_config() {
     pin_set(PIN_PWR, 0);
 }
 
-static void start_animation(jd_packet_t *pkt) {
+static void start_animation(srv_t *state, jd_packet_t *pkt) {
     if (pkt->service_size == 0)
         return;
     int anim = pkt->data[0];
     if (anim < sizeof(animations) / sizeof(animations[0])) {
-        cb_t f = animations[anim];
+        srv_cb_t f = animations[anim];
         if (f) {
             state->anim_step = 0;
             state->anim_flag = 0;
             state->anim_value = 0;
             LOG("start anim %d", anim);
-            f();
+            f(state);
         }
     }
 }
@@ -382,8 +383,8 @@ static void start_animation(jd_packet_t *pkt) {
 void light_handle_packet(srv_t *state, jd_packet_t *pkt) {
     switch (pkt->service_command) {
     case LIGHT_CMD_START_ANIMATION:
-        sync_config();
-        start_animation(pkt);
+        sync_config(state);
+        start_animation(state, pkt);
         break;
     default:
         srv_handle_reg(state, pkt, light_regs);
@@ -393,12 +394,8 @@ void light_handle_packet(srv_t *state, jd_packet_t *pkt) {
 
 SRV_DEF(light, JD_SERVICE_CLASS_LIGHT);
 void light_init() {
-    srv_t *tmp;
-    {
-        SRV_ALLOC(light);
-        tmp = state;
-    }
-    state = tmp; // there is global singleton state
+    SRV_ALLOC(light);
+    state_ = state; // there is global singleton state
     state->intensity = DEFAULT_INTENSITY;
     state->numpixels = DEFAULT_NUMPIXELS;
     state->maxpower = DEFAULT_MAXPOWER;
