@@ -23,22 +23,22 @@ __attribute__((noinline)) void gpio_probe_and_set(GPIO_TypeDef *gpio, uint32_t p
         gpio->MODER = mode;
 }
 
-static void uartOwnsPin(int doesIt) {
-    if (doesIt) {
-        LL_GPIO_SetPinMode(PIN_PORT, PIN_PIN, LL_GPIO_MODE_ALTERNATE);
-        if ((UART_PIN & 0xf) <= 7)
-            LL_GPIO_SetAFPin_0_7(PIN_PORT, PIN_PIN, UART_PIN_AF);
-        else
-            LL_GPIO_SetAFPin_8_15(PIN_PORT, PIN_PIN, UART_PIN_AF);
-    } else {
-        LL_GPIO_SetPinMode(PIN_PORT, PIN_PIN, LL_GPIO_MODE_INPUT);
-    }
+static void uartOwnsPin() {
+    LL_GPIO_SetPinMode(PIN_PORT, PIN_PIN, LL_GPIO_MODE_ALTERNATE);
+    if ((UART_PIN & 0xf) <= 7)
+        LL_GPIO_SetAFPin_0_7(PIN_PORT, PIN_PIN, UART_PIN_AF);
+    else
+        LL_GPIO_SetAFPin_8_15(PIN_PORT, PIN_PIN, UART_PIN_AF);
+}
+
+static void uartDoesntOwnPin() {
+    LL_GPIO_SetPinMode(PIN_PORT, PIN_PIN, LL_GPIO_MODE_INPUT);
 }
 
 void uart_init(ctx_t *ctx) {
     LL_GPIO_SetPinPull(PIN_PORT, PIN_PIN, LL_GPIO_PULL_UP);
     LL_GPIO_SetPinSpeed(PIN_PORT, PIN_PIN, LL_GPIO_SPEED_FREQ_HIGH);
-    uartOwnsPin(0);
+    uartDoesntOwnPin();
 
     USARTx->CR1 = LL_USART_DATAWIDTH_8B | LL_USART_PARITY_NONE | LL_USART_OVERSAMPLING_16 |
                   LL_USART_DIRECTION_TX;
@@ -59,12 +59,12 @@ void uart_init(ctx_t *ctx) {
 
 void uart_disable(ctx_t *ctx) {
     LL_USART_Disable(USARTx);
-    uartOwnsPin(0);
+    uartDoesntOwnPin();
     ctx->uart_mode = UART_MODE_NONE;
 }
 
 void uart_start_rx(ctx_t *ctx, void *data, uint32_t maxbytes) {
-    uartOwnsPin(1);
+    uartOwnsPin();
     LL_USART_DisableDirectionTx(USARTx);
     LL_USART_EnableDirectionRx(USARTx);
     USARTx->ICR = USART_ISR_FE | USART_ISR_NE | USART_ISR_ORE; // clear error flags before we start
@@ -120,7 +120,7 @@ int uart_start_tx(ctx_t *ctx, const void *data, uint32_t numbytes) {
     target_wait_us(11);
     LL_GPIO_SetOutputPin(PIN_PORT, PIN_PIN);
 
-    uartOwnsPin(1);
+    uartOwnsPin();
     LL_USART_DisableDirectionRx(USARTx);
     LL_USART_EnableDirectionTx(USARTx);
     USARTx->ICR = USART_ISR_FE | USART_ISR_NE | USART_ISR_ORE; // clear error flags before we start
