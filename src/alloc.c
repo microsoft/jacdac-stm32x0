@@ -30,6 +30,8 @@ void alloc_init() {
     aptr = (uint32_t *)HEAP_BASE;
     int p = 0;
     int sz = (uint32_t)&p - HEAP_BASE - 32;
+    // seed PRNG with random RAM contents (later we add ADC readings)
+    jd_seed_random(jd_hash_fnv1a((void *)HEAP_BASE,  sz));
     memset((void *)HEAP_BASE, 0x33, sz);
 
     alloc_stack_check();

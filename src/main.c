@@ -76,6 +76,7 @@ int main(void) {
     px_init();
 
     adc_init_random(); // 300b
+    settings_init();
 
     txq_init();
     jd_init();
