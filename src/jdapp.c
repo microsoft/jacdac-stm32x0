@@ -1,5 +1,7 @@
 #include "jdsimple.h"
 
+#ifndef BL
+
 #define MAX_SERV 32
 
 static srv_t **services;
@@ -8,7 +10,6 @@ static uint8_t num_services;
 uint32_t now;
 static uint64_t maxId;
 static uint32_t lastMax, lastDisconnectBlink;
-static jd_frame_t *frameToHandle;
 
 #define ADD_SRV(name)                                                                              \
     extern void name##_init(void);                                                                 \
@@ -117,7 +118,7 @@ static void handle_ctrl_tick(jd_packet_t *pkt) {
     }
 }
 
-static void handle_packet(jd_packet_t *pkt) {
+void app_handle_packet(jd_packet_t *pkt) {
     if (!(pkt->flags & JD_FRAME_FLAG_COMMAND)) {
         if (pkt->service_number == 0)
             handle_ctrl_tick(pkt);
@@ -145,28 +146,8 @@ static void handle_packet(jd_packet_t *pkt) {
     }
 }
 
-int app_handle_frame(jd_frame_t *frame) {
-    if (frameToHandle)
-        return -1;
-    frameToHandle = frame;
-    return 0;
-}
-
 void app_process() {
-    if (frameToHandle) {
-        if (frameToHandle->flags & JD_FRAME_FLAG_ACK_REQUESTED &&
-            frameToHandle->flags & JD_FRAME_FLAG_COMMAND &&
-            frameToHandle->device_identifier == device_id())
-            txq_push(JD_SERVICE_NUMBER_CRC_ACK, frameToHandle->crc, NULL, 0);
-
-        for (;;) {
-            handle_packet((jd_packet_t *)frameToHandle);
-            if (!jd_shift_frame(frameToHandle))
-                break;
-        }
-
-        frameToHandle = NULL;
-    }
+    app_process_frame();
 
     if (should_sample(&lastDisconnectBlink, 250000)) {
         if (in_past(lastMax + 2000000)) {
@@ -180,3 +161,5 @@ void app_process() {
 
     txq_flush();
 }
+
+#endif

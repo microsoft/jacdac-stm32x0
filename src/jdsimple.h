@@ -84,3 +84,9 @@ bool should_sample(uint32_t *sample, uint32_t period);
 #define CHECK(cond)                                                                                \
     if (!(cond))                                                                                   \
     jd_panic()
+
+
+void ctrl_process(srv_t *_state);
+void ctrl_handle_packet(srv_t *_state, jd_packet_t *pkt);
+void app_handle_packet(jd_packet_t *pkt);
+void app_process_frame(void);
