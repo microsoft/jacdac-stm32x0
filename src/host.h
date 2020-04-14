@@ -47,7 +47,7 @@ typedef struct _srv_vt srv_vt_t;
 #define SRV_COMMON                                                                                 \
     const srv_vt_t *vt;                                                                            \
     uint8_t service_number;                                                                        \
-    uint8_t instance_idx
+    uint8_t padding0;
 #define REG_SRV_BASE REG_BYTES(JD_REG_PADDING, 6)
 
 struct srv_state_common {
@@ -68,8 +68,7 @@ int srv_handle_reg(srv_t *state, jd_packet_t *pkt, const uint16_t sdesc[]);
 
 #define SRV_ALLOC(id)                                                                              \
     srv_t *state = srv_alloc(&id##_vt);                                                            \
-    if (!state)                                                                                    \
-        return;
+    (void)state;
 
 #define SENSOR_COMMON                                                                              \
     SRV_COMMON;                                                                                    \

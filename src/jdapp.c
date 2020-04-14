@@ -1,7 +1,5 @@
 #include "jdsimple.h"
 
-#ifndef BL
-
 #define MAX_SERV 32
 
 static srv_t **services;
@@ -19,7 +17,7 @@ static inline void init_services() {
     // DMESG 1.1k
 
     //ADD_SRV(acc); // 2k
-    //ADD_SRV(light); // 2.5k
+    ADD_SRV(light); // 2.5k
     //ADD_SRV(crank); // 1k
     //ADD_SRV(pwm_light); // 2.5k
     //ADD_SRV(servo); // 2.5k
@@ -31,48 +29,13 @@ struct srv_state {
     SRV_COMMON;
 };
 
-static int alloc_hash(const srv_vt_t *vt) {
-    uint16_t hash = vt->service_class & 0xffff;
-    if (!hash)
-        return 0;
-    uint16_t *hashes = (uint16_t *)services[MAX_SERV];
-    int numcol = 1;
-    int pos0 = -1;
-    while (numcol) {
-        numcol = 0;
-        for (int i = 0; i < MAX_SERV; ++i) {
-            if (hashes[i] == 0) {
-                pos0 = i;
-                break;
-            }
-            if (hashes[i] == hash) {
-                hash++;
-                numcol++;
-            }
-        }
-    }
-    if (pos0 < 0)
-        jd_panic();
-    hashes[pos0] = hash;
-    return hash - (vt->service_class & 0xffff);
-}
-
 srv_t *srv_alloc(const srv_vt_t *vt) {
     // always allocate instances idx - it should be stable when we disable some services
-    srv_t tmp;
-    tmp.vt = vt;
-    tmp.service_number = num_services;
-    tmp.instance_idx = alloc_hash(vt);
-
-    {
-        if (settings_get_reg(&tmp, JD_REG_SERVICE_DISABLED) == 1)
-            return NULL;
-    }
-
     if (num_services >= MAX_SERV)
         jd_panic();
     srv_t *r = alloc(vt->state_size);
-    *r = tmp;
+    r->vt = vt;
+    r->service_number = num_services;
     services[num_services++] = r;
 
     return r;
@@ -169,5 +132,3 @@ void app_process() {
 
     txq_flush();
 }
-
-#endif

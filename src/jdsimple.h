@@ -41,13 +41,6 @@ void *alloc(uint32_t size);
 void alloc_stack_check();
 void *alloc_emergency_area(uint32_t size);
 
-// kv.c
-void kv_init(void);
-void kv_set(uint32_t key, uint32_t val);
-bool kv_has(uint32_t key);
-uint32_t kv_get(uint32_t key);
-uint32_t kv_get_defl(uint32_t key, uint32_t defl);
-
 // pwr.c
 // enter/leave high-speed no-deep-sleep mode
 void pwr_enter_pll(void);
@@ -58,12 +51,6 @@ void pwr_enter_tim(void);
 void pwr_leave_tim(void);
 // go to sleep, deep or shallow
 void pwr_sleep(void);
-
-// settings.c
-void settings_init(void);
-void settings_set_reg(srv_t *srv, unsigned reg, int val);
-int settings_get_reg(srv_t *srv, unsigned reg);
-void settings_set_binary(unsigned id, const void *data, unsigned len);
 
 extern uint32_t now;
 
