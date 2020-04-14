@@ -2,17 +2,19 @@
 
 void tim_update_prescaler(void);
 
-void NMI_Handler(void) {}
-
 void HardFault_Handler(void) {
     jd_panic();
 }
+
+#ifndef BL
+void NMI_Handler(void) {}
 
 void SVC_Handler(void) {}
 
 void PendSV_Handler(void) {}
 
 void SysTick_Handler(void) {}
+#endif
 
 static void enable_nrst_pin() {
 #ifdef FLASH_OPTR_NRST_MODE
@@ -65,18 +67,7 @@ bool clk_is_pll() {
     return LL_RCC_GetSysClkSource() == LL_RCC_SYS_CLKSOURCE_PLL;
 }
 
-void clk_set_pll(int on) {
-    if (!on) {
-        LL_RCC_SetSysClkSource(LL_RCC_SYS_CLKSOURCE_HSI);
-        while (LL_RCC_GetSysClkSource() != LL_RCC_SYS_CLKSOURCE_HSI)
-            ;
-        cpu_mhz = HSI_MHZ;
-        LL_FLASH_SetLatency(LL_FLASH_LATENCY_0);
-        LL_FLASH_DisablePrefetch();
-        tim_update_prescaler();
-        return;
-    }
-
+void clk_setup_pll() {
 #if defined(STM32G0)
     LL_FLASH_SetLatency(LL_FLASH_LATENCY_2);
     LL_RCC_PLL_ConfigDomain_SYS(LL_RCC_PLLSOURCE_HSI, LL_RCC_PLLM_DIV_1, 8, LL_RCC_PLLR_DIV_2);
@@ -101,6 +92,21 @@ void clk_set_pll(int on) {
     LL_RCC_SetSysClkSource(LL_RCC_SYS_CLKSOURCE_PLL);
     while (LL_RCC_GetSysClkSource() != LL_RCC_SYS_CLKSOURCE_STATUS_PLL)
         ;
+}
+
+void clk_set_pll(int on) {
+    if (!on) {
+        LL_RCC_SetSysClkSource(LL_RCC_SYS_CLKSOURCE_HSI);
+        while (LL_RCC_GetSysClkSource() != LL_RCC_SYS_CLKSOURCE_HSI)
+            ;
+        cpu_mhz = HSI_MHZ;
+        LL_FLASH_SetLatency(LL_FLASH_LATENCY_0);
+        LL_FLASH_DisablePrefetch();
+        tim_update_prescaler();
+        return;
+    }
+
+    clk_setup_pll();
 
     cpu_mhz = PLL_MHZ;
     tim_update_prescaler();
@@ -123,6 +129,7 @@ void SystemInit(void) {
 #ifdef STM32G0
     SCB->VTOR = FLASH_BASE;
 #endif
+
     LL_APB1_GRP2_EnableClock(LL_APB1_GRP2_PERIPH_SYSCFG);
     LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_PWR);
 

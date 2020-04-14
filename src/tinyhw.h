@@ -60,7 +60,7 @@ int target_in_irq(void);
 // init.c
 bool clk_is_pll(void);
 void clk_set_pll(int on);
-
+void clk_setup_pll(void);
 
 // flash.c
 void flash_program(void *dst, const void *src, uint32_t len);
