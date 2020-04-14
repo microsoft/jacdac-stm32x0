@@ -66,7 +66,6 @@ void settings_set_reg(srv_t *srv, unsigned reg, int val);
 int settings_get_reg(srv_t *srv, unsigned reg);
 void settings_set_binary(unsigned id, const void *data, unsigned len);
 
-
 extern uint32_t now;
 
 // check if given timestamp is already in the past, regardless of overflows on 'now'
@@ -84,7 +83,6 @@ bool should_sample(uint32_t *sample, uint32_t period);
 #define CHECK(cond)                                                                                \
     if (!(cond))                                                                                   \
     jd_panic()
-
 
 void ctrl_process(srv_t *_state);
 void ctrl_handle_packet(srv_t *_state, jd_packet_t *pkt);
