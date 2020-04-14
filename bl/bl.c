@@ -1,4 +1,4 @@
-#include "jdsimple.h"
+#include "bl.h"
 
 uint32_t now;
 
@@ -18,12 +18,13 @@ void led_init() {
     pin_set(PIN_GLO1, 1);
 }
 
-void led_toggle() {
-    pin_toggle(PIN_LED);
+static uint8_t ledst;
+void led_set(int state) {
+    pin_set(PIN_LED, ledst = state);
 }
 
-void led_set(int state) {
-    pin_set(PIN_LED, state);
+void led_toggle() {
+    led_set(!ledst);
 }
 
 static uint64_t led_off_time;
@@ -34,32 +35,34 @@ void led_blink(int us) {
 }
 
 int main(void) {
-#if 0
+    __disable_irq();
+    clk_setup_pll();
+    LL_APB1_GRP2_EnableClock(LL_APB1_GRP2_PERIPH_TIM17 | LL_APB1_GRP2_PERIPH_USART1);
+
     led_init();
     led_set(1);
     tim_init();
+    uart_init();
     led_blink(200000); // initial (on reset) blink
 
     while (1) {
         uint64_t now_long = tim_get_micros();
         now = (uint32_t)now_long;
 
+        jd_process();
+
         if (led_off_time) {
             int timeLeft = led_off_time - now_long;
             if (timeLeft <= 0) {
                 led_off_time = 0;
                 led_set(0);
-            } else if (timeLeft < 1000) {
-                continue; // don't sleep
             }
         }
     }
-    #endif
 }
 
 void jd_panic(void) {
     DMESG("PANIC!");
-    target_disable_irq();
     while (1) {
         led_toggle();
         target_wait_us(70000);
@@ -68,7 +71,6 @@ void jd_panic(void) {
 
 void fail_and_reset() {
     DMESG("FAIL!");
-    target_disable_irq();
     for (int i = 0; i < 20; ++i) {
         led_toggle();
         target_wait_us(70000);
