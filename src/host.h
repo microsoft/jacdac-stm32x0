@@ -6,6 +6,7 @@
 
 #define JD_REG_PADDING 0xff0
 #define JD_REG_END 0xff1
+#define JD_REG_SERVICE_DISABLED 0xff2
 #define _REG_(tp, v) (((tp) << 12) | (v))
 #define _REG_S8 0
 #define _REG_U8 1

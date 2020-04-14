@@ -36,21 +36,13 @@ static void kv_gc(void) {
     memcpy(tmp, store, SETTINGS_SIZE);
     kv_t *first = tmp->keys;
     kv_t *kv = first;
-    while (!IS_LAST(kv) && kv - first < NUM_KV)
-        kv++;
-    kv_t *last = kv;
     uint32_t numdel = 0;
-    for (kv = last; first <= kv; kv--) {
-        if (!kv->key)
-            continue;
-        // delete previous values for the same register
-        for (kv_t *back = kv - 1; first <= back; back--) {
-            if (back->key == kv->key) {
-                numdel++;
-                back->key = 0;
-            }
-        }
+    while (!IS_LAST(kv) && kv - first < NUM_KV) {
+        if (kv->key == 0)
+            numdel++;
+        kv++;
     }
+    kv_t *last = kv;
     uint32_t newsize = last - first - numdel;
     if (newsize >= NUM_KV - 1) {
         // whoops, we're out of space even after compression! just bail out
@@ -79,19 +71,27 @@ void kv_init() {
     }
 }
 
+static kv_t *lookup(uint32_t key) {
+    // backwards maybe better for perf?
+    for (kv_t *kv = store->keys; !IS_LAST(kv); kv++)
+        if (kv->key == key)
+            return kv;
+    return NULL;
+}
+
 void kv_set(uint32_t key, uint32_t val) {
+    kv_t *ex = lookup(key);
+    if (ex) {
+        if (ex->value == val)
+            return;
+        uint32_t z = 0;
+        flash_program(&ex->key, &z, 4);
+    }
     kv_t data = {key, val};
     uint32_t idx = num_entries();
     flash_program(&store->keys[idx], &data, sizeof(data));
     if (idx >= NUM_KV - 1)
         kv_gc();
-}
-
-static kv_t *lookup(uint32_t key) {
-    for (kv_t *kv = store->keys; !IS_LAST(kv); kv++)
-        if (kv->key == key)
-            return kv;
-    return NULL;
 }
 
 bool kv_has(uint32_t key) {

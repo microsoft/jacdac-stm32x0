@@ -49,7 +49,6 @@ bool kv_has(uint32_t key);
 uint32_t kv_get(uint32_t key);
 uint32_t kv_get_defl(uint32_t key, uint32_t defl);
 
-
 // pwr.c
 // enter/leave high-speed no-deep-sleep mode
 void pwr_enter_pll(void);
@@ -60,6 +59,13 @@ void pwr_enter_tim(void);
 void pwr_leave_tim(void);
 // go to sleep, deep or shallow
 void pwr_sleep(void);
+
+// settings.c
+void settings_init(void);
+void settings_set_reg(srv_t *srv, unsigned reg, int val);
+int settings_get_reg(srv_t *srv, unsigned reg);
+void settings_set_binary(unsigned id, const void *data, unsigned len);
+
 
 extern uint32_t now;
 
@@ -74,3 +80,7 @@ static inline bool in_future(uint32_t moment) {
 
 // keep sampling at period, using state at *sample
 bool should_sample(uint32_t *sample, uint32_t period);
+
+#define CHECK(cond)                                                                                \
+    if (!(cond))                                                                                   \
+    jd_panic()

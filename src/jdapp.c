@@ -11,7 +11,7 @@ static uint32_t lastMax, lastDisconnectBlink;
 static jd_frame_t *frameToHandle;
 
 #define ADD_SRV(name)                                                                              \
-    extern void name##_init(void);                                                                   \
+    extern void name##_init(void);                                                                 \
     name##_init();
 
 #ifndef INIT_SERVICES
@@ -50,18 +50,20 @@ static int alloc_hash(const srv_vt_t *vt) {
 
 srv_t *srv_alloc(const srv_vt_t *vt) {
     // always allocate instances idx - it should be stable when we disable some services
-    uint8_t instance_idx = alloc_hash(vt);
+    srv_t tmp;
+    tmp.vt = vt;
+    tmp.service_number = num_services;
+    tmp.instance_idx = alloc_hash(vt);
 
-    // TODO check disable
-    if (kv_get(vt->service_class) == 1)
-        return NULL;
+    {
+        if (settings_get_reg(&tmp, JD_REG_SERVICE_DISABLED) == 1)
+            return NULL;
+    }
 
     if (num_services >= MAX_SERV)
         jd_panic();
     srv_t *r = alloc(vt->state_size);
-    r->vt = vt;
-    r->service_number = num_services;
-    r->instance_idx = instance_idx;
+    *r = tmp;
     services[num_services++] = r;
 
     return r;
