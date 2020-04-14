@@ -50,9 +50,6 @@ static void ctrl_handle_packet(ctx_t *ctx, jd_packet_t *pkt) {
     }
 }
 
-static void bl_handle_packet(ctx_t *ctx, jd_packet_t *pkt) {
-}
-
 static void process_frame(ctx_t *ctx, jd_frame_t *frame) {
     jd_packet_t *pkt = (jd_packet_t *)frame;
     if (pkt->service_number == 0)
@@ -112,4 +109,6 @@ void jd_process(ctx_t *ctx) {
             break;
         }
     }
+
+    bl_process(ctx);
 }

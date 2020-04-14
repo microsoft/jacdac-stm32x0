@@ -32,9 +32,12 @@ typedef struct ctx {
     uint8_t uart_mode;
 
     uint8_t tx_full, rx_full;
-    uint8_t currsubpage;
+    uint8_t subpageno;
 
+    // these two fields are sent directly from here, so don't move them
+    uint32_t subpageerr;
     uint32_t pageaddr;
+
     uint32_t randomseed;
     uint32_t service_class_bl;
 
@@ -76,3 +79,6 @@ uint16_t crc16(const void *data, uint32_t size);
 uint32_t random(ctx_t *);
 uint16_t jd_crc16(const void *data, uint32_t size);
 void jd_compute_crc(jd_frame_t *frame);
+
+void bl_handle_packet(ctx_t *ctx, jd_packet_t *pkt);
+void bl_process(ctx_t *ctx);
