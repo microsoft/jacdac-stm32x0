@@ -9,7 +9,7 @@ for (let line of fs.readFileSync(process.argv[2], "utf8").split(/\r?\n/)) {
   if (/^r[oa]m\s/.test(line)) continue
   let m = /^ \.(\w+)/.exec(line)
   if (m) {
-    if (m[1] == "text" || m[1] == "binmeta" || m[1] == "rodata" || m[1] == "data")
+    if (m[1] == "text" || m[1] == "binmeta" || m[1] == "rodata" || m[1] == "data" || m[1] == "isr_vector")
       inprog = true
     else
       inprog = false
