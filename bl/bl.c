@@ -23,10 +23,6 @@ void led_set(int state) {
     pin_set(PIN_LED, ledst = state);
 }
 
-void led_toggle() {
-    led_set(!ledst);
-}
-
 static uint64_t led_off_time;
 
 void led_blink(int us) {

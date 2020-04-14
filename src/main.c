@@ -21,8 +21,8 @@ void led_init() {
     for (unsigned i = 0; i < 16; ++i)
         pin_setup_analog_input(i + 0x50);
 
-    // The effects of the pins shutdown above is quite dramatic - without the MCU can draw ~100uA
-    // (but with wide random variation) in STOP; with shutdown we get a stable 4.3uA
+        // The effects of the pins shutdown above is quite dramatic - without the MCU can draw
+        // ~100uA (but with wide random variation) in STOP; with shutdown we get a stable 4.3uA
 #endif
 
     // setup all our output pins
@@ -58,10 +58,6 @@ void log_pin_set(int line, int v) {
 
 static uint64_t led_off_time;
 
-void led_toggle() {
-    pin_toggle(PIN_LED);
-}
-
 void led_set(int state) {
     pin_set(PIN_LED, state);
 }
@@ -78,7 +74,7 @@ int main(void) {
 
     tim_init();
 
-#ifndef BL    
+#ifndef BL
     adc_init_random(); // 300b
     settings_init();
 #endif
@@ -86,7 +82,7 @@ int main(void) {
     txq_init();
     jd_init();
 
-#ifndef BL    
+#ifndef BL
     rtc_init();
 #endif
 
@@ -126,21 +122,26 @@ int main(void) {
     }
 }
 
+static void led_panic_blink() {
+    led_set(1);
+    target_wait_us(70000);
+    led_set(0);
+    target_wait_us(70000);
+}
+
 void jd_panic(void) {
     DMESG("PANIC!");
     target_disable_irq();
     while (1) {
-        led_toggle();
-        target_wait_us(70000);
+        led_panic_blink();
     }
 }
 
 void fail_and_reset() {
     DMESG("FAIL!");
     target_disable_irq();
-    for (int i = 0; i < 20; ++i) {
-        led_toggle();
-        target_wait_us(70000);
+    for (int i = 0; i < 10; ++i) {
+        led_panic_blink();
     }
     target_reset();
 }

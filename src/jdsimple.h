@@ -15,7 +15,6 @@
 #define RTC_ALRM_US 10000
 
 // main.c
-void led_toggle(void);
 void led_set(int state);
 void led_blink(int us);
 void fail_and_reset(void);
