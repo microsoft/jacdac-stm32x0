@@ -80,3 +80,7 @@ void target_disable_irq() {
 int target_in_irq() {
     return (SCB->ICSR & SCB_ICSR_VECTACTIVE_Msk) != 0;
 }
+
+void __libc_init_array() {
+    // do nothing - not using static constructors
+}

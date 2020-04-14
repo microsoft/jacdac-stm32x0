@@ -34,6 +34,7 @@ cb_t tim_steal_callback(uint32_t *usec) {
     return f;
 }
 
+#ifndef BL
 void tim_forward(int us) {
     timeoff += us;
 }
@@ -50,22 +51,19 @@ void tim_set_timer(int delta, cb_t cb) {
     LL_TIM_ClearFlag_CC1(TIMx);
     target_enable_irq();
 }
+#endif
 
 void tim_init() {
-    LL_TIM_InitTypeDef TIM_InitStruct = {0};
-
     /* Peripheral clock enable */
     TIMx_CLK_EN();
 
     NVIC_SetPriority(TIMx_IRQn, 2);
     NVIC_EnableIRQ(TIMx_IRQn);
 
-    TIM_InitStruct.Prescaler = cpu_mhz - 1;
-    TIM_InitStruct.CounterMode = LL_TIM_COUNTERMODE_UP;
-    TIM_InitStruct.Autoreload = 0xffff;
-    TIM_InitStruct.ClockDivision = LL_TIM_CLOCKDIVISION_DIV1;
-    TIM_InitStruct.RepetitionCounter = 0;
-    LL_TIM_Init(TIMx, &TIM_InitStruct);
+    LL_TIM_SetAutoReload(TIMx, 0xffff);
+    LL_TIM_SetPrescaler(TIMx, cpu_mhz - 1);
+    LL_TIM_GenerateEvent_UPDATE(TIMx);
+
     LL_TIM_DisableARRPreload(TIMx);
     LL_TIM_SetClockSource(TIMx, LL_TIM_CLOCKSOURCE_INTERNAL);
     LL_TIM_SetTriggerOutput(TIMx, LL_TIM_TRGO_RESET);
@@ -77,22 +75,13 @@ void tim_init() {
     LL_TIM_ClearFlag_UPDATE(TIMx);
     LL_TIM_EnableIT_UPDATE(TIMx);
 
-#if 0
-    LL_TIM_OC_InitTypeDef TIM_OC_InitStruct = {0};
-    TIM_OC_InitStruct.OCMode = LL_TIM_OCMODE_FROZEN;
-    TIM_OC_InitStruct.OCState = LL_TIM_OCSTATE_DISABLE;
-    TIM_OC_InitStruct.OCNState = LL_TIM_OCSTATE_DISABLE;
-    TIM_OC_InitStruct.CompareValue = 1000;
-    TIM_OC_InitStruct.OCPolarity = LL_TIM_OCPOLARITY_HIGH;
-    LL_TIM_OC_Init(TIM3, LL_TIM_CHANNEL_CH1, &TIM_OC_InitStruct);
-    LL_TIM_OC_DisableFast(TIM3, LL_TIM_CHANNEL_CH1);
-#endif
-
     LL_TIM_EnableIT_CC1(TIMx);
 
     LL_TIM_EnableCounter(TIMx);
 
+#ifndef BL
     tim_set_timer(5000, NULL);
+#endif
 }
 
 void TIMx_IRQHandler() {

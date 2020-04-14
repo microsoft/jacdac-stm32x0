@@ -6,31 +6,26 @@
 void pin_setup_output(int pin) {
     if ((uint8_t)pin == 0xff)
         return;
-    LL_GPIO_InitTypeDef GPIO_InitStruct = {0};
-    GPIO_InitStruct.Mode = LL_GPIO_MODE_OUTPUT;
-    GPIO_InitStruct.Speed = LL_GPIO_SPEED_FREQ_HIGH;
-    GPIO_InitStruct.OutputType = LL_GPIO_OUTPUT_PUSHPULL;
-    GPIO_InitStruct.Pull = LL_GPIO_PULL_NO;
-    GPIO_InitStruct.Pin = PIN(pin);
-    LL_GPIO_Init(PORT(pin), &GPIO_InitStruct);
+
+    GPIO_TypeDef *GPIOx = PORT(pin);
+    uint32_t currentpin = PIN(pin);
+
+    LL_GPIO_SetPinMode(GPIOx, currentpin, LL_GPIO_MODE_OUTPUT);
+    LL_GPIO_SetPinSpeed(GPIOx, currentpin, LL_GPIO_SPEED_FREQ_HIGH);
+    LL_GPIO_SetPinPull(GPIOx, currentpin, LL_GPIO_PULL_NO);
+    LL_GPIO_SetPinOutputType(GPIOx, currentpin, LL_GPIO_OUTPUT_PUSHPULL);
 }
 
 void pin_setup_input(int pin, int pull) {
     if ((uint8_t)pin == 0xff)
         return;
-    LL_GPIO_InitTypeDef GPIO_InitStruct = {0};
-    GPIO_InitStruct.Mode = LL_GPIO_MODE_INPUT;
-    GPIO_InitStruct.Speed = LL_GPIO_SPEED_FREQ_LOW;
-    if (pull == -1)
-        GPIO_InitStruct.Pull = LL_GPIO_PULL_DOWN;
-    else if (pull == 1)
-        GPIO_InitStruct.Pull = LL_GPIO_PULL_UP;
-    else if (pull == 0)
-        GPIO_InitStruct.Pull = LL_GPIO_PULL_NO;
-    else
-        jd_panic();
-    GPIO_InitStruct.Pin = PIN(pin);
-    LL_GPIO_Init(PORT(pin), &GPIO_InitStruct);
+    GPIO_TypeDef *GPIOx = PORT(pin);
+    uint32_t currentpin = PIN(pin);
+    LL_GPIO_SetPinMode(GPIOx, currentpin, LL_GPIO_MODE_INPUT);
+    LL_GPIO_SetPinPull(GPIOx, currentpin,
+                       pull == -1 ? LL_GPIO_PULL_DOWN
+                                  : pull == 1 ? LL_GPIO_PULL_UP
+                                              : pull == 0 ? LL_GPIO_PULL_NO : (jd_panic(), 0));
 }
 
 void pin_setup_analog_input(int pin) {
