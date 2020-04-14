@@ -25,6 +25,30 @@ void led_blink(int us) {
     led_set(1);
 }
 
+uint32_t hash(const void *data, unsigned len) {
+    const uint8_t *d = (const uint8_t *)data;
+    uint32_t h = 0x13;
+    while (len--)
+        h = (h ^ *d++) * 0x1000193;
+    return h;
+}
+
+uint32_t random(ctx_t *ctx) {
+    // xorshift algorithm
+    uint32_t x = ctx->randomseed;
+    x ^= x << 13;
+    x ^= x >> 17;
+    x ^= x << 5;
+    ctx->randomseed = x;
+    return x;
+}
+
+static const uint32_t announce_data[] = {
+    8 | (JD_SERVICE_NUMBER_CTRL << 8) | (JD_CMD_ADVERTISEMENT_DATA << 16), //
+    JD_SERVICE_CLASS_CTRL,                                                 //
+    JD_SERVICE_CLASS_BOOTLOADER                                            //
+};
+
 int main(void) {
     __disable_irq();
     clk_setup_pll();
@@ -38,10 +62,24 @@ int main(void) {
     uart_init(ctx);
     led_blink(200000); // initial (on reset) blink
 
+    uint32_t r0 = hash((void *)0, 4096);
+    uint32_t r1 = hash((void *)2048, 2048);
+    ctx->randomseed = r0;
+    random(ctx); // rotate
+    ctx->txBuffer.device_identifier = ((uint64_t)r0 << 32) | r1;
+    ctx->service_class_bl = announce_data[2];
+
+    uint32_t next_announce = 500000;
+
     while (1) {
         ctx->now = tim_get_micros();
 
         jd_process(ctx);
+
+        if (ctx->now >= next_announce && !ctx->tx_full) {
+            memcpy(ctx->txBuffer.data, announce_data, sizeof(announce_data));
+            ctx->tx_full = 1;
+        }
 
         if (ctx->led_off_time && ctx->led_off_time < ctx->now) {
             led_set(0);
