@@ -1,5 +1,7 @@
 #include "jdsimple.h"
 
+uint32_t now;
+
 static const uint8_t output_pins[] = {
     PIN_LOG0, PIN_LOG1,     PIN_LOG2,    PIN_LOG3,    PIN_LED,    PIN_LED2,    PIN_PWR,
     PIN_P0,   PIN_P1,       PIN_ASCK,    PIN_AMOSI,   PIN_SERVO,  PIN_LED_GND, PIN_GLO0,

@@ -7,7 +7,6 @@
 static srv_t **services;
 static uint8_t num_services;
 
-uint32_t now;
 static uint64_t maxId;
 static uint32_t lastMax, lastDisconnectBlink;
 
