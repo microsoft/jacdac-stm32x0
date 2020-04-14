@@ -34,7 +34,6 @@ cb_t tim_steal_callback(uint32_t *usec) {
     return f;
 }
 
-#ifndef BL
 void tim_forward(int us) {
     timeoff += us;
 }
@@ -51,7 +50,6 @@ void tim_set_timer(int delta, cb_t cb) {
     LL_TIM_ClearFlag_CC1(TIMx);
     target_enable_irq();
 }
-#endif
 
 void tim_init() {
     /* Peripheral clock enable */
@@ -79,9 +77,7 @@ void tim_init() {
 
     LL_TIM_EnableCounter(TIMx);
 
-#ifndef BL
     tim_set_timer(5000, NULL);
-#endif
 }
 
 void TIMx_IRQHandler() {

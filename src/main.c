@@ -9,7 +9,6 @@ static const uint8_t output_pins[] = {
 };
 
 void led_init() {
-#ifndef BL
     // To save power, especially in STOP mode,
     // configure all pins in GPIOA,B,C as analog inputs (except for SWD)
     for (unsigned i = 0; i < 16 * 3; ++i)
@@ -23,7 +22,6 @@ void led_init() {
 
         // The effects of the pins shutdown above is quite dramatic - without the MCU can draw
         // ~100uA (but with wide random variation) in STOP; with shutdown we get a stable 4.3uA
-#endif
 
     // setup all our output pins
     for (unsigned i = 0; i < sizeof(output_pins); ++i)
@@ -74,17 +72,12 @@ int main(void) {
 
     tim_init();
 
-#ifndef BL
     adc_init_random(); // 300b
-    settings_init();
-#endif
 
     txq_init();
     jd_init();
 
-#ifndef BL
     rtc_init();
-#endif
 
     app_init_services();
 
