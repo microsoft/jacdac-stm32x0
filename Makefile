@@ -141,6 +141,8 @@ $(BUILT)/binary.hex: $(BUILT)/binary.elf
 clean:
 	rm -rf built
 
-st: stats
-stats:
+st:
 	@node scripts/map-file-stats.js  built/$(TARGET)/output.map
+
+stf:
+	@node scripts/map-file-stats.js  built/$(TARGET)/output.map -fun

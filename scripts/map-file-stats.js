@@ -3,6 +3,7 @@ let sums = { TOTAL: 0, "RAM.TOTAL": 0 }
 let inprog = false
 let inram = false
 let fun = ""
+let dofun = process.argv[3] == "-fun"
 for (let line of fs.readFileSync(process.argv[2], "utf8").split(/\r?\n/)) {
   if (/\*fill\*/.test(line)) continue
   if (/^r[oa]m\s/.test(line)) continue
@@ -30,7 +31,7 @@ for (let line of fs.readFileSync(process.argv[2], "utf8").split(/\r?\n/)) {
   name = name.replace(/.*\/lib/, "lib")
     .replace(/\(.*/, "") // can remove
 
-  name += fun
+  if (dofun) name += fun
 
   let pref = inram ? "RAM." : ""
 
