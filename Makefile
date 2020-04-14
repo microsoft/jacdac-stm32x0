@@ -1,7 +1,7 @@
 PREFIX = arm-none-eabi-
 CC = $(PREFIX)gcc
 AS = $(PREFIX)as
-TARGET ?= jdm-v3
+TARGET ?= jdm-v3-bl
 
 JD_CORE = jacdac-core
 

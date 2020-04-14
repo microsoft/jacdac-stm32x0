@@ -35,12 +35,7 @@ static void uartOwnsPin(int doesIt) {
     }
 }
 
-void uart_disable() {
-    LL_USART_Disable(USARTx);
-    uartOwnsPin(0);
-}
-
-void uart_init() {
+void uart_init(ctx_t *ctx) {
     LL_GPIO_SetPinPull(PIN_PORT, PIN_PIN, LL_GPIO_PULL_UP);
     LL_GPIO_SetPinSpeed(PIN_PORT, PIN_PIN, LL_GPIO_SPEED_FREQ_HIGH);
     uartOwnsPin(0);
@@ -62,11 +57,13 @@ void uart_init() {
     LL_USART_ConfigHalfDuplexMode(USARTx);
 }
 
-static uint8_t *dataptr;
-static uint32_t bytesleft;
-static uint8_t mode;
+void uart_disable(ctx_t *ctx) {
+    LL_USART_Disable(USARTx);
+    uartOwnsPin(0);
+    ctx->uart_mode = UART_MODE_NONE;
+}
 
-void uart_start_rx(void *data, uint32_t maxbytes) {
+void uart_start_rx(ctx_t *ctx, void *data, uint32_t maxbytes) {
     uartOwnsPin(1);
     LL_USART_DisableDirectionTx(USARTx);
     LL_USART_EnableDirectionRx(USARTx);
@@ -75,29 +72,29 @@ void uart_start_rx(void *data, uint32_t maxbytes) {
     while (!(LL_USART_IsActiveFlag_REACK(USARTx)))
         ;
 
-    dataptr = data;
-    bytesleft = maxbytes;
-    mode = 1;
+    ctx->uart_data = data;
+    ctx->uart_bytesleft = maxbytes;
+    ctx->uart_mode = UART_MODE_RX;
 }
 
-int uart_process() {
+int uart_process(ctx_t *ctx) {
     uint32_t isr = USARTx->ISR;
-    if (mode == 1) {
+    if (ctx->uart_mode == UART_MODE_RX) {
         if (isr & USART_ISR_FE) {
-            uart_disable();
-            return 1;
+            uart_disable(ctx);
+            return UART_END_RX;
         } else if (isr & USART_ISR_RXNE) {
             uint8_t c = USARTx->RDR;
-            if (bytesleft) {
-                bytesleft--;
-                *dataptr++ = c;
+            if (ctx->uart_bytesleft) {
+                ctx->uart_bytesleft--;
+                *ctx->uart_data++ = c;
             }
         }
-    } else if (mode == 2) {
+    } else if (ctx->uart_mode == UART_MODE_TX) {
         if (isr & USART_ISR_TXE) {
-            if (bytesleft) {
-                bytesleft--;
-                USARTx->TDR = *dataptr++;
+            if (ctx->uart_bytesleft) {
+                ctx->uart_bytesleft--;
+                USARTx->TDR = *ctx->uart_data++;
             } else {
                 if (!LL_USART_IsActiveFlag_TC(USARTx))
                     return 0;
@@ -106,15 +103,15 @@ int uart_process() {
                 LL_GPIO_ResetOutputPin(PIN_PORT, PIN_PIN);
                 target_wait_us(12);
                 LL_GPIO_SetOutputPin(PIN_PORT, PIN_PIN);
-                uart_disable();
-                return 2;
+                uart_disable(ctx);
+                return UART_END_TX;
             }
         }
     }
     return 0;
 }
 
-int uart_start_tx(const void *data, uint32_t numbytes) {
+int uart_start_tx(ctx_t *ctx, const void *data, uint32_t numbytes) {
     LL_GPIO_ResetOutputPin(PIN_PORT, PIN_PIN);
     gpio_probe_and_set(PIN_PORT, PIN_PIN, PIN_MODER | PIN_PORT->MODER);
     if (!(PIN_PORT->MODER & PIN_MODER)) {
@@ -131,9 +128,9 @@ int uart_start_tx(const void *data, uint32_t numbytes) {
     while (!(LL_USART_IsActiveFlag_TEACK(USARTx)))
         ;
 
-    dataptr = (void *)data;
-    bytesleft = numbytes;
-    mode = 2;
+    ctx->uart_data = (void *)data;
+    ctx->uart_bytesleft = numbytes;
+    ctx->uart_mode = UART_MODE_TX;
 
     target_wait_us(37);
 
