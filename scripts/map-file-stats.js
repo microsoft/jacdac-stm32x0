@@ -30,7 +30,7 @@ for (let line of fs.readFileSync(process.argv[2], "utf8").split(/\r?\n/)) {
   name = name.replace(/.*\/lib/, "lib")
     .replace(/\(.*/, "") // can remove
 
-  // name += fun
+  name += fun
 
   let pref = inram ? "RAM." : ""
 

@@ -1,20 +1,19 @@
 PREFIX = arm-none-eabi-
 CC = $(PREFIX)gcc
 AS = $(PREFIX)as
-
-TARGET ?= jdm-v3
+TARGET ?= jdm-v3-bl
 
 JD_CORE = jacdac-core
 
-DEFINES += -DDEVICE_DMESG_BUFFER_SIZE=1024
 WARNFLAGS = -Wall -Wno-strict-aliasing
 CFLAGS = $(DEFINES) \
 	-mthumb -mfloat-abi=soft  \
-	-Os -g3 -Wall -ffunction-sections -fdata-sections \
+	-Os -g3 -Wall -ffunction-sections -fdata-sections -nostartfiles \
 	$(WARNFLAGS)
 BUILT = built/$(TARGET)
 CONFIG_DEPS = \
 	$(wildcard src/*.h) \
+	$(wildcard bl/*.h) \
 	$(wildcard $(PLATFORM)/*.h) \
 	$(wildcard $(JD_CORE)/*.h) \
 	$(wildcard targets/$(TARGET)/*.h) \
@@ -23,15 +22,29 @@ CONFIG_DEPS = \
 include targets/$(TARGET)/config.mk
 BASE_TARGET ?= $(TARGET)
 
-ifneq ($(BMP),)
-BMP_PORT = $(shell ls -1 /dev/cu.usbmodem????????1 | head -1)
-endif
-
+ifeq ($(BL),)
+DEFINES += -DDEVICE_DMESG_BUFFER_SIZE=1024
 C_SRC += $(wildcard src/*.c)
 C_SRC += $(wildcard $(PLATFORM)/*.c)
 C_SRC += $(JD_CORE)/jdlow.c
 C_SRC += $(JD_CORE)/jdutil.c
 C_SRC += $(HALSRC)
+else
+DEFINES += -DDEVICE_DMESG_BUFFER_SIZE=0 -DBL
+SRC = bl
+CPPFLAGS += -Ibl
+C_SRC += $(wildcard bl/*.c)
+C_SRC += $(PLATFORM)/tim.c
+C_SRC += $(PLATFORM)/pins.c
+C_SRC += $(PLATFORM)/target_utils.c
+C_SRC += $(PLATFORM)/init.c
+C_SRC += $(HALSRC)
+endif
+
+ifneq ($(BMP),)
+BMP_PORT = $(shell ls -1 /dev/cu.usbmodem????????1 | head -1)
+endif
+
 
 V = @
 
@@ -107,6 +120,7 @@ $(BUILT)/%.o: %.c
 	@echo CC $<
 	$(V)$(CC) $(CFLAGS) $(CPPFLAGS) -o $@ -c $<
 
+$(wildcard $(BUILT)/bl/*.o): $(CONFIG_DEPS)
 $(wildcard $(BUILT)/src/*.o): $(CONFIG_DEPS)
 $(wildcard $(BUILT)/$(PLATFORM)/*.o): $(CONFIG_DEPS)
 $(wildcard $(BUILT)/$(JD_CORE)/*.o): $(CONFIG_DEPS)
