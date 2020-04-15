@@ -96,13 +96,15 @@ int main(void) {
         BL_DEVICE_ID = bl_dev_info.device_id;
     }
 
+    BL_DEVICE_ID++; // use different dev-id for application and bootloader
+
     if (!app_valid)
         app_valid = bl_fixup_app_handlers(ctx);
 
     DMESG("ID: %x %x", (uint32_t)BL_DEVICE_ID, (uint32_t)(BL_DEVICE_ID >> 32));
 
     ctx->service_class_bl = announce_data[2];
-    ctx->next_announce = 512 * 1024;
+    ctx->next_announce = 128 * 1024; // TODO change it, so we don't announce normally
 
     if (app_valid)
         ctx->app_start_time = 512 * 1024;

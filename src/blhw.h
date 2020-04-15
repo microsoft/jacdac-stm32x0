@@ -39,7 +39,7 @@ struct device_info_block {
     uint32_t magic;
     uint64_t device_id;
     uint32_t device_type;
-};
+} __attribute__((packed, aligned(4)));
 
 extern struct device_info_block bl_dev_info;
 
