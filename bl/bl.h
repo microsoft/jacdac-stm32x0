@@ -33,6 +33,8 @@ typedef struct ctx {
 
     uint8_t tx_full, rx_full;
     uint8_t subpageno;
+    uint8_t bl_ad_queued;
+    uint8_t id_counter;
 
     // these two fields are sent directly from here, so don't move them
     uint32_t subpageerr;
@@ -49,6 +51,8 @@ typedef struct ctx {
     uint32_t low_start;
     uint32_t tx_start_time;
     uint32_t led_off_time;
+    uint32_t next_announce;
+    uint32_t next_id_blink;
 
     jd_frame_t rxBuffer;
     jd_frame_t txBuffer;
@@ -82,3 +86,4 @@ void jd_compute_crc(jd_frame_t *frame);
 
 void bl_handle_packet(ctx_t *ctx, jd_packet_t *pkt);
 void bl_process(ctx_t *ctx);
+void led_blink(int us);

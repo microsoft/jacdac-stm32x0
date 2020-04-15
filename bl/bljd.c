@@ -16,7 +16,6 @@ static bool valid_frame(ctx_t *ctx, jd_frame_t *frame) {
     if (pkt->device_identifier == ctx->txBuffer.device_identifier)
         return true;
 
-#if 0
     if (pkt->flags & JD_FRAME_FLAG_IDENTIFIER_IS_SERVICE_CLASS) {
         if (pkt->device_identifier == JD_SERVICE_CLASS_CTRL) {
             pkt->service_number = 0;
@@ -27,23 +26,30 @@ static bool valid_frame(ctx_t *ctx, jd_frame_t *frame) {
             return true;
         }
     }
-#endif
 
     return false;
 }
 
+static void identify(ctx_t *ctx) {
+    if (!ctx->id_counter)
+        return;
+    if (ctx->next_id_blink >= ctx->now) {
+        ctx->next_id_blink = ctx->now + 150000;
+        ctx->id_counter--;
+        led_blink(50000);
+    }
+}
+
 static void ctrl_handle_packet(ctx_t *ctx, jd_packet_t *pkt) {
     switch (pkt->service_command) {
-#if 0
     case JD_CMD_ADVERTISEMENT_DATA:
-        app_queue_annouce();
+        ctx->next_announce = ctx->now;
         break;
     case JD_CMD_CTRL_IDENTIFY:
-        id_counter = 7;
-        nextblink = now;
-        identify();
+        ctx->id_counter = 7;
+        ctx->next_id_blink = ctx->now;
+        identify(ctx);
         break;
-#endif
     case JD_CMD_CTRL_RESET:
         target_reset();
         break;
@@ -73,7 +79,7 @@ void jd_process(ctx_t *ctx) {
                 ctx->rx_full = 1;
                 uart_start_rx(ctx, &ctx->rxBuffer, sizeof(ctx->rxBuffer));
             } else if (ctx->tx_full == 1 && !ctx->tx_start_time) {
-                ctx->tx_start_time = now + 64 + (random(ctx) & 63);
+                ctx->tx_start_time = now + 20 + (random(ctx) & 127);
             } else if (ctx->tx_start_time && ctx->tx_start_time <= now) {
                 prep_frame(&ctx->txBuffer);
                 if (uart_start_tx(ctx, &ctx->txBuffer, JD_FRAME_SIZE(&ctx->txBuffer)) == 0) {
@@ -110,5 +116,6 @@ void jd_process(ctx_t *ctx) {
         }
     }
 
+    identify(ctx);
     bl_process(ctx);
 }

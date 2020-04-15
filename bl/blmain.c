@@ -73,18 +73,18 @@ int main(void) {
     ctx->txBuffer.device_identifier = ((uint64_t)r0 << 32) | r1;
     ctx->service_class_bl = announce_data[2];
 
-    uint32_t next_announce = 500000;
+    ctx->next_announce = 500000;
 
     while (1) {
         ctx->now = tim_get_micros();
 
         jd_process(ctx);
 
-        if (ctx->now >= next_announce && !ctx->tx_full) {
+        if (ctx->now >= ctx->next_announce && !ctx->tx_full) {
             memcpy(ctx->txBuffer.data, announce_data, sizeof(announce_data));
             led_blink(200);
             ctx->tx_full = 1;
-            next_announce = ctx->now + 500000;
+            ctx->next_announce = ctx->now + 500000;
         }
 
         if (ctx->led_off_time && ctx->led_off_time < ctx->now) {
