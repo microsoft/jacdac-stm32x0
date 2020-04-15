@@ -33,7 +33,7 @@ static bool valid_frame(ctx_t *ctx, jd_frame_t *frame) {
 static void identify(ctx_t *ctx) {
     if (!ctx->id_counter)
         return;
-    if (ctx->next_id_blink >= ctx->now) {
+    if (ctx->next_id_blink <= ctx->now) {
         ctx->next_id_blink = ctx->now + 150000;
         ctx->id_counter--;
         led_blink(50000);

@@ -68,6 +68,8 @@ int main(void) {
 
     uint32_t r0 = hash(membase + 0, 4096);
     uint32_t r1 = hash(membase + 2048, 2048);
+
+    DMESG("ID: %x %x", r0, r1);
     ctx->randomseed = r0;
     random(ctx); // rotate
     ctx->txBuffer.device_identifier = ((uint64_t)r0 << 32) | r1;
@@ -76,20 +78,23 @@ int main(void) {
     ctx->next_announce = 500000;
 
     while (1) {
-        ctx->now = tim_get_micros();
+        uint32_t now = ctx->now = tim_get_micros();
 
         jd_process(ctx);
 
-        if (ctx->now >= ctx->next_announce && !ctx->tx_full) {
+        if (now >= ctx->next_announce && !ctx->tx_full) {
             memcpy(ctx->txBuffer.data, announce_data, sizeof(announce_data));
-            led_blink(200);
             ctx->tx_full = 1;
-            ctx->next_announce = ctx->now + 500000;
+            ctx->next_announce = now + 500000;
         }
 
-        if (ctx->led_off_time && ctx->led_off_time < ctx->now) {
-            led_set(0);
-            ctx->led_off_time = 0;
+        if (ctx->led_off_time) {
+            if (ctx->led_off_time < now) {
+                led_set(0);
+                ctx->led_off_time = 0;
+            }
+        } else {
+            led_set((now & 0xff) < ((now & 0x80000) ? 0x4 : 0xf));
         }
     }
 }
