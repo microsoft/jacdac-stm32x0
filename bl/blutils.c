@@ -30,3 +30,7 @@ void target_reset() {
 void __libc_init_array() {
     // do nothing - not using static constructors
 }
+
+void target_enable_irq() {}
+
+void target_disable_irq() {}

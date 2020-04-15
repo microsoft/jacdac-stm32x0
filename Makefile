@@ -30,13 +30,14 @@ C_SRC += $(JD_CORE)/jdlow.c
 C_SRC += $(JD_CORE)/jdutil.c
 C_SRC += $(HALSRC)
 else
-DEFINES += -DDEVICE_DMESG_BUFFER_SIZE=0 -DBL
+DEFINES += -DDEVICE_DMESG_BUFFER_SIZE=1024 -DBL
 SRC = bl
 CPPFLAGS += -Ibl
 C_SRC += $(wildcard bl/*.c)
 C_SRC += $(PLATFORM)/pins.c
 C_SRC += $(PLATFORM)/init.c
 C_SRC += $(PLATFORM)/flash.c
+C_SRC += src/dmesg.c
 C_SRC += $(JD_CORE)/jdutil.c
 C_SRC += $(HALSRC)
 endif
