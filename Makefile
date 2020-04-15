@@ -1,7 +1,9 @@
 PREFIX = arm-none-eabi-
 CC = $(PREFIX)gcc
 AS = $(PREFIX)as
-TARGET ?= jdm-v3-bl
+TARGET ?= jdm-v3
+
+all: x-all
 
 JD_CORE = jacdac-core
 
@@ -39,7 +41,7 @@ C_SRC += $(PLATFORM)/flash.c
 C_SRC += src/dmesg.c
 C_SRC += $(JD_CORE)/jdutil.c
 C_SRC += $(HALSRC)
-AS_SRC += bl/bootstart.s
+AS_SRC += bl/boothandler.s
 endif
 
 ifneq ($(BMP),)
@@ -62,8 +64,9 @@ CPPFLAGS += \
 LDFLAGS = -specs=nosys.specs -specs=nano.specs \
 	-T"$(LD_SCRIPT)" -Wl,-Map=$(BUILT)/output.map -Wl,--gc-sections
 
-all: $(JD_CORE)/jdlow.c
+x-all: $(JD_CORE)/jdlow.c
 	$(MAKE) -j8 $(BUILT)/binary.hex
+	$(V)$(PREFIX)size $(BUILT)/binary.elf
 
 drop:
 	$(MAKE) TARGET=g031 all
@@ -131,20 +134,23 @@ $(BUILT)/%.o: %.s
 	@echo AS $<
 	$(V)$(CC) $(CFLAGS) $(CPPFLAGS) -o $@ -c $<
 
-$(BUILT)/binary.elf: $(OBJ) Makefile
+$(BUILT)/binary.elf: $(OBJ) Makefile $(LD_SCRIPT)
 	@echo LD $@
 	$(V)$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $(OBJ) -lm
+ifeq ($(BL),)
+	@echo BL-PATCH $@
+	$(V)node scripts/patch-bin.js $@ $(FLASH_SIZE) $(BL_SIZE)
+endif
 
 $(BUILT)/binary.hex: $(BUILT)/binary.elf
 	@echo HEX $<
-	$(PREFIX)objcopy -O ihex $< $@
-	$(PREFIX)size $<
+	$(V)$(PREFIX)objcopy -O ihex $< $@
 
 clean:
 	rm -rf built
 
 st:
-	@node scripts/map-file-stats.js  built/$(TARGET)/output.map
+	$(V)node scripts/map-file-stats.js  built/$(TARGET)/output.map
 
 stf:
-	@node scripts/map-file-stats.js  built/$(TARGET)/output.map -fun
+	$(V)node scripts/map-file-stats.js  built/$(TARGET)/output.map -fun

@@ -1,0 +1,3 @@
+RAM_SIZE = 4
+FLASH_SIZE = 16
+BL_SIZE = 3
