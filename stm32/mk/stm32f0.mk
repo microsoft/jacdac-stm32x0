@@ -29,7 +29,6 @@ BMP = 1
 PLATFORM = stm32
 
 # TODO move some of this to common stm32.mk
-DEFINES += -D$(MCU) -DFLASH_SIZE="1024*$(FLASH_SIZE)"
 AS_SRC = $(DRV)/CMSIS/Device/ST/STM32F0xx/Source/Templates/gcc/startup_$(MCU:STM32F%=stm32f%).s
 CUBE = stm32/STM32Cube$(SERIES)
 DRV = $(CUBE)/Drivers
@@ -38,12 +37,13 @@ CPPFLAGS += 	\
 	-I$(DRV)/STM32$(SERIES)xx_HAL_Driver/Inc/Legacy \
 	-I$(DRV)/CMSIS/Device/ST/STM32$(SERIES)xx/Include \
 	-I$(DRV)/CMSIS/Include
-DEFINES += -DUSE_FULL_ASSERT -DUSE_FULL_LL_DRIVER -DSTM32$(SERIES)
+DEFINES += -DUSE_FULL_LL_DRIVER -DSTM32$(SERIES)
+DEFINES += -D$(MCU) -DFLASH_SIZE="1024*$(FLASH_SIZE)" -DFLASH_PAGE_SIZE=$(PAGE_SIZE)
 
 include stm32/mk/$(MCU).mk
 
 LD_SCRIPT = $(BUILT)/linker.ld
-$(BUILT)/linker.ld: $(wildcard stm32/*.mk) stm32/mk/$(MCU).mk
+$(BUILT)/linker.ld: $(wildcard stm32/mk/*.mk)
 	: > $@
 	echo "MEMORY {" >> $@
 	echo "RAM (rwx)   : ORIGIN = 0x20000000, LENGTH = $(RAM_SIZE)K" >> $@

@@ -68,10 +68,6 @@ x-all: $(JD_CORE)/jdlow.c
 	$(MAKE) -j8 $(BUILT)/binary.hex
 	$(V)$(PREFIX)size $(BUILT)/binary.elf
 
-drop:
-	$(MAKE) TARGET=g031 all
-	$(MAKE) TARGET=f031 all
-
 $(JD_CORE)/jdlow.c:
 	if test -f ../pxt-common-packages/libs/jacdac/jdlow.c ; then \
 		ln -s ../pxt-common-packages/libs/jacdac jacdac-core; \
@@ -83,6 +79,10 @@ r: run
 l: flash-loop
 
 run: all flash
+
+drop:
+	$(MAKE) TARGET=jdm-v3 all
+	$(MAKE) TARGET=jdm-v3-bl all
 
 ONCE ?= 1
 
