@@ -34,13 +34,14 @@ CUBE = stm32/STM32Cube$(SERIES)
 DRV = $(CUBE)/Drivers
 CPPFLAGS += 	\
 	-I$(DRV)/STM32$(SERIES)xx_HAL_Driver/Inc \
-	-I$(DRV)/STM32$(SERIES)xx_HAL_Driver/Inc/Legacy \
 	-I$(DRV)/CMSIS/Device/ST/STM32$(SERIES)xx/Include \
 	-I$(DRV)/CMSIS/Include
 DEFINES += -DUSE_FULL_LL_DRIVER -DSTM32$(SERIES)
 DEFINES += -D$(MCU) -DFLASH_SIZE="1024*$(FLASH_SIZE)" -DFLASH_PAGE_SIZE=$(PAGE_SIZE)
 
 include stm32/mk/$(MCU).mk
+
+CONFIG_DEPS += $(wildcard stm32/mk/*.mk)
 
 LD_SCRIPT = $(BUILT)/linker.ld
 $(BUILT)/linker.ld: $(wildcard stm32/mk/*.mk)
