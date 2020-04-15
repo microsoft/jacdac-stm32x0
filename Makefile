@@ -23,7 +23,8 @@ CONFIG_DEPS = \
 	$(wildcard $(PLATFORM)/*.h) \
 	$(wildcard $(JD_CORE)/*.h) \
 	$(wildcard targets/$(TARGET)/*.h) \
-	targets/$(TARGET)/config.mk
+	targets/$(TARGET)/config.mk \
+	Makefile
 
 include targets/$(TARGET)/config.mk
 BASE_TARGET ?= $(TARGET)
@@ -36,7 +37,7 @@ C_SRC += $(JD_CORE)/jdlow.c
 C_SRC += $(JD_CORE)/jdutil.c
 C_SRC += $(HALSRC)
 else
-DEFINES += -DDEVICE_DMESG_BUFFER_SIZE=1024 -DBL
+DEFINES += -DDEVICE_DMESG_BUFFER_SIZE=0 -DBL
 CPPFLAGS += -Ibl
 C_SRC += $(wildcard bl/*.c)
 C_SRC += $(PLATFORM)/pins.c
@@ -146,9 +147,19 @@ ifeq ($(BL),)
 	$(V)node scripts/patch-bin.js $@ $(FLASH_SIZE) $(BL_SIZE)
 endif
 
-$(BUILT)/binary.hex: $(BUILT)/binary.elf
+$(BUILT)/binary.bin: $(BUILT)/binary.elf
+	$(V)$(PREFIX)objcopy -O binary $< $@
+
+$(BUILT)/binary.hex: $(BUILT)/binary.elf $(BUILT)/binary.bin
 	@echo HEX $<
 	$(V)$(PREFIX)objcopy -O ihex $< $@
+
+built/compress.js: scripts/compress.ts
+	cd scripts; tsc
+
+c: built/compress.js
+	node $< tmp/images/*.bin
+
 
 clean:
 	rm -rf built
