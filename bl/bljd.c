@@ -76,7 +76,7 @@ void jd_process(ctx_t *ctx) {
                 ctx->tx_start_time = now + 64 + (random(ctx) & 63);
             } else if (ctx->tx_start_time && ctx->tx_start_time <= now) {
                 prep_frame(&ctx->txBuffer);
-                if (uart_start_tx(ctx, &ctx->txBuffer, sizeof(ctx->txBuffer)) == 0) {
+                if (uart_start_tx(ctx, &ctx->txBuffer, JD_FRAME_SIZE(&ctx->txBuffer)) == 0) {
                     // sent OK
                     ctx->tx_full = 2;
                     ctx->tx_start_time = 0;

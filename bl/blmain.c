@@ -14,6 +14,7 @@ void led_init() {
         // all power pins are reverse polarity; we don't care much for others
         pin_set(output_pins[i], 1);
     }
+    pin_set(PIN_LED_GND, 0);
 }
 
 void led_set(int state) {
@@ -60,10 +61,13 @@ int main(void) {
     led_set(1);
     tim_init();
     uart_init(ctx);
+
     led_blink(200000); // initial (on reset) blink
 
-    uint32_t r0 = hash((void *)0, 4096);
-    uint32_t r1 = hash((void *)2048, 2048);
+    uint8_t *membase = (uint8_t)0x20000000;
+
+    uint32_t r0 = hash(membase + 0, 4096);
+    uint32_t r1 = hash(membase + 2048, 2048);
     ctx->randomseed = r0;
     random(ctx); // rotate
     ctx->txBuffer.device_identifier = ((uint64_t)r0 << 32) | r1;
@@ -78,7 +82,9 @@ int main(void) {
 
         if (ctx->now >= next_announce && !ctx->tx_full) {
             memcpy(ctx->txBuffer.data, announce_data, sizeof(announce_data));
+            led_blink(200);
             ctx->tx_full = 1;
+            next_announce = ctx->now + 500000;
         }
 
         if (ctx->led_off_time && ctx->led_off_time < ctx->now) {
@@ -88,11 +94,17 @@ int main(void) {
     }
 }
 
+static void busy_sleep(int ms) {
+    ms *= 1000; // check
+    while (ms--)
+        asm volatile("nop");
+}
+
 static void led_panic_blink() {
     led_set(1);
-    target_wait_us(70000);
+    busy_sleep(70);
     led_set(0);
-    target_wait_us(70000);
+    busy_sleep(70);
 }
 
 void jd_panic(void) {

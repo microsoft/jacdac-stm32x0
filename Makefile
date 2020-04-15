@@ -35,7 +35,6 @@ SRC = bl
 CPPFLAGS += -Ibl
 C_SRC += $(wildcard bl/*.c)
 C_SRC += $(PLATFORM)/pins.c
-C_SRC += $(PLATFORM)/target_utils.c
 C_SRC += $(PLATFORM)/init.c
 C_SRC += $(PLATFORM)/flash.c
 C_SRC += $(JD_CORE)/jdutil.c

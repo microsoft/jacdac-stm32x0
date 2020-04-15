@@ -29,4 +29,5 @@ void tim_init() {
     LL_TIM_SetPrescaler(TIMx, CPU_MHZ - 1);
     LL_TIM_GenerateEvent_UPDATE(TIMx);
     LL_TIM_ClearFlag_UPDATE(TIMx);
+    LL_TIM_EnableCounter(TIMx);
 }
