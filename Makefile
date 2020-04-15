@@ -12,7 +12,11 @@ CFLAGS = $(DEFINES) \
 	-mthumb -mfloat-abi=soft  \
 	-Os -g3 -Wall -ffunction-sections -fdata-sections -nostartfiles \
 	$(WARNFLAGS)
+ifeq ($(BL),)
 BUILT = built/$(TARGET)
+else
+BUILT = built/$(TARGET)/bl
+endif
 CONFIG_DEPS = \
 	$(wildcard src/*.h) \
 	$(wildcard bl/*.h) \
@@ -40,7 +44,6 @@ C_SRC += $(PLATFORM)/init.c
 C_SRC += $(PLATFORM)/flash.c
 C_SRC += src/dmesg.c
 C_SRC += $(JD_CORE)/jdutil.c
-C_SRC += $(HALSRC)
 AS_SRC += bl/boothandler.s
 endif
 
@@ -66,7 +69,8 @@ LDFLAGS = -specs=nosys.specs -specs=nano.specs \
 
 x-all: $(JD_CORE)/jdlow.c
 	$(MAKE) -j8 $(BUILT)/binary.hex
-	$(V)$(PREFIX)size $(BUILT)/binary.elf
+	$(MAKE) -j8 BL=1 $(BUILT)/bl/binary.hex
+	$(V)$(PREFIX)size $(BUILT)/binary.elf $(BUILT)/bl/binary.elf
 
 $(JD_CORE)/jdlow.c:
 	if test -f ../pxt-common-packages/libs/jacdac/jdlow.c ; then \
