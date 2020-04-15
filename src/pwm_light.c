@@ -14,6 +14,8 @@
 #define PWM_PERIOD_BITS 13 // at 12 bit you can still see the steps at the low end
 #define PWM_PERIOD (1 << PWM_PERIOD_BITS)
 
+#define PIN_GLO PIN_GLO1
+
 typedef struct {
     uint16_t start_intensity;
     uint16_t duration; // in ms
@@ -57,10 +59,10 @@ static void set_pwr(srv_t *state, int on) {
         pwr_enter_tim();
         // set prescaler to 1 - as fast as possible
         if (!state->pwm_pin)
-            state->pwm_pin = pwm_init(PIN_GLO1, PWM_PERIOD, PWM_PERIOD - 1, 1);
+            state->pwm_pin = pwm_init(PIN_GLO, PWM_PERIOD, PWM_PERIOD - 1, 1);
         pwm_enable(state->pwm_pin, 1);
     } else {
-        pin_set(PIN_GLO1, 1);
+        pin_set(PIN_GLO, 1);
         pwm_enable(state->pwm_pin, 0);
         pwr_leave_tim();
     }
