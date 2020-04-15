@@ -53,6 +53,7 @@ typedef struct ctx {
     uint32_t led_off_time;
     uint32_t next_announce;
     uint32_t next_id_blink;
+    uint32_t app_start_time;
 
     jd_frame_t rxBuffer;
     jd_frame_t txBuffer;
@@ -86,4 +87,15 @@ void jd_compute_crc(jd_frame_t *frame);
 
 void bl_handle_packet(ctx_t *ctx, jd_packet_t *pkt);
 void bl_process(ctx_t *ctx);
+bool bl_fixup_app_handlers(ctx_t *ctx);
 void led_blink(int us);
+
+#define BL_MAGIC_FLAG_APP 0x873d9293
+extern uint32_t _estack;
+#define BL_MAGIC_FLAG (&_estack)[-1]
+
+#ifndef HW_TYPE
+#define HW_TYPE 0
+#endif
+
+#define BL_DEVICE_ID ctx->txBuffer.device_identifier

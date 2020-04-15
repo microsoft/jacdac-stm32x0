@@ -1,5 +1,16 @@
 #include "bl.h"
 
+struct device_info_block __attribute__((section(".devinfo"), used)) bl_dev_info = {
+    .magic = DEV_INFO_MAGIC,
+    .device_id = 0xffffffffffffffffULL,
+    .device_type = HW_TYPE,
+};
+
+static void start_app() {
+    BL_MAGIC_FLAG = BL_MAGIC_FLAG_APP;
+    target_reset();
+}
+
 ctx_t ctx_;
 
 static const uint8_t output_pins[] = {
@@ -62,20 +73,41 @@ int main(void) {
     tim_init();
     uart_init(ctx);
 
-    led_blink(200000); // initial (on reset) blink
+    led_blink(256 * 1024); // initial (on reset) blink
 
     uint8_t *membase = (uint8_t)0x20000000;
 
     uint32_t r0 = hash(membase + 0, 4096);
-    uint32_t r1 = hash(membase + 2048, 2048);
 
-    DMESG("ID: %x %x", r0, r1);
     ctx->randomseed = r0;
     random(ctx); // rotate
-    ctx->txBuffer.device_identifier = ((uint64_t)r0 << 32) | r1;
-    ctx->service_class_bl = announce_data[2];
 
-    ctx->next_announce = 500000;
+    bool app_valid = app_dev_info.magic == DEV_INFO_MAGIC;
+
+    if ((bl_dev_info.device_id + 1) == 0) {
+        if (app_valid && app_dev_info.device_id && (app_dev_info.device_id + 1)) {
+            BL_DEVICE_ID = app_dev_info.device_id;
+        } else {
+            uint32_t r1 = hash(membase + 2048, 2048);
+            BL_DEVICE_ID = ((uint64_t)r0 << 32) | r1;
+        }
+        flash_program(&bl_dev_info.device_id, &BL_DEVICE_ID, 8);
+    } else {
+        BL_DEVICE_ID = bl_dev_info.device_id;
+    }
+
+    if (!app_valid)
+        app_valid = bl_fixup_app_handlers(ctx);
+
+    DMESG("ID: %x %x", (uint32_t)BL_DEVICE_ID, (uint32_t)(BL_DEVICE_ID >> 32));
+
+    ctx->service_class_bl = announce_data[2];
+    ctx->next_announce = 512 * 1024;
+
+    if (app_valid)
+        ctx->app_start_time = 512 * 1024;
+    else
+        ctx->app_start_time = 0x80000000;
 
     while (1) {
         uint32_t now = ctx->now = tim_get_micros();
@@ -85,8 +117,11 @@ int main(void) {
         if (now >= ctx->next_announce && !ctx->tx_full) {
             memcpy(ctx->txBuffer.data, announce_data, sizeof(announce_data));
             ctx->tx_full = 1;
-            ctx->next_announce = now + 500000;
+            ctx->next_announce = now + 512 * 1024;
         }
+
+        if (now >= ctx->app_start_time)
+            start_app();
 
         if (ctx->led_off_time) {
             if (ctx->led_off_time < now) {

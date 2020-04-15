@@ -25,13 +25,14 @@
  *   __stack
  *   _estack
  */
-ENTRY(Reset_Handler)
+ENTRY(Boot_Handler)
 
 SECTIONS
 {
     .text :
     {
-        KEEP(*(.isr_vector))
+        KEEP(*(.devinfo))
+        KEEP(*(.bootstart))
         *(.text*)
         KEEP(*(.init))
         KEEP(*(.fini))
@@ -143,8 +144,6 @@ SECTIONS
     _estack = __StackTop;
     __StackLimit = __StackTop - SIZEOF(.stack_dummy);
     PROVIDE(__stack = __StackTop);
-
-    bl_dev_info = ORIGIN(FLASH) + LENGTH(FLASH);
 
     /* Check if data + heap + stack exceeds RAM limit */
     ASSERT(__StackLimit >= __HeapLimit, "region RAM overflowed with stack")

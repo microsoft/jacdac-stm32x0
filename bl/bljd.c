@@ -13,7 +13,7 @@ static bool valid_frame(ctx_t *ctx, jd_frame_t *frame) {
     if (!(pkt->flags & JD_FRAME_FLAG_COMMAND))
         return false;
 
-    if (pkt->device_identifier == ctx->txBuffer.device_identifier)
+    if (pkt->device_identifier == BL_DEVICE_ID)
         return true;
 
     if (pkt->flags & JD_FRAME_FLAG_IDENTIFIER_IS_SERVICE_CLASS) {
