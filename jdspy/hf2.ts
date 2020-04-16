@@ -94,44 +94,6 @@ export const HF2_CMD_JDS_CONFIG = 0x0020
 export const HF2_CMD_JDS_SEND = 0x0021
 export const HF2_EV_JDS_PACKET = 0x800020
 
-export interface MutableArrayLike<T> {
-    readonly length: number;
-    [n: number]: T;
-}
-
-export function write32(buf: MutableArrayLike<number>, pos: number, v: number) {
-    buf[pos + 0] = (v >> 0) & 0xff;
-    buf[pos + 1] = (v >> 8) & 0xff;
-    buf[pos + 2] = (v >> 16) & 0xff;
-    buf[pos + 3] = (v >> 24) & 0xff;
-}
-
-export function write16(buf: MutableArrayLike<number>, pos: number, v: number) {
-    buf[pos + 0] = (v >> 0) & 0xff;
-    buf[pos + 1] = (v >> 8) & 0xff;
-}
-
-export function read32(buf: ArrayLike<number>, pos: number) {
-    return (buf[pos] | (buf[pos + 1] << 8) | (buf[pos + 2] << 16) | (buf[pos + 3] << 24)) >>> 0
-}
-
-export function read16(buf: ArrayLike<number>, pos: number) {
-    return buf[pos] | (buf[pos + 1] << 8)
-}
-
-export function encodeU32LE(words: number[]) {
-    let r = new Uint8Array(words.length * 4)
-    for (let i = 0; i < words.length; ++i)
-        write32(r, i * 4, words[i])
-    return r
-}
-
-export function decodeU32LE(buf: Uint8Array) {
-    let res: number[] = []
-    for (let i = 0; i < buf.length; i += 4)
-        res.push(read32(buf, i))
-    return res
-}
 
 export class Transport {
     dev: USBDevice;
@@ -357,19 +319,19 @@ export class Proto {
         if (data) len += data.length
         let pkt = new Uint8Array(len)
         let seq = ++this.cmdSeq & 0xffff
-        write32(pkt, 0, cmd);
-        write16(pkt, 4, seq);
-        write16(pkt, 6, 0);
+        U.write32(pkt, 0, cmd);
+        U.write16(pkt, 4, seq);
+        U.write16(pkt, 6, 0);
         if (data)
             U.memcpy(pkt, 8, data, 0, data.length)
         let numSkipped = 0
         let handleReturnAsync = (): Promise<Uint8Array> =>
             this.msgs.shiftAsync(1000) // we wait up to a second
                 .then(res => {
-                    if (read16(res, 0) != seq) {
+                    if (U.read16(res, 0) != seq) {
                         if (numSkipped < 3) {
                             numSkipped++
-                            this.io.log(`message out of sync, (${seq} vs ${read16(res, 0)}); will re-try`)
+                            this.io.log(`message out of sync, (${seq} vs ${U.read16(res, 0)}); will re-try`)
                             return handleReturnAsync()
                         }
                         this.error("out of sync")
@@ -426,7 +388,7 @@ export class Proto {
     }
 
     onJDMessage(f: (buf: Uint8Array) => void) {
-        this.talkAsync(HF2_CMD_JDS_CONFIG, encodeU32LE([1]))
+        this.talkAsync(HF2_CMD_JDS_CONFIG, U.encodeU32LE([1]))
         this.onEvent(HF2_EV_JDS_PACKET, f)
     }
 
@@ -435,7 +397,7 @@ export class Proto {
     }
 
     handleEvent(buf: Uint8Array) {
-        let evid = read32(buf, 0)
+        let evid = U.read32(buf, 0)
         let f = this.eventHandlers[evid + ""]
         if (f) {
             f(buf.slice(4))
