@@ -27,7 +27,7 @@ async function main() {
         .version("0.0.0")
         .option("-p, --parse-log <logfile>", "parse log file from jdspy or Logic")
         .option("-l, --log <logfile>", "in addition to print, save data to file")
-        .option("-a, --all-announce", "print repeated announace commands")
+        .option("-a, --all", "print repeated commands")
         .parse(process.argv)
 
     function processFrame(frame: jdpretty.ParsedFrame) {
@@ -37,7 +37,10 @@ async function main() {
             if (program.log)
                 fs.appendFileSync(program.log, `JD ${frame.timestamp} ${U.toHex(frame.data)}\n`)
             jd.process(p)
-            const pp = jdpretty.printPkt(p, { skipRepeatedAnnounce: !program.allAnnounce })
+            const pp = jdpretty.printPkt(p, {
+                skipRepeatedAnnounce: !program.all,
+                skipRepeatedReading: !program.all
+            })
             if (pp)
                 console.log(pp)
         }

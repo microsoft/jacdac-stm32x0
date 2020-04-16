@@ -139,6 +139,7 @@ export class Device {
     services: Uint8Array
     lastSeen: number
     lastServiceUpdate: number
+    currentReading: Uint8Array
     private _shortId: string
 
     constructor(public deviceId: string) {

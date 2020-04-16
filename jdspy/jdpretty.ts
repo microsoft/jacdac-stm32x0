@@ -96,6 +96,7 @@ function num2str(n: number) {
 
 export interface Options {
     skipRepeatedAnnounce?: boolean;
+    skipRepeatedReading?: boolean;
 }
 
 export function printPkt(pkt: jd.Packet, opts: Options = {}) {
@@ -131,6 +132,12 @@ export function printPkt(pkt: jd.Packet, opts: Options = {}) {
             pdesc += "; " + "Announce services: " + services.join(", ")
         }
     } else {
+        if (pkt.dev && !pkt.is_command && pkt.service_command == (jd.CMD_GET_REG | jd.REG_READING)) {
+            if (opts.skipRepeatedReading && pkt.dev.currentReading && U.bufferEq(pkt.dev.currentReading, pkt.data))
+                return ""
+            pkt.dev.currentReading = pkt.data
+        }
+
         if (0 < d.length && d.length <= 4) {
             let v0 = pkt.uintData, v1 = pkt.intData
             pdesc += "; " + num2str(v0)
