@@ -1,4 +1,6 @@
 built/
 .vscode/
+node_modules/
 jacdac-core
 tmp
+package-lock.json
