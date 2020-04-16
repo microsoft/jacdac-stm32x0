@@ -192,5 +192,6 @@ export function parseLog(logcontents: string) {
         }
     }
 
+    return res
 }
 

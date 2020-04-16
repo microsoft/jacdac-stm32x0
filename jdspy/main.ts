@@ -2,6 +2,8 @@ import * as U from "./pxtutils"
 import * as HF2 from "./hf2"
 import * as jd from "./jd"
 import * as jdpretty from "./jdpretty"
+import { program } from "commander"
+import * as fs from "fs"
 
 const dev_ids = {
     "119c5abca9fd6070": "JDM3.0-ACC-burned",
@@ -21,16 +23,40 @@ const dev_ids = {
 U.jsonCopyFrom(jd.deviceNames, dev_ids)
 
 async function main() {
+    program
+        .version("0.0.0")
+        .option("-p, --parse-log <logfile>", "parse log file from jdspy or Logic")
+        .option("-l, --log <logfile>", "in addition to print, save data to file")
+        .option("-a, --all-announce", "print repeated announace commands")
+        .parse(process.argv)
+
+    function processFrame(frame: jdpretty.ParsedFrame) {
+        if (frame.info)
+            console.warn("FRM: " + frame.info)
+        for (let p of jd.Packet.fromFrame(frame.data, frame.timestamp)) {
+            if (program.log)
+                fs.appendFileSync(program.log, `JD ${frame.timestamp} ${U.toHex(frame.data)}\n`)
+            jd.process(p)
+            const pp = jdpretty.printPkt(p, { skipRepeatedAnnounce: !program.allAnnounce })
+            if (pp)
+                console.log(pp)
+        }
+    }
+
+    if (program.parseLog) {
+        for (const frame of jdpretty.parseLog(fs.readFileSync(program.parseLog, "utf8"))) {
+            processFrame(frame)
+        }
+        return
+    }
+
     const startTime = Date.now()
     const hf2 = new HF2.Proto(new HF2.Transport())
     try {
         await hf2.init()
 
         hf2.onJDMessage(buf => {
-            for (let p of jd.Packet.fromFrame(buf, Date.now() - startTime)) {
-                jd.process(p)
-                console.log(jdpretty.printPkt(p))
-            }
+            processFrame({ data: buf, timestamp: Date.now() - startTime })
         })
 
         jd.setSendPacketFn(p => {
@@ -43,5 +69,5 @@ async function main() {
     }
 }
 
-main()
 
+main()
