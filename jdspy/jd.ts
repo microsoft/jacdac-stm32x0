@@ -349,6 +349,8 @@ export class Packet {
     }
 
     _sendCore() {
+        this._header[2] = this.size + 4
+        U.write16(this._header, 0, crc(U.bufferConcat(this._header.slice(2), this._data)))
         sendPacketFn(this)
     }
 

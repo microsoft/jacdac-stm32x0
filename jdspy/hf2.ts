@@ -355,8 +355,9 @@ export class Proto {
                     return null
                 })
 
-        return this.sendMsgAsync(pkt)
-            .then(handleReturnAsync)
+        return this.lock.enqueue("talk", () =>
+            this.sendMsgAsync(pkt)
+                .then(handleReturnAsync))
     }
 
 
@@ -379,7 +380,7 @@ export class Proto {
             return this.io.sendPacketAsync(frame)
                 .then(() => loop(pos + len))
         }
-        return this.lock.enqueue("out", () => loop(0))
+        return loop(0)
     }
 
     onEvent(id: number, f: (buf: Uint8Array) => void) {

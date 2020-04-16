@@ -2,6 +2,7 @@ import * as U from "./pxtutils"
 import * as HF2 from "./hf2"
 import * as jd from "./jd"
 import * as jdpretty from "./jdpretty"
+import * as jdbl from "./jdbl"
 import { program } from "commander"
 import * as fs from "fs"
 
@@ -22,12 +23,14 @@ const dev_ids = {
 
 U.jsonCopyFrom(jd.deviceNames, dev_ids)
 
+
 async function main() {
     program
         .version("0.0.0")
         .option("-p, --parse-log <logfile>", "parse log file from jdspy or Logic")
         .option("-l, --log <logfile>", "in addition to print, save data to file")
         .option("-a, --all", "print repeated commands")
+        .option("-f, --flash <file.bin>", "flash binary file")
         .parse(process.argv)
 
     function processFrame(frame: jdpretty.ParsedFrame) {
@@ -47,27 +50,33 @@ async function main() {
     }
 
     if (program.parseLog) {
-        for (const frame of jdpretty.parseLog(fs.readFileSync(program.parseLog, "utf8"))) {
+        for (const frame of jdpretty.parseLog(fs.readFileSync(program.parseLog, "utf8")))
             processFrame(frame)
-        }
         return
     }
+
 
     const startTime = Date.now()
     const hf2 = new HF2.Proto(new HF2.Transport())
     try {
         await hf2.init()
 
-        hf2.onJDMessage(buf => {
-            processFrame({ data: buf, timestamp: Date.now() - startTime })
-        })
-
         jd.setSendPacketFn(p => {
             hf2.sendJDMessageAsync(p.toBuffer())
                 .then(() => { }, err => console.log(err))
         })
+
+        if (program.flash) {
+            await jdbl.flash(hf2, fs.readFileSync(program.flash))
+            return
+        }
+
+        hf2.onJDMessage(buf => {
+            processFrame({ data: buf, timestamp: Date.now() - startTime })
+        })
+
     } catch (err) {
-        console.error(err)
+        console.error("ERROR: ", err)
         await hf2.io.disconnectAsync()
     }
 }
