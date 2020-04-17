@@ -22,7 +22,7 @@ function log(msg) {
         console.log(msg)
 }
 
-const w0 = buf.readUInt32LE(0)
+let w0 = buf.readUInt32LE(0)
 if (w0 == 0x464c457f) {
     const out = child_process.execSync("arm-none-eabi-objdump -h " + fn, { encoding: "utf-8" })
     const m = /^\s*\d+\s+\.text\s.*\s([0-9a-fA-F]{8})\s+\d\*\*/m.exec(out)
@@ -31,22 +31,32 @@ if (w0 == 0x464c457f) {
     }
     pos = parseInt(m[1], 16)
     log("detected ELF file, text at " + pos.toString(16))
-} else if ((w0 & 0xff00_0000) == 0x2000_0000) {
-    log("detected BIN file")
+} else {
+    log("assuming BIN file")
 }
 
-const reset = buf.readUInt32LE(pos + 4)
-const app_reset = buf.readInt32LE(pos + 13 * 4)
-if (app_reset == 0 || app_reset == -1) {
-    buf.writeUInt32LE(reset, pos + 13 * 4)
-    log("patching app_reset to " + reset.toString(16))
+w0 = buf.readUInt32LE(pos)
+if ((w0 & 0xff00_0000) == 0x2000_0000) {
+    log("app mode")
+    const reset = buf.readUInt32LE(pos + 4)
+    const app_reset = buf.readInt32LE(pos + 13 * 4)
+    if (app_reset == 0 || app_reset == -1) {
+        buf.writeUInt32LE(reset, pos + 13 * 4)
+        log("patching app_reset to " + reset.toString(16))
+    }
+
+    const bl_reset_handler = 0x800_0000 + (flash_size - bl_size) * 1024 + 8 * 4 + 1
+    buf.writeUInt32LE(bl_reset_handler, pos + 4)
+    log("setting global reset to " + bl_reset_handler.toString(16))
+
+    buf.fill(0xff, pos + 7 * 4, pos + (7 + 4) * 4)
+    log("clearing devinfo area")
+} else if (w0 == 0x9fddf13b) {
+    log("setting random seed")
+    require("crypto").randomFillSync(buf, pos + 16, 8)
+} else {
+    throw "can't detect file type"
 }
 
-const bl_reset_handler = 0x800_0000 + (flash_size - bl_size) * 1024 + 4 * 4 + 1
-buf.writeUInt32LE(bl_reset_handler, pos + 4)
-log("setting global reset to " + bl_reset_handler.toString(16))
-
-buf.fill(0xff, pos + 7 * 4, pos + (7 + 4) * 4)
-log("clearing devinfo area")
 
 fs.writeFileSync(fn, buf)

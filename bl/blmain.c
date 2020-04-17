@@ -70,7 +70,7 @@ int main(void) {
 
     uint8_t *membase = (uint8_t)0x20000000;
 
-    uint32_t r0 = hash(membase + 0, 4096) ^ bl_dev_info.device_type;
+    uint32_t r0 = hash(membase + 0, 4096) ^ bl_dev_info.device_type ^ bl_info.random_seed0;
 
     ctx->randomseed = r0;
     random(ctx); // rotate
@@ -81,7 +81,8 @@ int main(void) {
         if (app_valid && app_dev_info.device_id && (app_dev_info.device_id + 1)) {
             BL_DEVICE_ID = app_dev_info.device_id;
         } else {
-            uint32_t r1 = hash(membase + 2048, 2048) ^ bl_dev_info.device_type;
+            uint32_t r1 =
+                hash(membase + 2048, 2048) ^ bl_dev_info.device_type ^ bl_info.random_seed1;
             r0 &= ~0x02000000; // clear "universal" bit
             BL_DEVICE_ID = ((uint64_t)r0 << 32) | r1;
         }

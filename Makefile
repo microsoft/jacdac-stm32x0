@@ -4,6 +4,7 @@ AS = $(PREFIX)as
 
 TARGET ?= jdm-v3
 PROF ?= acc
+FORCE ?=
 
 .SECONDARY: # this prevents object files from being removed
 .DEFAULT_GOAL := all
@@ -150,10 +151,10 @@ $(BUILT)/%.o: %.s
 	@echo AS $<
 	$(V)$(CC) $(CFLAGS) $(CPPFLAGS) -o $@ -c $<
 
-%.bin: %.elf
+%.hex: %.elf
 	@echo BIN/HEX $<
-	$(V)$(PREFIX)objcopy -O binary $< $@
-	$(V)$(PREFIX)objcopy -O ihex $< $(@:.bin=.hex)
+	$(V)$(PREFIX)objcopy -O binary $< $(@:.hex=.bin)
+	$(V)$(PREFIX)objcopy -O ihex $< $@
 
 built/compress.js: scripts/compress.ts
 	cd scripts; tsc
@@ -175,24 +176,27 @@ $(BUILT)/src/prof-%.o: targets/$(TARGET)/profile/%.c
 	@mkdir -p $(BUILT)/src
 	$(V)$(CC) $(CFLAGS) $(CPPFLAGS) -o $@ -c $<
 
-$(BUILT_BIN)/app-%.elf: $(BUILT)/src/prof-%.o $(OBJ) Makefile $(LD_SCRIPT) scripts/patch-bin.js
+$(BUILT_BIN)/$(PREF)-%.elf: $(BUILT)/src/prof-%.o $(OBJ) Makefile $(LD_SCRIPT) scripts/patch-bin.js $(FORCE)
 	@echo LD $@
 	$(V)$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $(OBJ) $< -lm
-	@echo BL-PATCH $@
+	@echo BIN-PATCH $@
 	$(V)node scripts/patch-bin.js -q $@ $(FLASH_SIZE) $(BL_SIZE)
 
-$(BUILT_BIN)/bl-%.elf: $(BUILT)/src/prof-%.o $(OBJ) Makefile $(LD_SCRIPT)
-	@echo LD $@
-	$(V)$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $(OBJ) $< -lm
-
-build: $(addsuffix .bin,$(addprefix $(BUILT_BIN)/$(PREF)-,$(PROFILES)))
+build: $(addsuffix .hex,$(addprefix $(BUILT_BIN)/$(PREF)-,$(PROFILES)))
 
 combine: $(addsuffix .hex,$(addprefix $(BUILT_BIN)/combined-,$(PROFILES)))
 
-$(BUILT_BIN)/combined-%.hex: $(BUILT_BIN)/app-%.hex $(BUILT_BIN)/bl-%.hex
+$(BUILT_BIN)/combined-%.hex: $(BUILT_BIN)/$(PREF)-%.hex
 	@echo COMBINE $@
 	@(cat $< | grep -v '^:0.00000[51]' ; cat $(subst app-,bl-,$<)) > $@
 
+# make sure we re-binary-patch the bootloader on every flash, to get different random seed
 rc: run-combined
-run-combined: all
+run-combined:
+	touch scripts/patch-bin.js
+	$(MAKE) -j8 BL=1 $(BUILT_BIN)/combined-$(PROF).hex
+	$(MAKE) -j8 $(BUILT_BIN)/combined-$(PROF).hex
 	$(MAKE) ELF=$(BUILT_BIN)/combined-$(PROF).hex flash
+
+force:
+	@echo forcing...

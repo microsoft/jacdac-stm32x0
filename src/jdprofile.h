@@ -12,10 +12,17 @@
 
 #ifdef BL
 #define SET_HW_TYPE(val)                                                                           \
-    struct device_info_block __attribute__((section(".devinfo"), used)) bl_dev_info = {            \
-        .magic = DEV_INFO_MAGIC,                                                                   \
-        .device_id = 0xffffffffffffffffULL,                                                        \
-        .device_type = val,                                                                        \
+    struct bl_info_block __attribute__((section(".devinfo"), used)) bl_info = {                    \
+        .devinfo =                                                                                 \
+            {                                                                                      \
+                .magic = DEV_INFO_MAGIC,                                                           \
+                .device_id = 0xffffffffffffffffULL,                                                \
+                .device_type = val,                                                                \
+            },                                                                                     \
+        .random_seed0 = 0xffffffff,                                                                \
+        .random_seed1 = 0xffffffff,                                                                \
+        .reserved0 = 0xffffffff,                                                                   \
+        .reserved1 = 0xffffffff,                                                                   \
     };
 #else
 #define SET_HW_TYPE(val) /* nothing */

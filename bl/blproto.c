@@ -38,7 +38,7 @@ static void bl_write_page(ctx_t *ctx) {
         if (a->app_reset_handler == 0 || a->app_reset_handler + 1 == 0)
             a->app_reset_handler = a->boot_reset_handler;
         a->boot_reset_handler =
-            (uint32_t)&bl_dev_info + sizeof(bl_dev_info) + 1; // +1 for thumb state
+            (uint32_t)&bl_dev_info + 32 + 1; // +1 for thumb state
     }
     flash_erase((void *)ctx->pageaddr);
     flash_program((void *)ctx->pageaddr, ctx->pagedata, BL_PAGE_SIZE);

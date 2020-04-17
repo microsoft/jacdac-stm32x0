@@ -43,11 +43,21 @@ void target_wait_us(uint32_t n);
 
 struct device_info_block {
     uint32_t magic;
-    uint64_t device_id;
     uint32_t device_type;
+    uint64_t device_id;
 } __attribute__((packed, aligned(4)));
 
-extern struct device_info_block bl_dev_info;
+
+struct bl_info_block {
+    struct device_info_block devinfo;
+    uint32_t random_seed0;
+    uint32_t random_seed1;
+    uint32_t reserved0;
+    uint32_t reserved1;
+} __attribute__((packed, aligned(4)));
+
+extern struct bl_info_block bl_info;
+#define bl_dev_info bl_info.devinfo
 
 STATIC_ASSERT(sizeof(struct device_info_block) == 16);
 
