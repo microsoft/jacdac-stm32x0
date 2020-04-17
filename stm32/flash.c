@@ -32,6 +32,8 @@ void flash_program(void *dst, const void *src, uint32_t len) {
     unlock();
     FLASH->CR |= FLASH_CR_PG; // enable programming
 
+    len >>= 1;
+
     while (len--) {
         *(__IO uint16_t *)(dst) = *(uint16_t *)src;
         check_eop();

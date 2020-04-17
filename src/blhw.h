@@ -68,4 +68,3 @@ struct app_top_handlers {
 #define app_handlers ((struct app_top_handlers *)0x8000000)
 #define app_dev_info app_handlers->devinfo
 
-#define BL_SIZE (4 * 1024)

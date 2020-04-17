@@ -61,10 +61,9 @@ async function main() {
     try {
         await hf2.init()
 
-        jd.setSendPacketFn(p => {
+        jd.setSendPacketFn(p =>
             hf2.sendJDMessageAsync(p.toBuffer())
-                .then(() => { }, err => console.log(err))
-        })
+                .then(() => { }, err => console.log(err)))
 
         if (program.flash) {
             await jdbl.flash(hf2, fs.readFileSync(program.flash))
@@ -74,7 +73,6 @@ async function main() {
         hf2.onJDMessage(buf => {
             processFrame({ data: buf, timestamp: Date.now() - startTime })
         })
-
     } catch (err) {
         console.error("ERROR: ", err)
         await hf2.io.disconnectAsync()

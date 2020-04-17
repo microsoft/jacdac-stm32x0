@@ -5,8 +5,9 @@ static int setup_tx(ctx_t *ctx, int cmd, const void *data, int size) {
         return -1;
 
     jd_packet_t *pkt = (jd_packet_t *)&ctx->txBuffer;
-    pkt->service_command = BL_CMD_PAGE_DATA;
+    pkt->service_command = cmd;
     pkt->service_size = size;
+    pkt->service_number = 1;
     memcpy(pkt->data, data, size);
     ctx->tx_full = 1;
 
@@ -14,8 +15,9 @@ static int setup_tx(ctx_t *ctx, int cmd, const void *data, int size) {
 }
 
 static const uint32_t bl_ad_data[] = {
+    JD_SERVICE_CLASS_BOOTLOADER,
     BL_PAGE_SIZE,
-    FLASH_SIZE,
+    FLASH_SIZE - BL_SIZE,
     HW_TYPE,
 };
 
@@ -35,7 +37,8 @@ static void bl_write_page(ctx_t *ctx) {
         memcpy(&a->devinfo, &bl_dev_info, sizeof(bl_dev_info));
         if (a->app_reset_handler == 0 || a->app_reset_handler + 1 == 0)
             a->app_reset_handler = a->boot_reset_handler;
-        a->boot_reset_handler = (uint32_t)&bl_dev_info + sizeof(bl_dev_info) + 1; // +1 for thumb state
+        a->boot_reset_handler =
+            (uint32_t)&bl_dev_info + sizeof(bl_dev_info) + 1; // +1 for thumb state
     }
     flash_erase((void *)ctx->pageaddr);
     flash_program((void *)ctx->pageaddr, ctx->pagedata, BL_PAGE_SIZE);
@@ -44,7 +47,7 @@ static void bl_write_page(ctx_t *ctx) {
 bool bl_fixup_app_handlers(ctx_t *ctx) {
     if (app_dev_info.magic + 1 == 0) {
         ctx->pageaddr = 0x8000000;
-        memcpy(ctx->pagedata, (void*)ctx->pageaddr, BL_PAGE_SIZE);
+        memcpy(ctx->pagedata, (void *)ctx->pageaddr, BL_PAGE_SIZE);
         bl_write_page(ctx);
         return true;
     } else {
@@ -70,7 +73,7 @@ static void page_data(ctx_t *ctx, struct bl_page_data *d, int datasize) {
     } else if (!ctx->subpageerr && d->subpageno == ctx->subpageno && d->pageaddr == ctx->pageaddr) {
         ctx->subpageno++;
     } else {
-        ctx->subpageerr = 1;
+        ctx->subpageerr = 1000 * ctx->subpageno + d->subpageno;
     }
 
     if (d->pageoffset >= BL_PAGE_SIZE || d->pageoffset + datasize > BL_PAGE_SIZE)
@@ -89,6 +92,7 @@ static void page_data(ctx_t *ctx, struct bl_page_data *d, int datasize) {
 }
 
 void bl_handle_packet(ctx_t *ctx, jd_packet_t *pkt) {
+    ctx->app_start_time = 0x80000000; // prevent app start
     switch (pkt->service_command) {
     case JD_CMD_ADVERTISEMENT_DATA:
         ctx->bl_ad_queued = 1;

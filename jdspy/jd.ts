@@ -81,9 +81,9 @@ function log(msg: string, v?: any) {
 
 function warn(msg: string, v?: any) {
     if (v === undefined)
-        console.warn("JD-WARN: " + msg)
+        console.log("JD-WARN: " + msg)
     else
-        console.warn("JD-WARN: " + msg, v)
+        console.log("JD-WARN: " + msg, v)
 }
 
 function idiv(a: number, b: number) { return ((a | 0) / (b | 0)) | 0 }
@@ -120,9 +120,9 @@ export function shortDeviceId(devid: string) {
 const devices_: Device[] = []
 export const deviceNames: U.SMap<string> = {}
 
-let sendPacketFn = (p: Packet) => { }
+let sendPacketFn = (p: Packet) => Promise.resolve(undefined)
 
-export function setSendPacketFn(f: (p: Packet) => void) {
+export function setSendPacketFn(f: (p: Packet) => Promise<void>) {
     sendPacketFn = f
 }
 
@@ -178,7 +178,7 @@ export class Device {
     sendCtrlCommand(cmd: number, payload: Buffer = null) {
         const pkt = !payload ? Packet.onlyHeader(cmd) : Packet.from(cmd, payload)
         pkt.service_number = JD_SERVICE_NUMBER_CTRL
-        pkt._sendCmd(this)
+        pkt.sendCmdAsync(this)
     }
 }
 
@@ -251,6 +251,12 @@ export class Packet {
         if (service_number == null)
             throw "service_number not set"
         this._header[13] = (this._header[13] & JD_SERVICE_NUMBER_INV_MASK) | service_number;
+    }
+
+    get service_class(): number {
+        if (this.dev)
+            return this.dev.serviceAt(this.service_number)
+        return undefined
     }
 
     get crc(): number {
@@ -341,6 +347,10 @@ export class Packet {
         return !!(this.frame_flags & JD_FRAME_FLAG_COMMAND)
     }
 
+    get is_report() {
+        return !this.is_command
+    }
+
     toString(): string {
         let msg = `${this.device_identifier}/${this.service_number}[${this.frame_flags}]: ${this.service_command} sz=${this.size}`
         if (this.size < 20) msg += ": " + U.toHex(this.data)
@@ -348,39 +358,36 @@ export class Packet {
         return msg
     }
 
-    _sendCore() {
+    sendCoreAsync() {
         this._header[2] = this.size + 4
         U.write16(this._header, 0, crc(U.bufferConcat(this._header.slice(2), this._data)))
-        sendPacketFn(this)
+        return sendPacketFn(this)
     }
 
-    _sendReport(dev: Device) {
+    sendReportAsync(dev: Device) {
         if (!dev)
-            return
+            return Promise.resolve()
         this.device_identifier = dev.deviceId
-        this._sendCore()
+        return this.sendCoreAsync()
     }
 
-    _sendCmd(dev: Device) {
+    sendCmdAsync(dev: Device) {
         if (!dev)
-            return
+            return Promise.resolve()
         this.device_identifier = dev.deviceId
         this._header[3] |= JD_FRAME_FLAG_COMMAND
-        this._sendCore()
+        return this.sendCoreAsync()
     }
 
-    sendAsMultiCommand(service_class: number) {
+    sendAsMultiCommandAsync(service_class: number) {
         this._header[3] |= JD_FRAME_FLAG_IDENTIFIER_IS_SERVICE_CLASS | JD_FRAME_FLAG_COMMAND
         U.write32(this._header, 4, service_class)
         U.write32(this._header, 8, 0)
-        this._sendCore()
+        return this.sendCoreAsync()
     }
 
     static fromFrame(frame: Uint8Array, timestamp: number) {
-        return frameToPackets(frame).map(p => {
-            p.timestamp = timestamp
-            return p
-        })
+        return frameToPackets(frame, timestamp)
     }
 }
 
@@ -398,12 +405,12 @@ function crc(p: Uint8Array) {
 
 function ALIGN(n: number) { return (n + 3) & ~3 }
 
-function frameToPackets(frame: Uint8Array) {
+function frameToPackets(frame: Uint8Array, timestamp: number) {
     const size = frame[2] || 0
     if (frame.length < size + 12) {
-        warn(`got only ${frame.length} bytes; expecting ${size + 12}`)
+        warn(`${timestamp}ms: got only ${frame.length} bytes; expecting ${size + 12}`)
     } else if (size < 4) {
-        warn(`empty packet`)
+        warn(`${timestamp}ms: empty packet`)
     } else {
         const computed = crc(frame.slice(2, size + 12))
         const actual = U.read16(frame, 0)
@@ -412,14 +419,16 @@ function frameToPackets(frame: Uint8Array) {
         } else {
             const res: Packet[] = []
             if (frame.length != 12 + frame[2])
-                warn("unexpected packet len: " + frame.length)
+                warn(`${timestamp}ms: unexpected packet len: ${frame.length}`)
             for (let ptr = 12; ptr < 12 + frame[2];) {
                 const psz = frame[ptr] + 4
                 const sz = ALIGN(psz)
                 const pkt = U.bufferConcat(frame.slice(0, 12), frame.slice(ptr, ptr + psz))
                 if (ptr + sz > 12 + frame[2])
-                    warn(`invalid frame compression, res len=${res.length}`)
-                res.push(Packet.fromBinary(pkt))
+                    warn(`${timestamp}ms: invalid frame compression, res len=${res.length}`)
+                const p = Packet.fromBinary(pkt)
+                p.timestamp = timestamp
+                res.push(p)
                 ptr += sz
             }
 

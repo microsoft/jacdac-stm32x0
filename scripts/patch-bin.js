@@ -32,7 +32,7 @@ if (app_reset == 0 || app_reset == -1) {
     console.log("patching app_reset to " + reset.toString(16))
 }
 
-const bl_reset_handler = 0x800_0000 + (flash_size - bl_size) * 1024 + 4 * 4
+const bl_reset_handler = 0x800_0000 + (flash_size - bl_size) * 1024 + 4 * 4 + 1
 buf.writeUInt32LE(bl_reset_handler, pos + 4)
 console.log("setting global reset to " + bl_reset_handler.toString(16))
 

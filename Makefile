@@ -69,9 +69,11 @@ LDFLAGS = -specs=nosys.specs -specs=nano.specs \
 	-T"$(LD_SCRIPT)" -Wl,-Map=$(BUILT)/output.map -Wl,--gc-sections
 
 x-all: $(JD_CORE)/jdlow.c
-	$(MAKE) -j8 $(BUILT)/binary.hex
-	$(MAKE) -j8 BL=1 $(BUILT)/bl/binary.hex
+	$(MAKE) -j8 build
+ifeq ($(BL),)
+	$(MAKE) -j8 BL=1 build
 	$(V)$(PREFIX)size $(BUILT)/binary.elf $(BUILT)/bl/binary.elf
+endif
 
 $(JD_CORE)/jdlow.c:
 	if test -f ../pxt-common-packages/libs/jacdac/jdlow.c ; then \
@@ -139,7 +141,7 @@ $(BUILT)/%.o: %.s
 	@echo AS $<
 	$(V)$(CC) $(CFLAGS) $(CPPFLAGS) -o $@ -c $<
 
-$(BUILT)/binary.elf: $(OBJ) Makefile $(LD_SCRIPT)
+$(BUILT)/binary.elf: $(OBJ) Makefile $(LD_SCRIPT) scripts/patch-bin.js
 	@echo LD $@
 	$(V)$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $(OBJ) -lm
 ifeq ($(BL),)
@@ -150,7 +152,9 @@ endif
 $(BUILT)/binary.bin: $(BUILT)/binary.elf
 	$(V)$(PREFIX)objcopy -O binary $< $@
 
-$(BUILT)/binary.hex: $(BUILT)/binary.elf $(BUILT)/binary.bin
+build: $(BUILT)/binary.hex $(BUILT)/binary.bin
+
+$(BUILT)/binary.hex: $(BUILT)/binary.elf
 	@echo HEX $<
 	$(V)$(PREFIX)objcopy -O ihex $< $@
 

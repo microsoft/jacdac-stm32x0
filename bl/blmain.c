@@ -104,11 +104,13 @@ int main(void) {
     DMESG("ID: %x %x", (uint32_t)BL_DEVICE_ID, (uint32_t)(BL_DEVICE_ID >> 32));
 
     ctx->service_class_bl = announce_data[2];
-    ctx->next_announce = 128 * 1024; // TODO change it, so we don't announce normally
+    ctx->next_announce = 1024 * 1024;
 
+#if 1
     if (app_valid)
         ctx->app_start_time = 512 * 1024;
     else
+#endif
         ctx->app_start_time = 0x80000000;
 
     while (1) {
