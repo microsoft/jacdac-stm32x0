@@ -39,3 +39,4 @@ void target_wait_cycles(int n);
 int target_in_irq(void);
 
 extern uint8_t cpu_mhz;
+extern uint16_t tim_max_sleep;

@@ -27,6 +27,7 @@ static void update(srv_t *state) {
 static void maybe_init(srv_t *state) {
     if (state->is_streaming && !state->inited) {
         state->inited = true;
+        tim_max_sleep = 1000;
         pin_setup_input(state->pin0, 1);
         pin_setup_input(state->pin1, 1);
         update(state);
@@ -36,7 +37,7 @@ static void maybe_init(srv_t *state) {
 void crank_process(srv_t *state) {
     maybe_init(state);
 
-    if (should_sample(&state->nextSample, 997) && state->inited)
+    if (should_sample(&state->nextSample, 950) && state->inited)
         update(state);
 
     sensor_process_simple(state, &state->sample, sizeof(state->sample));

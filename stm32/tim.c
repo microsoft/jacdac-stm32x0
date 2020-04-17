@@ -8,6 +8,8 @@
 static volatile uint64_t timeoff;
 static volatile cb_t timer_cb;
 
+uint16_t tim_max_sleep;
+
 // takes around 1us
 uint64_t tim_get_micros() {
     while (1) {
@@ -41,6 +43,9 @@ void tim_forward(int us) {
 void tim_set_timer(int delta, cb_t cb) {
     if (delta < 10)
         delta = 10;
+
+    if (tim_max_sleep && delta == 10000)
+        delta = tim_max_sleep;
 
     rtc_cancel_cb();
     target_disable_irq();
