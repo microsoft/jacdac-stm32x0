@@ -3,8 +3,8 @@
 uint32_t now;
 
 static const uint8_t output_pins[] = {
-    PIN_LOG0,    PIN_LOG1, PIN_LOG2, PIN_LOG3,     PIN_LED,     PIN_LED2,    PIN_PWR,
-    PIN_LED_GND, PIN_GLO0, PIN_GLO1, PIN_ACC_MOSI, PIN_ACC_SCK, PIN_ACC_VCC, PIN_ACC_CS,
+    PIN_LOG0, PIN_LOG1,    PIN_LOG2, PIN_LOG3, PIN_LED,      PIN_LED2,    PIN_PWR,     PIN_P0,
+    PIN_P1,   PIN_LED_GND, PIN_GLO0, PIN_GLO1, PIN_ACC_MOSI, PIN_ACC_SCK, PIN_ACC_VCC, PIN_ACC_CS,
 };
 
 void led_init() {
