@@ -73,7 +73,7 @@ uint8_t pwm_init(uint8_t pin, uint32_t period, uint32_t duty, uint8_t prescaler)
 
     TIMx->CR1 = LL_TIM_COUNTERMODE_UP | LL_TIM_CLOCKDIVISION_DIV1; // default anyways
 
-    LL_TIM_SetPrescaler(TIMx, (PLL_MHZ / 8 * prescaler) - 1);
+    LL_TIM_SetPrescaler(TIMx, prescaler - 1);
     LL_TIM_SetAutoReload(TIMx, period - 1);
 
     LL_TIM_GenerateEvent_UPDATE(TIMx);
