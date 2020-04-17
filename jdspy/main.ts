@@ -67,6 +67,7 @@ async function main() {
 
         if (program.flash) {
             await jdbl.flash(hf2, fs.readFileSync(program.flash))
+            await hf2.io.disconnectAsync()
             return
         }
 

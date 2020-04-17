@@ -129,5 +129,7 @@ export async function flash(hf2: HF2.Proto, binProgram: Uint8Array) {
     log("flash done; resetting target")
 
     const rst2 = jd.Packet.onlyHeader(jd.CMD_CTRL_RESET)
-    await rst.sendCmdAsync(targetDevice)
+    await rst2.sendCmdAsync(targetDevice)
+
+    await U.delay(300)
 }
