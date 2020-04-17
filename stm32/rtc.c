@@ -10,8 +10,13 @@ static uint16_t presc;
 static uint16_t lastSetSleep;
 static cb_t cb;
 
+#if 0
+#define PIN_PWR_STATE PIN_AMOSI
+#define PIN_PWR_LOG PA_6
+#else
 #define PIN_PWR_STATE -1
 #define PIN_PWR_LOG -1
+#endif
 
 static void rtc_set(uint32_t delta_us, cb_t f) {
     if (delta_us > 10000)
@@ -129,6 +134,9 @@ static void rtc_config(uint8_t p0, uint16_t p1) {
 #define CALIB_CYCLES 1024
 
 void rtc_init() {
+    pin_setup_output(PIN_PWR_STATE);
+    pin_setup_output(PIN_PWR_LOG);
+
     target_disable_irq();
     rtc_config(1, CALIB_CYCLES);
     uint64_t t0 = tim_get_micros();
