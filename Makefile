@@ -1,15 +1,15 @@
-PREFIX = arm-none-eabi-
-CC = $(PREFIX)gcc
-AS = $(PREFIX)as
-
 TARGET ?= jdm-v3
-PROF ?= acc
+PROF ?= glo
 FORCE ?=
 
 .SECONDARY: # this prevents object files from being removed
 .DEFAULT_GOAL := all
 
 JD_CORE = jacdac-core
+
+PREFIX = arm-none-eabi-
+CC = $(PREFIX)gcc
+AS = $(PREFIX)as
 
 WARNFLAGS = -Wall -Wno-strict-aliasing
 CFLAGS = $(DEFINES) \

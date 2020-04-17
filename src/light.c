@@ -132,6 +132,7 @@ static int isin(uint8_t theta) {
 }
 
 static bool is_enabled(srv_t *state) {
+    // TODO check if all pixels are zero
     return state->numpixels > 0 && state->intensity > 0;
 }
 
