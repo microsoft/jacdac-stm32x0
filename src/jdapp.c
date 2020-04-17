@@ -8,16 +8,12 @@ static uint8_t num_services;
 static uint64_t maxId;
 static uint32_t lastMax, lastDisconnectBlink;
 
-#define ADD_SRV(name)                                                                              \
-    extern void name##_init(void);                                                                 \
-    name##_init();
-
 #ifndef INIT_SERVICES
 static inline void init_services() {
     // DMESG 1.1k
 
     //ADD_SRV(acc); // 2k
-    ADD_SRV(light); // 2.5k
+    light_init(); // 2.5k
     //ADD_SRV(crank); // 1k
     //ADD_SRV(pwm_light); // 2.5k
     //ADD_SRV(servo); // 2.5k
@@ -46,7 +42,7 @@ void app_init_services() {
     uint16_t hashes[MAX_SERV];
     tmp[MAX_SERV] = (srv_t *)hashes; // avoid global variable
     services = tmp;
-    ADD_SRV(ctrl);
+    ctrl_init();
     INIT_SERVICES();
     services = alloc(sizeof(void *) * num_services);
     memcpy(services, tmp, sizeof(void *) * num_services);

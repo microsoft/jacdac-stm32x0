@@ -13,8 +13,11 @@
 #define PIN_AMOSI PA_7
 #define PIN_SERVO PA_6
 
+/*
 #define PIN_GLO_SENSE0 PA_1
 #define PIN_GLO_SENSE1 PA_4
+*/
+
 #define PIN_GLO0 PB_0
 #define PIN_GLO1 PB_1
 

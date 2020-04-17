@@ -14,8 +14,6 @@
 #define PWM_PERIOD_BITS 13 // at 12 bit you can still see the steps at the low end
 #define PWM_PERIOD (1 << PWM_PERIOD_BITS)
 
-#define PIN_GLO PIN_GLO1
-
 typedef struct {
     uint16_t start_intensity;
     uint16_t duration; // in ms
@@ -29,13 +27,14 @@ struct srv_state {
     uint16_t curr_iteration;
     uint16_t max_iterations;
     uint8_t max_steps;
-    uint8_t pwm_pin;
     step_t steps[MAX_STEPS];
 
     // internal state
     uint32_t step_start_time;
     uint32_t nextFrame;
     uint8_t is_on;
+    uint8_t pwm_pin;
+    uint8_t pin;
 };
 
 REG_DEFINITION(                                           //
@@ -46,7 +45,6 @@ REG_DEFINITION(                                           //
     REG_U16(PWM_REG_CURR_ITERATION),                      //
     REG_U16(PWM_REG_MAX_ITERATIONS),                      //
     REG_U8(PWM_REG_MAX_STEPS),                            //
-    REG_U8(JD_REG_PADDING),                               // pwm_pin not accessible
     REG_BYTES(PWM_REG_STEPS, MAX_STEPS * sizeof(step_t)), //
 )
 
@@ -59,10 +57,10 @@ static void set_pwr(srv_t *state, int on) {
         pwr_enter_tim();
         // set prescaler to 1 - as fast as possible
         if (!state->pwm_pin)
-            state->pwm_pin = pwm_init(PIN_GLO, PWM_PERIOD, PWM_PERIOD - 1, 1);
+            state->pwm_pin = pwm_init(state->pin, PWM_PERIOD, PWM_PERIOD - 1, 1);
         pwm_enable(state->pwm_pin, 1);
     } else {
-        pin_set(PIN_GLO, 1);
+        pin_set(state->pin, 1);
         pwm_enable(state->pwm_pin, 0);
         pwr_leave_tim();
     }
@@ -127,9 +125,10 @@ void pwm_light_handle_packet(srv_t *state, jd_packet_t *pkt) {
 }
 
 SRV_DEF(pwm_light, JD_SERVICE_CLASS_PWM_LIGHT);
-void pwm_light_init() {
+void pwm_light_init(uint8_t pin) {
     SRV_ALLOC(pwm_light);
 
+    state->pin = pin;
     state->max_steps = MAX_STEPS;
 
     memcpy(state->steps, stable, sizeof(stable));

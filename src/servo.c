@@ -8,6 +8,7 @@ struct srv_state {
     uint8_t intensity;
     uint8_t pwm_pin;
     uint8_t is_on;
+    uint8_t pin;
 };
 
 REG_DEFINITION(               //
@@ -24,10 +25,10 @@ static void set_pwr(srv_t *state, int on) {
         pwr_enter_pll();
         // configure at 1MHz
         if (!state->pwm_pin)
-            state->pwm_pin = pwm_init(PIN_SERVO, SERVO_PERIOD, 0, cpu_mhz);
+            state->pwm_pin = pwm_init(state->pin, SERVO_PERIOD, 0, cpu_mhz);
         pwm_enable(state->pwm_pin, 1);
     } else {
-        pin_set(PIN_SERVO, 0);
+        pin_set(state->pin, 0);
         pwm_enable(state->pwm_pin, 0);
         pwr_leave_pll();
     }
@@ -46,6 +47,7 @@ void servo_handle_packet(srv_t *state, jd_packet_t *pkt) {
 }
 
 SRV_DEF(servo, JD_SERVICE_CLASS_SERVO);
-void servo_init() {
+void servo_init(uint8_t pin) {
     SRV_ALLOC(servo);
+    state->pin = pin;
 }

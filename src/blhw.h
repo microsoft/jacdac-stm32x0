@@ -2,6 +2,12 @@
 
 #include "hwconfig.h"
 
+#define CONCAT_1(a, b) a##b
+#define CONCAT_0(a, b) CONCAT_1(a, b)
+#ifndef STATIC_ASSERT
+#define STATIC_ASSERT(e) enum { CONCAT_0(_static_assert_, __LINE__) = 1 / ((e) ? 1 : 0) };
+#endif
+
 #define RAM_FUNC __attribute__((noinline, long_call, section(".data")))
 
 // pins.c
@@ -43,6 +49,8 @@ struct device_info_block {
 
 extern struct device_info_block bl_dev_info;
 
+STATIC_ASSERT(sizeof(struct device_info_block) == 16);
+
 struct app_top_handlers {
     uint32_t stack_bottom;
     uint32_t boot_reset_handler;
@@ -67,4 +75,3 @@ struct app_top_handlers {
 
 #define app_handlers ((struct app_top_handlers *)0x8000000)
 #define app_dev_info app_handlers->devinfo
-

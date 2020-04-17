@@ -3,9 +3,8 @@
 uint32_t now;
 
 static const uint8_t output_pins[] = {
-    PIN_LOG0, PIN_LOG1,     PIN_LOG2,    PIN_LOG3,    PIN_LED,    PIN_LED2,    PIN_PWR,
-    PIN_P0,   PIN_P1,       PIN_ASCK,    PIN_AMOSI,   PIN_SERVO,  PIN_LED_GND, PIN_GLO0,
-    PIN_GLO1, PIN_ACC_MOSI, PIN_ACC_SCK, PIN_ACC_VCC, PIN_ACC_CS,
+    PIN_LOG0,    PIN_LOG1, PIN_LOG2, PIN_LOG3,     PIN_LED,     PIN_LED2,    PIN_PWR,
+    PIN_LED_GND, PIN_GLO0, PIN_GLO1, PIN_ACC_MOSI, PIN_ACC_SCK, PIN_ACC_VCC, PIN_ACC_CS,
 };
 
 void led_init() {
@@ -20,8 +19,8 @@ void led_init() {
     for (unsigned i = 0; i < 16; ++i)
         pin_setup_analog_input(i + 0x50);
 
-        // The effects of the pins shutdown above is quite dramatic - without the MCU can draw
-        // ~100uA (but with wide random variation) in STOP; with shutdown we get a stable 4.3uA
+    // The effects of the pins shutdown above is quite dramatic - without the MCU can draw
+    // ~100uA (but with wide random variation) in STOP; with shutdown we get a stable 4.3uA
 
     // setup all our output pins
     for (unsigned i = 0; i < sizeof(output_pins); ++i)

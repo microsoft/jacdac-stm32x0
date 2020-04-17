@@ -3,6 +3,7 @@
 struct srv_state {
     SENSOR_COMMON;
     uint8_t state, inited;
+    uint8_t pin0, pin1;
     int32_t sample, position;
     uint32_t nextSample;
 };
@@ -11,9 +12,9 @@ const static int8_t posMap[] = {0, +1, -1, +2, -1, 0, -2, +1, +1, -2, 0, -1, +2,
 static void update(srv_t *state) {
     // based on comments in https://github.com/PaulStoffregen/Encoder/blob/master/Encoder.h
     uint16_t s = state->state & 3;
-    if (pin_get(PIN_P0))
+    if (pin_get(state->pin0))
         s |= 4;
-    if (pin_get(PIN_P1))
+    if (pin_get(state->pin1))
         s |= 8;
 
     state->state = (s >> 2);
@@ -26,8 +27,8 @@ static void update(srv_t *state) {
 static void maybe_init(srv_t *state) {
     if (state->is_streaming && !state->inited) {
         state->inited = true;
-        pin_setup_input(PIN_P0, 1);
-        pin_setup_input(PIN_P1, 1);
+        pin_setup_input(state->pin0, 1);
+        pin_setup_input(state->pin1, 1);
         update(state);
     }
 }
@@ -47,6 +48,8 @@ void crank_handle_packet(srv_t *state, jd_packet_t *pkt) {
 
 SRV_DEF(crank, JD_SERVICE_CLASS_ROTARY_ENCODER);
 
-void crank_init() {
+void crank_init(uint8_t pin0, uint8_t pin1) {
     SRV_ALLOC(crank);
+    state->pin0 = pin0;
+    state->pin1 = pin1;
 }

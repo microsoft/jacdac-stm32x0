@@ -1,6 +1,6 @@
 #include "jdstm.h"
 
-#ifdef STM32F031x6
+#if defined(STM32F031x6) || !defined(SPI2)
 #define SPI_IDX 1
 #else
 #define SPI_IDX 2
@@ -27,6 +27,8 @@
 #define PIN_SCK LL_GPIO_PIN_5
 #define PIN_MOSI LL_GPIO_PIN_7
 #define PIN_AF LL_GPIO_AF_0
+STATIC_ASSERT(PIN_ASCK == PA_5);
+STATIC_ASSERT(PIN_AMOSI == PA_7);
 #define SPI_CLK_ENABLE __HAL_RCC_SPI1_CLK_ENABLE
 #elif SPI_IDX == 2
 #define PIN_PORT GPIOB

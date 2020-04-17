@@ -82,3 +82,10 @@ int sensor_should_stream(srv_t *state);
 int sensor_handle_packet_simple(srv_t *state, jd_packet_t *pkt, const void *sample,
                                 uint32_t sample_size);
 void sensor_process_simple(srv_t *state, const void *sample, uint32_t sample_size);
+
+void ctrl_init(void);
+void acc_init(void);
+void crank_init(uint8_t pin0, uint8_t pin1);
+void light_init(void);
+void pwm_light_init(uint8_t pin);
+void servo_init(uint8_t pin);
