@@ -45,6 +45,7 @@ CONFIG_DEPS += $(wildcard stm32/mk/*.mk)
 
 LD_SCRIPT = $(BUILT)/linker.ld
 $(BUILT)/linker.ld: $(wildcard stm32/mk/*.mk)
+	mkdir -p $(BUILT)
 	: > $@
 	echo "MEMORY {" >> $@
 	echo "RAM (rwx)   : ORIGIN = 0x20000000, LENGTH = $(RAM_SIZE)K" >> $@

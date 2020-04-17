@@ -11,9 +11,9 @@
 #define PIN_P1 PA_3
 #define PIN_ASCK PA_5
 #define PIN_AMOSI PA_7
-#define PIN_SERVO PA_6
 
 /*
+#define PIN_SERVO PA_6
 #define PIN_GLO_SENSE0 PA_1
 #define PIN_GLO_SENSE1 PA_4
 */

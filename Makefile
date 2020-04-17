@@ -3,6 +3,8 @@ CC = $(PREFIX)gcc
 AS = $(PREFIX)as
 TARGET ?= jdm-v3
 
+.SECONDARY: # this prevents object files from being removed
+
 all: x-all
 
 JD_CORE = jacdac-core
@@ -12,11 +14,6 @@ CFLAGS = $(DEFINES) \
 	-mthumb -mfloat-abi=soft  \
 	-Os -g3 -Wall -ffunction-sections -fdata-sections -nostartfiles \
 	$(WARNFLAGS)
-ifeq ($(BL),)
-BUILT = built/$(TARGET)
-else
-BUILT = built/$(TARGET)/bl
-endif
 CONFIG_DEPS = \
 	$(wildcard src/*.h) \
 	$(wildcard bl/*.h) \
@@ -25,6 +22,12 @@ CONFIG_DEPS = \
 	$(wildcard targets/$(TARGET)/*.h) \
 	targets/$(TARGET)/config.mk \
 	Makefile
+
+ifeq ($(BL),)
+BUILT = built/$(TARGET)
+else
+BUILT = built/$(TARGET)/bl
+endif
 
 include targets/$(TARGET)/config.mk
 BASE_TARGET ?= $(TARGET)
@@ -36,6 +39,7 @@ C_SRC += $(wildcard $(PLATFORM)/*.c)
 C_SRC += $(JD_CORE)/jdlow.c
 C_SRC += $(JD_CORE)/jdutil.c
 C_SRC += $(HALSRC)
+PROFILES = $(patsubst targets/$(TARGET)/profile/%.c,%,$(wildcard targets/$(TARGET)/profile/*.c))
 else
 DEFINES += -DDEVICE_DMESG_BUFFER_SIZE=0 -DBL
 CPPFLAGS += -Ibl
@@ -72,7 +76,7 @@ x-all: $(JD_CORE)/jdlow.c
 	$(MAKE) -j8 build
 ifeq ($(BL),)
 	$(MAKE) -j8 BL=1 build
-	$(V)$(PREFIX)size $(BUILT)/binary.elf $(BUILT)/bl/binary.elf
+	$(V)$(PREFIX)size $(BUILT)/*.elf
 endif
 
 $(JD_CORE)/jdlow.c:
@@ -141,21 +145,9 @@ $(BUILT)/%.o: %.s
 	@echo AS $<
 	$(V)$(CC) $(CFLAGS) $(CPPFLAGS) -o $@ -c $<
 
-$(BUILT)/binary.elf: $(OBJ) Makefile $(LD_SCRIPT) scripts/patch-bin.js
-	@echo LD $@
-	$(V)$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $(OBJ) -lm
-ifeq ($(BL),)
-	@echo BL-PATCH $@
-	$(V)node scripts/patch-bin.js $@ $(FLASH_SIZE) $(BL_SIZE)
-endif
-
-$(BUILT)/binary.bin: $(BUILT)/binary.elf
+%.bin: %.elf
+	@echo BIN/HEX $<
 	$(V)$(PREFIX)objcopy -O binary $< $@
-
-build: $(BUILT)/binary.hex $(BUILT)/binary.bin
-
-$(BUILT)/binary.hex: $(BUILT)/binary.elf
-	@echo HEX $<
 	$(V)$(PREFIX)objcopy -O ihex $< $@
 
 built/compress.js: scripts/compress.ts
@@ -163,7 +155,6 @@ built/compress.js: scripts/compress.ts
 
 c: built/compress.js
 	node $< tmp/images/*.bin
-
 
 clean:
 	rm -rf built
@@ -173,3 +164,24 @@ st:
 
 stf:
 	$(V)node scripts/map-file-stats.js  built/$(TARGET)/output.map -fun
+
+ifeq ($(BL),)
+$(BUILT)/src/profile-%.o: targets/$(TARGET)/profile/%.c
+	@echo CC $<
+	$(V)$(CC) $(CFLAGS) $(CPPFLAGS) -o $@ -c $<
+
+$(BUILT)/binary-%.elf: $(BUILT)/src/profile-%.o $(OBJ) Makefile $(LD_SCRIPT) scripts/patch-bin.js
+	@echo LD $@
+	$(V)$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $(OBJ) $< -lm
+	@echo BL-PATCH $@
+	$(V)node scripts/patch-bin.js $@ $(FLASH_SIZE) $(BL_SIZE)
+
+build: $(addsuffix .bin,$(addprefix $(BUILT)/binary-,$(PROFILES)))
+else
+built/$(TARGET)/bl.elf: $(OBJ) Makefile $(LD_SCRIPT)
+	@echo LD $@
+	$(V)$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $(OBJ) -lm
+
+build: built/$(TARGET)/bl.bin
+endif
+
