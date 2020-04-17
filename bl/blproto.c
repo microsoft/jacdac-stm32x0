@@ -45,7 +45,7 @@ static void bl_write_page(ctx_t *ctx) {
 }
 
 bool bl_fixup_app_handlers(ctx_t *ctx) {
-    if (app_dev_info.magic + 1 == 0) {
+    if (app_dev_info.magic + 1 == 0 && (app_handlers->app_reset_handler >> 24) == 0x08) {
         ctx->pageaddr = 0x8000000;
         memcpy(ctx->pagedata, (void *)ctx->pageaddr, BL_PAGE_SIZE);
         bl_write_page(ctx);

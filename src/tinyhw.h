@@ -34,7 +34,6 @@ void bspi_recv(void *dst, uint32_t len);
 
 // target_utils.c
 void target_reset(void);
-uint64_t device_id(void);
 RAM_FUNC
 void target_wait_cycles(int n);
 int target_in_irq(void);
