@@ -8,9 +8,6 @@ const SERVCE_CLASS_BOOTLOADER = 0x1ffa9948
 const BL_CMD_PAGE_DATA = 0x80
 const BL_SUBPAGE_SIZE = 208
 
-function log(msg: string) {
-    console.log("BL: " + msg)
-}
 
 export async function flash(hf2: HF2.Proto, binProgram: Uint8Array) {
     const stackBase = U.read32(binProgram, 0)
@@ -28,6 +25,10 @@ export async function flash(hf2: HF2.Proto, binProgram: Uint8Array) {
 
     function timestamp() {
         return Date.now() - startTime
+    }
+
+    function log(msg: string) {
+        console.log(`BL [${timestamp()}ms]: ${msg}`)
     }
 
     hf2.onJDMessage(buf => {
