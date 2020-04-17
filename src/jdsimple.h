@@ -1,14 +1,8 @@
 #pragma once
 
-#include <stdint.h>
-#include <string.h>
-#include <stdbool.h>
+#include "jdprofile.h"
 
-#include "board.h"
-#include "dmesg.h"
-#include "pinnames.h"
 #include "jdlow.h"
-#include "services.h"
 #include "host.h"
 #include "tinyhw.h"
 

@@ -1,11 +1,12 @@
 PREFIX = arm-none-eabi-
 CC = $(PREFIX)gcc
 AS = $(PREFIX)as
+
 TARGET ?= jdm-v3
+PROF ?= acc
 
 .SECONDARY: # this prevents object files from being removed
-
-all: x-all
+.DEFAULT_GOAL := all
 
 JD_CORE = jacdac-core
 
@@ -24,13 +25,17 @@ CONFIG_DEPS = \
 	Makefile
 
 ifeq ($(BL),)
-BUILT = built/$(TARGET)
+PREF = app
 else
-BUILT = built/$(TARGET)/bl
+PREF = bl
 endif
+BUILT_BIN = built/$(TARGET)
+BUILT = $(BUILT_BIN)/$(PREF)
 
 include targets/$(TARGET)/config.mk
 BASE_TARGET ?= $(TARGET)
+
+PROFILES = $(patsubst targets/$(TARGET)/profile/%.c,%,$(wildcard targets/$(TARGET)/profile/*.c))
 
 ifeq ($(BL),)
 DEFINES += -DDEVICE_DMESG_BUFFER_SIZE=1024
@@ -39,7 +44,6 @@ C_SRC += $(wildcard $(PLATFORM)/*.c)
 C_SRC += $(JD_CORE)/jdlow.c
 C_SRC += $(JD_CORE)/jdutil.c
 C_SRC += $(HALSRC)
-PROFILES = $(patsubst targets/$(TARGET)/profile/%.c,%,$(wildcard targets/$(TARGET)/profile/*.c))
 else
 DEFINES += -DDEVICE_DMESG_BUFFER_SIZE=0 -DBL
 CPPFLAGS += -Ibl
@@ -51,6 +55,8 @@ C_SRC += src/dmesg.c
 C_SRC += $(JD_CORE)/jdutil.c
 AS_SRC += bl/boothandler.s
 endif
+
+ELF = $(BUILT_BIN)/$(PREF)-$(PROF).elf
 
 ifneq ($(BMP),)
 BMP_PORT = $(shell ls -1 /dev/cu.usbmodem????????1 | head -1)
@@ -72,12 +78,15 @@ CPPFLAGS += \
 LDFLAGS = -specs=nosys.specs -specs=nano.specs \
 	-T"$(LD_SCRIPT)" -Wl,-Map=$(BUILT)/output.map -Wl,--gc-sections
 
-x-all: $(JD_CORE)/jdlow.c
+all: $(JD_CORE)/jdlow.c
 	$(MAKE) -j8 build
 ifeq ($(BL),)
 	$(MAKE) -j8 BL=1 build
-	$(V)$(PREFIX)size $(BUILT)/*.elf
 endif
+ifeq ($(BL),)
+	$(MAKE) combine
+endif
+	$(V)$(PREFIX)size $(BUILT_BIN)/*.elf
 
 $(JD_CORE)/jdlow.c:
 	if test -f ../pxt-common-packages/libs/jacdac/jdlow.c ; then \
@@ -91,15 +100,11 @@ l: flash-loop
 
 run: all flash
 
-drop:
-	$(MAKE) TARGET=jdm-v3 all
-	$(MAKE) TARGET=jdm-v3-bl all
-
 ONCE ?= 1
 
 flash: prep-built-gdb
 ifeq ($(BMP),)
-	$(OPENOCD) -c "program $(BUILT)/binary.elf verify reset exit"
+	$(OPENOCD) -c "program $(ELF) verify reset exit"
 else
 ifeq ($(ONCE),)
 	echo "set {int}0xe000ed0c = 0x5fa0004" >> built/debug.gdb
@@ -118,7 +123,7 @@ flash-loop: all
 	while : ; do make flash && break ; sleep 1 ; done
 
 prep-built-gdb:
-	echo "file $(BUILT)/binary.elf" > built/debug.gdb
+	echo "file $(ELF)" > built/debug.gdb
 ifeq ($(BMP),)
 	echo "target extended-remote | $(OPENOCD) -f scripts/gdbdebug.cfg" >> built/debug.gdb
 else
@@ -148,40 +153,46 @@ $(BUILT)/%.o: %.s
 %.bin: %.elf
 	@echo BIN/HEX $<
 	$(V)$(PREFIX)objcopy -O binary $< $@
-	$(V)$(PREFIX)objcopy -O ihex $< $@
+	$(V)$(PREFIX)objcopy -O ihex $< $(@:.bin=.hex)
 
 built/compress.js: scripts/compress.ts
 	cd scripts; tsc
 
-c: built/compress.js
+run-compress: built/compress.js
 	node $< tmp/images/*.bin
 
 clean:
 	rm -rf built
 
 st:
-	$(V)node scripts/map-file-stats.js  built/$(TARGET)/output.map
+	$(V)node scripts/map-file-stats.js $(BUILT)/output.map
 
 stf:
-	$(V)node scripts/map-file-stats.js  built/$(TARGET)/output.map -fun
+	$(V)node scripts/map-file-stats.js  $(BUILT)/output.map -fun
 
-ifeq ($(BL),)
-$(BUILT)/src/profile-%.o: targets/$(TARGET)/profile/%.c
+$(BUILT)/src/prof-%.o: targets/$(TARGET)/profile/%.c
 	@echo CC $<
+	@mkdir -p $(BUILT)/src
 	$(V)$(CC) $(CFLAGS) $(CPPFLAGS) -o $@ -c $<
 
-$(BUILT)/binary-%.elf: $(BUILT)/src/profile-%.o $(OBJ) Makefile $(LD_SCRIPT) scripts/patch-bin.js
+$(BUILT_BIN)/app-%.elf: $(BUILT)/src/prof-%.o $(OBJ) Makefile $(LD_SCRIPT) scripts/patch-bin.js
 	@echo LD $@
 	$(V)$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $(OBJ) $< -lm
 	@echo BL-PATCH $@
-	$(V)node scripts/patch-bin.js $@ $(FLASH_SIZE) $(BL_SIZE)
+	$(V)node scripts/patch-bin.js -q $@ $(FLASH_SIZE) $(BL_SIZE)
 
-build: $(addsuffix .bin,$(addprefix $(BUILT)/binary-,$(PROFILES)))
-else
-built/$(TARGET)/bl.elf: $(OBJ) Makefile $(LD_SCRIPT)
+$(BUILT_BIN)/bl-%.elf: $(BUILT)/src/prof-%.o $(OBJ) Makefile $(LD_SCRIPT)
 	@echo LD $@
-	$(V)$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $(OBJ) -lm
+	$(V)$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $(OBJ) $< -lm
 
-build: built/$(TARGET)/bl.bin
-endif
+build: $(addsuffix .bin,$(addprefix $(BUILT_BIN)/$(PREF)-,$(PROFILES)))
 
+combine: $(addsuffix .hex,$(addprefix $(BUILT_BIN)/combined-,$(PROFILES)))
+
+$(BUILT_BIN)/combined-%.hex: $(BUILT_BIN)/app-%.hex $(BUILT_BIN)/bl-%.hex
+	@echo COMBINE $@
+	@(cat $< | grep -v '^:0.00000[51]' ; cat $(subst app-,bl-,$<)) > $@
+
+rc: run-combined
+run-combined: all
+	$(MAKE) ELF=$(BUILT_BIN)/combined-$(PROF).hex flash

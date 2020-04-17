@@ -1,11 +1,5 @@
 #include "bl.h"
 
-struct device_info_block __attribute__((section(".devinfo"), used)) bl_dev_info = {
-    .magic = DEV_INFO_MAGIC,
-    .device_id = 0xffffffffffffffffULL,
-    .device_type = HW_TYPE,
-};
-
 static void start_app() {
     BL_MAGIC_FLAG = BL_MAGIC_FLAG_APP;
     target_reset();

@@ -1,14 +1,6 @@
 #pragma once
 
-#include <stdint.h>
-#include <string.h>
-#include <stdbool.h>
-
-#include "board.h"
-#include "dmesg.h"
-#include "pinnames.h"
-#include "services.h"
-
+#include "jdprofile.h"
 #include "blproto.h"
 
 #if defined(STM32F0)
@@ -20,7 +12,6 @@
 #endif
 
 #include "jdprotocol.h"
-#include "blhw.h"
 
 #define CPU_MHZ PLL_MHZ
 
