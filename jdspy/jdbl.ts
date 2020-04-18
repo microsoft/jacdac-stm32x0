@@ -8,12 +8,14 @@ const SERVCE_CLASS_BOOTLOADER = 0x1ffa9948
 const BL_CMD_PAGE_DATA = 0x80
 const BL_SUBPAGE_SIZE = 208
 
+interface Program {
+    deviceClass: number;
+    flashStart: number;
+    name: string;
+    program: Uint8Array;
+}
 
-export async function flash(hf2: HF2.Proto, binProgram: Uint8Array) {
-    const stackBase = U.read32(binProgram, 0)
-    if ((stackBase & 0xff00_0000) != 0x2000_0000)
-        throw "not a .bin file"
-
+async function flashOneProgram(hf2: HF2.Proto, info: Program) {
     const startTime = Date.now()
     let targetDevice: jd.Device
     let currPageAddr = -1
@@ -21,7 +23,8 @@ export async function flash(hf2: HF2.Proto, binProgram: Uint8Array) {
 
     let pageSize = 0
     let flashSize = 0
-    let hwType = 0
+
+    const binProgram = info.program
 
     function timestamp() {
         return Date.now() - startTime
@@ -30,6 +33,8 @@ export async function flash(hf2: HF2.Proto, binProgram: Uint8Array) {
     function log(msg: string) {
         console.log(`BL [${timestamp()}ms]: ${msg}`)
     }
+
+    log("flashing: " + info.name)
 
     hf2.onJDMessage(buf => {
         for (let p of jd.Packet.fromFrame(buf, timestamp())) {
@@ -40,10 +45,11 @@ export async function flash(hf2: HF2.Proto, binProgram: Uint8Array) {
                 p.service_command == jd.CMD_ADVERTISEMENT_DATA) {
                 const d = U.decodeU32LE(p.data)
                 if (d[0] == SERVCE_CLASS_BOOTLOADER) {
-                    pageSize = d[1]
-                    flashSize = d[2]
-                    hwType = d[3] // TODO match on this
-                    targetDevice = p.dev
+                    if (d[3] == info.deviceClass) {
+                        pageSize = d[1]
+                        flashSize = d[2]
+                        targetDevice = p.dev
+                    }
                     return
                 }
             }
@@ -73,7 +79,7 @@ export async function flash(hf2: HF2.Proto, binProgram: Uint8Array) {
     log("asking for bootloaders")
 
     const p = jd.Packet.onlyHeader(jd.CMD_ADVERTISEMENT_DATA)
-    while (!targetDevice && timestamp() < 15000) {
+    while (!targetDevice && timestamp() < 1000) {
         await p.sendAsMultiCommandAsync(SERVCE_CLASS_BOOTLOADER)
         await U.delay(100)
     }
@@ -85,7 +91,7 @@ export async function flash(hf2: HF2.Proto, binProgram: Uint8Array) {
         throw "program too big"
 
     log(`flashing ${targetDevice}; available flash=${flashSize / 1024}kb; page=${pageSize}b`)
-    const flashOff = 0x800_0000
+
     const hdSize = 7 * 4
     const numSubpage = ((pageSize + BL_SUBPAGE_SIZE - 1) / BL_SUBPAGE_SIZE) | 0
 
@@ -98,7 +104,7 @@ export async function flash(hf2: HF2.Proto, binProgram: Uint8Array) {
                 if (suboff + sz > pageSize)
                     sz = pageSize - suboff
                 const data = new Uint8Array(sz + hdSize)
-                U.write32(data, 0, flashOff + off)
+                U.write32(data, 0, info.flashStart + off)
                 U.write16(data, 4, suboff)
                 data[6] = currSubpage++
                 data[7] = numSubpage - 1
@@ -115,7 +121,7 @@ export async function flash(hf2: HF2.Proto, binProgram: Uint8Array) {
                     break
                 await U.delay(5)
             }
-            if (currPageAddr != flashOff + off)
+            if (currPageAddr != info.flashStart + off)
                 currPageError = -2
 
             if (currPageError == 0) {
@@ -130,6 +136,48 @@ export async function flash(hf2: HF2.Proto, binProgram: Uint8Array) {
 
     const rst2 = jd.Packet.onlyHeader(jd.CMD_CTRL_RESET)
     await rst2.sendCmdAsync(targetDevice)
+
+}
+
+export async function flash(hf2: HF2.Proto, binProgram: Uint8Array, name: string) {
+    console.log("flash: " + binProgram.length)
+    while (binProgram.length) {
+        const info: Program = {
+            deviceClass: 0,
+            flashStart: 0x0800_0000,
+            name: name,
+            program: binProgram
+        }
+
+        const hdsize = 16 * 4
+        const header = U.decodeU32LE(binProgram.slice(0, hdsize))
+        let endptr = binProgram.length
+
+        if (header[0] == 0x4b50444a && header[1] == 0x1688f310) {
+            const [_magic0, _magic1, pageSz, flashBase, progLen, devClass] = header
+            info.deviceClass = devClass
+            info.program = binProgram.slice(pageSz, pageSz + progLen)
+            info.flashStart = flashBase
+            for (let i = 0; i < 64; ++i) {
+                if (binProgram[hdsize + i] == 0) {
+                    info.name = name + ": " + U.bufferToString(binProgram.slice(hdsize, hdsize + i))
+                    break
+                }
+            }
+            endptr = (progLen + pageSz * 2 - 1) & ~(pageSz - 1)
+        } else if ((header[0] & 0xff00_0000) == 0x2000_0000) {
+            info.deviceClass = header[8]
+        } else {
+            throw "not a .bin or .jdpk file"
+        }
+
+        if (info.deviceClass >> 28 != 3)
+            throw "device class invalid: " + info.deviceClass.toString(16)
+
+        await flashOneProgram(hf2, info)
+
+        binProgram = binProgram.slice(endptr)
+    }
 
     await U.delay(300)
 }

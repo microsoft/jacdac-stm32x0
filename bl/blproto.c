@@ -26,7 +26,7 @@ void bl_process(ctx_t *ctx) {
         ctx->subpageno = 0;
     if (ctx->bl_ad_queued &&
         setup_tx(ctx, JD_CMD_ADVERTISEMENT_DATA, bl_ad_data, sizeof(bl_ad_data)) == 0) {
-        ((uint32_t *)ctx->txBuffer.data)[3] = bl_dev_info.device_class;
+        ((uint32_t *)ctx->txBuffer.data)[4] = bl_dev_info.device_class;
         ctx->bl_ad_queued = 0;
     }
 }

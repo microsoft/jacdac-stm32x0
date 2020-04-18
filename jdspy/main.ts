@@ -66,7 +66,7 @@ async function main() {
                 .then(() => { }, err => console.log(err)))
 
         if (program.flash) {
-            await jdbl.flash(hf2, fs.readFileSync(program.flash))
+            await jdbl.flash(hf2, fs.readFileSync(program.flash), program.flash)
             await hf2.io.disconnectAsync()
             return
         }
