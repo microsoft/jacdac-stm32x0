@@ -43,7 +43,7 @@ void target_wait_us(uint32_t n);
 
 struct device_info_block {
     uint32_t magic;
-    uint32_t device_type;
+    uint32_t device_class;
     uint64_t device_id;
 } __attribute__((packed, aligned(4)));
 

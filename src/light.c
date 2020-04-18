@@ -131,6 +131,19 @@ static int isin(uint8_t theta) {
     return y;
 }
 
+static bool is_empty(const uint8_t *data, uint32_t size) {
+    unsigned st = 1;
+    for (unsigned i = 0; i < size; ++i) {
+        uint8_t exp = st >> 1 == 0 ? 0x49 : st >> 1 == 1 ? 0x92 : 0x24;
+        if (data[i] && data[i] != exp)
+            return false;
+        st++;
+        if (st >= 6)
+            st = 0;
+    }
+    return true;
+}
+
 static bool is_enabled(srv_t *state) {
     // TODO check if all pixels are zero
     return state->numpixels > 0 && state->intensity > 0;
@@ -338,6 +351,12 @@ void light_process(srv_t *state) {
 
     if (state->dirty && !state->in_tx) {
         state->dirty = 0;
+        if (is_empty((uint8_t *)state->pxbuffer, PX_WORDS(state->numpixels) * 4)) {
+            pin_set(PIN_PWR, 1);
+            return;
+        } else {
+            pin_set(PIN_PWR, 0);
+        }
         state->in_tx = 1;
         pwr_enter_pll();
         px_tx(state->pxbuffer, PX_WORDS(state->numpixels) << 2, tx_done);

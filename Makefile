@@ -1,5 +1,5 @@
 TARGET ?= jdm-v3
-PROF ?= glo
+PROF ?= light
 FORCE ?=
 
 .SECONDARY: # this prevents object files from being removed
@@ -77,7 +77,7 @@ CPPFLAGS += \
 	-I$(BUILT)
 
 LDFLAGS = -specs=nosys.specs -specs=nano.specs \
-	-T"$(LD_SCRIPT)" -Wl,-Map=$(BUILT)/output.map -Wl,--gc-sections
+	-T"$(LD_SCRIPT)" -Wl,--gc-sections
 
 all: $(JD_CORE)/jdlow.c
 	$(MAKE) -j8 build
@@ -151,10 +151,12 @@ $(BUILT)/%.o: %.s
 	@echo AS $<
 	$(V)$(CC) $(CFLAGS) $(CPPFLAGS) -o $@ -c $<
 
-%.hex: %.elf
+%.hex: %.elf scripts/mk-jdpk.js
 	@echo BIN/HEX $<
 	$(V)$(PREFIX)objcopy -O binary $< $(@:.hex=.bin)
 	$(V)$(PREFIX)objcopy -O ihex $< $@
+	@echo JDPK $<
+	$(V)node scripts/mk-jdpk.js -q $(@:.hex=.bin)
 
 built/compress.js: scripts/compress.ts
 	cd scripts; tsc
@@ -178,9 +180,9 @@ $(BUILT)/src/prof-%.o: targets/$(TARGET)/profile/%.c
 
 $(BUILT_BIN)/$(PREF)-%.elf: $(BUILT)/src/prof-%.o $(OBJ) Makefile $(LD_SCRIPT) scripts/patch-bin.js $(FORCE)
 	@echo LD $@
-	$(V)$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $(OBJ) $< -lm
+	$(V)$(CC) $(CFLAGS) $(LDFLAGS) -Wl,-Map=$@.map  -o $@ $(OBJ) $< -lm
 	@echo BIN-PATCH $@
-	$(V)node scripts/patch-bin.js -q $@ $(FLASH_SIZE) $(BL_SIZE)
+	$(V)node scripts/patch-bin.js -q $@ $(FLASH_SIZE) $(BL_SIZE) targets/$(TARGET)/profile	
 
 build: $(addsuffix .hex,$(addprefix $(BUILT_BIN)/$(PREF)-,$(PROFILES)))
 

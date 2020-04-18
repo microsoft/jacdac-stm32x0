@@ -85,8 +85,4 @@ void led_blink(int us);
 extern uint32_t _estack;
 #define BL_MAGIC_FLAG (&_estack)[-1]
 
-#ifndef HW_TYPE
-#define HW_TYPE 0
-#endif
-
 #define BL_DEVICE_ID ctx->txBuffer.device_identifier

@@ -10,9 +10,10 @@ const buf = fs.readFileSync(fn)
 
 const flash_size = parseInt(process.argv[3])
 const bl_size = parseInt(process.argv[4])
+const profiles_path = process.argv[5]
 
-if (isNaN(bl_size)) {
-    throw "USAGE: node patch-bin.js file.elf flash_size_in_k bootloader_size_in_k"
+if (isNaN(bl_size) || !profiles_path) {
+    throw "USAGE: node patch-bin.js file.elf flash_size_in_k bootloader_size_in_k profiles_path"
 }
 
 let pos = 0
@@ -38,6 +39,20 @@ if (w0 == 0x464c457f) {
 w0 = buf.readUInt32LE(pos)
 if ((w0 & 0xff00_0000) == 0x2000_0000) {
     log("app mode")
+
+    const flashBase = 0x800_0000
+
+    const basename = fn.replace(/\.elf$/, "")
+
+    // figure out device class
+    const profile_name = basename.replace(/.*\/app-/, "")
+    const src = fs.readFileSync(profiles_path + "/" + profile_name + ".c", "utf8")
+    const m = /DEVICE_CLASS\((0x3[0-9a-f]+)\)/.exec(src)
+    if (!m)
+        throw "DEVICE_CLASS(0x3...) missing"
+    const dev_class = parseInt(m[1])
+    log("device class: " + dev_class.toString(16))
+
     const reset = buf.readUInt32LE(pos + 4)
     const app_reset = buf.readInt32LE(pos + 13 * 4)
     if (app_reset == 0 || app_reset == -1) {
@@ -45,12 +60,14 @@ if ((w0 & 0xff00_0000) == 0x2000_0000) {
         log("patching app_reset to " + reset.toString(16))
     }
 
-    const bl_reset_handler = 0x800_0000 + (flash_size - bl_size) * 1024 + 8 * 4 + 1
+    const bl_reset_handler = flashBase + (flash_size - bl_size) * 1024 + 8 * 4 + 1
     buf.writeUInt32LE(bl_reset_handler, pos + 4)
     log("setting global reset to " + bl_reset_handler.toString(16))
 
     buf.fill(0xff, pos + 7 * 4, pos + (7 + 4) * 4)
+    buf.writeUInt32LE(dev_class, pos + 8 * 4)
     log("clearing devinfo area")
+
 } else if (w0 == 0x9fddf13b) {
     log("setting random seed")
     require("crypto").randomFillSync(buf, pos + 16, 8)
