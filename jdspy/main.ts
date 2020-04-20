@@ -3,7 +3,7 @@ import * as HF2 from "./hf2"
 import * as jd from "./jd"
 import * as jdpretty from "./jdpretty"
 import * as jdbl from "./jdbl"
-import { program } from "commander"
+import { program as commander } from "commander"
 import * as fs from "fs"
 
 const dev_ids = {
@@ -24,33 +24,43 @@ const dev_ids = {
 U.jsonCopyFrom(jd.deviceNames, dev_ids)
 
 
+interface CmdOptions {
+    parseLog?: string;
+    log?: string;
+    all?: boolean;
+    flash?: string;
+    ignoreDevClass?: boolean;
+}
+
 async function main() {
-    program
+    commander
         .version("0.0.0")
         .option("-p, --parse-log <logfile>", "parse log file from jdspy or Logic")
         .option("-l, --log <logfile>", "in addition to print, save data to file")
         .option("-a, --all", "print repeated commands")
         .option("-f, --flash <file.bin>", "flash binary file")
+        .option("-D, --ignore-dev-class", "ignore device class when flashing")
         .parse(process.argv)
+    const opts = commander as CmdOptions
 
     function processFrame(frame: jdpretty.ParsedFrame) {
         if (frame.info)
             console.warn("FRM: " + frame.info)
         for (let p of jd.Packet.fromFrame(frame.data, frame.timestamp)) {
-            if (program.log)
-                fs.appendFileSync(program.log, `JD ${frame.timestamp} ${U.toHex(frame.data)}\n`)
+            if (opts.log)
+                fs.appendFileSync(opts.log, `JD ${frame.timestamp} ${U.toHex(frame.data)}\n`)
             jd.process(p)
             const pp = jdpretty.printPkt(p, {
-                skipRepeatedAnnounce: !program.all,
-                skipRepeatedReading: !program.all
+                skipRepeatedAnnounce: !opts.all,
+                skipRepeatedReading: !opts.all
             })
             if (pp)
                 console.log(pp)
         }
     }
 
-    if (program.parseLog) {
-        for (const frame of jdpretty.parseLog(fs.readFileSync(program.parseLog, "utf8")))
+    if (opts.parseLog) {
+        for (const frame of jdpretty.parseLog(fs.readFileSync(opts.parseLog, "utf8")))
             processFrame(frame)
         return
     }
@@ -65,8 +75,12 @@ async function main() {
             hf2.sendJDMessageAsync(p.toBuffer())
                 .then(() => { }, err => console.log(err)))
 
-        if (program.flash) {
-            await jdbl.flash(hf2, fs.readFileSync(program.flash), program.flash)
+        if (opts.flash) {
+            await jdbl.flash(hf2, {
+                program: fs.readFileSync(opts.flash),
+                name: opts.flash,
+                ignoreDevClass: opts.ignoreDevClass
+            })
             await hf2.io.disconnectAsync()
             return
         }

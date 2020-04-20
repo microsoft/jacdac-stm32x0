@@ -45,7 +45,7 @@ async function flashOneProgram(hf2: HF2.Proto, info: Program) {
                 p.service_command == jd.CMD_ADVERTISEMENT_DATA) {
                 const d = U.decodeU32LE(p.data)
                 if (d[0] == SERVCE_CLASS_BOOTLOADER) {
-                    if (d[3] == info.deviceClass) {
+                    if (!info.deviceClass || d[3] == info.deviceClass) {
                         pageSize = d[1]
                         flashSize = d[2]
                         targetDevice = p.dev
@@ -79,7 +79,7 @@ async function flashOneProgram(hf2: HF2.Proto, info: Program) {
     log("asking for bootloaders")
 
     const p = jd.Packet.onlyHeader(jd.CMD_ADVERTISEMENT_DATA)
-    while (!targetDevice && timestamp() < 1000) {
+    while (!targetDevice && timestamp() < 5000) {
         await p.sendAsMultiCommandAsync(SERVCE_CLASS_BOOTLOADER)
         await U.delay(100)
     }
@@ -139,7 +139,15 @@ async function flashOneProgram(hf2: HF2.Proto, info: Program) {
 
 }
 
-export async function flash(hf2: HF2.Proto, binProgram: Uint8Array, name: string) {
+export interface Options {
+    program: Uint8Array;
+    name?: string;
+    ignoreDevClass?: boolean;
+}
+
+export async function flash(hf2: HF2.Proto, opts: Options) {
+    let binProgram = opts.program
+    const name = opts.name
     console.log("flash: " + binProgram.length)
     while (binProgram.length) {
         const info: Program = {
@@ -171,8 +179,11 @@ export async function flash(hf2: HF2.Proto, binProgram: Uint8Array, name: string
             throw "not a .bin or .jdpk file"
         }
 
-        if (info.deviceClass >> 28 != 3)
+        if (info.deviceClass && info.deviceClass >> 28 != 3)
             throw "device class invalid: " + info.deviceClass.toString(16)
+
+        if (opts.ignoreDevClass)
+            info.deviceClass = 0
 
         await flashOneProgram(hf2, info)
 
