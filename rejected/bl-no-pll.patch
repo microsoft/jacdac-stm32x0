@@ -1,0 +1,96 @@
+diff --git a/bl/blmain.c b/bl/blmain.c
+index 2ee43b1..1077a25 100644
+--- a/bl/blmain.c
++++ b/bl/blmain.c
+@@ -56,7 +56,9 @@ static const uint32_t announce_data[] = {
+ 
+ int main(void) {
+     __disable_irq();
+-    clk_setup_pll();
++    // clk_setup_pll();
++
++    LL_RCC_SetUSARTClockSource(LL_RCC_USART1_CLKSOURCE_HSI);
+     LL_APB1_GRP2_EnableClock(LL_APB1_GRP2_PERIPH_TIM17 | LL_APB1_GRP2_PERIPH_USART1);
+ 
+     ctx_t *ctx = &ctx_;
+diff --git a/bl/blproto.c b/bl/blproto.c
+index e05595a..ad606ec 100644
+--- a/bl/blproto.c
++++ b/bl/blproto.c
+@@ -37,8 +37,7 @@ static void bl_write_page(ctx_t *ctx) {
+         memcpy(&a->devinfo, &bl_dev_info, sizeof(bl_dev_info));
+         if (a->app_reset_handler == 0 || a->app_reset_handler + 1 == 0)
+             a->app_reset_handler = a->boot_reset_handler;
+-        a->boot_reset_handler =
+-            (uint32_t)&bl_dev_info + 32 + 1; // +1 for thumb state
++        a->boot_reset_handler = (uint32_t)&bl_dev_info + 32 + 1; // +1 for thumb state
+     }
+     flash_erase((void *)ctx->pageaddr);
+     flash_program((void *)ctx->pageaddr, ctx->pagedata, BL_PAGE_SIZE);
+@@ -91,6 +90,14 @@ static void page_data(ctx_t *ctx, struct bl_page_data *d, int datasize) {
+         ctx->subpageno = 0xff; // send ack next round
+ }
+ 
++static void pll_on(void) {
++    if (cpu_mhz == PLL_MHZ)
++        return;
++    clk_setup_pll();
++    cpu_mhz = PLL_MHZ;
++    tim_init(); // re-do prescaler
++}
++
+ void bl_handle_packet(ctx_t *ctx, jd_packet_t *pkt) {
+     ctx->app_start_time = 0x80000000; // prevent app start
+     switch (pkt->service_command) {
+@@ -98,6 +105,7 @@ void bl_handle_packet(ctx_t *ctx, jd_packet_t *pkt) {
+         ctx->bl_ad_queued = 1;
+         break;
+     case BL_CMD_PAGE_DATA:
++        pll_on();
+         page_data(ctx, (struct bl_page_data *)pkt->data, pkt->service_size - 28);
+         break;
+     }
+diff --git a/bl/bltim.c b/bl/bltim.c
+index 94927ab..5e67a7b 100644
+--- a/bl/bltim.c
++++ b/bl/bltim.c
+@@ -25,8 +25,9 @@ uint32_t tim_get_micros() {
+ }
+ 
+ void tim_init() {
++    LL_TIM_DisableCounter(TIMx);
+     LL_TIM_SetAutoReload(TIMx, 0xffff);
+-    LL_TIM_SetPrescaler(TIMx, CPU_MHZ - 1);
++    LL_TIM_SetPrescaler(TIMx, cpu_mhz - 1);
+     LL_TIM_GenerateEvent_UPDATE(TIMx);
+     LL_TIM_ClearFlag_UPDATE(TIMx);
+     LL_TIM_EnableCounter(TIMx);
+diff --git a/bl/bluart.c b/bl/bluart.c
+index 9b89a5f..1519ee9 100644
+--- a/bl/bluart.c
++++ b/bl/bluart.c
+@@ -40,9 +40,9 @@ void uart_init(ctx_t *ctx) {
+     LL_GPIO_SetPinSpeed(PIN_PORT, PIN_PIN, LL_GPIO_SPEED_FREQ_HIGH);
+     uartDoesntOwnPin();
+ 
+-    USARTx->CR1 = LL_USART_DATAWIDTH_8B | LL_USART_PARITY_NONE | LL_USART_OVERSAMPLING_16 |
++    USARTx->CR1 = LL_USART_DATAWIDTH_8B | LL_USART_PARITY_NONE | LL_USART_OVERSAMPLING_8 |
+                   LL_USART_DIRECTION_TX;
+-    USARTx->BRR = CPU_MHZ; // ->1MHz
++    USARTx->BRR = HSI_MHZ * 2; // ->1MHz
+ 
+ #ifdef LL_USART_PRESCALER_DIV1
+     LL_USART_SetPrescaler(USARTx, LL_USART_PRESCALER_DIV1);
+diff --git a/src/blhw.h b/src/blhw.h
+index 1eddf55..898613d 100644
+--- a/src/blhw.h
++++ b/src/blhw.h
+@@ -39,6 +39,8 @@ void jd_panic(void);
+ void target_reset(void);
+ void target_wait_us(uint32_t n);
+ 
++extern uint8_t cpu_mhz;
++
+ #define DEV_INFO_MAGIC 0x9fddf13b
+ 
+ struct device_info_block {
