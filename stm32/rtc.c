@@ -35,7 +35,7 @@ static ctx_t ctx_;
 uint32_t rtc_get_seconds(void) {
     uint32_t t = RTC->TR;
     uint32_t d = RTC->DR;
-    DMESG("rtc %x %x", d,t);
+    DMESG("rtc %x %x", d, t);
     uint32_t d0 = (BCD(d >> 0, 2) - 1) + 30 * (BCD(d >> 8, 1) - 1) + 365 * BCD(d >> 16, 4);
     uint32_t r = BCD(t >> 0, 3) + 60 * (BCD(t >> 8, 3) + 60 * (BCD(t >> 16, 2) + 24 * d0));
     return r;
@@ -207,13 +207,15 @@ void rtc_init() {
 
 void rtc_set_to_seconds_and_standby() {
     ctx_t *ctx = &ctx_;
-    int pr = US_TO_TICKS(1000000);
-    int async_pr = 3;
-    DMESG("pr=%d * %d", pr >> async_pr, 1 << async_pr);
 
-    rtc_config(1 << async_pr, pr >> async_pr);
-    LL_RTC_ALMA_Disable(RTC);
-    LL_RTC_EnableWriteProtection(RTC);
+    if (ctx->ticksPerUs) {
+        int pr = US_TO_TICKS(1000000);
+        int async_pr = 3;
+        DMESG("pr=%d * %d", pr >> async_pr, 1 << async_pr);
+        rtc_config(1 << async_pr, pr >> async_pr);
+        LL_RTC_ALMA_Disable(RTC);
+        LL_RTC_EnableWriteProtection(RTC);
+    }
 
     //    pin_setup_input(PA_0, -1);
     LL_PWR_EnableWakeUpPin(LL_PWR_WAKEUP_PIN1);
