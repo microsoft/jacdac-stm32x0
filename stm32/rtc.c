@@ -1,14 +1,27 @@
 #include "jdstm.h"
 
-#define US_TICK_SCALE 20
-#define TICK_US_SCALE 10
-#define US_TO_TICKS(us) (((us)*ticksPerUs) >> US_TICK_SCALE)
-#define TICKS_TO_US(t) (((t)*usPerTick) >> TICK_US_SCALE)
+#ifndef RTC_SECOND_IN_US
+// use a little more than 10ms, so we don't have issues with wrap around
+#define RTC_SECOND_IN_US 25000
+#endif
 
-static uint32_t ticksPerUs, usPerTick;
-static uint16_t presc;
-static uint16_t lastSetSleep;
-static cb_t cb;
+#define US_TICK_SCALE 16
+#define TICK_US_SCALE 10
+#define US_TO_TICKS(us) (((uint32_t)(us)*ctx->ticksPerUs) >> US_TICK_SCALE)
+#define TICKS_TO_US(t) (((uint32_t)(t)*ctx->usPerTick) >> TICK_US_SCALE)
+
+STATIC_ASSERT(10000 <= RTC_SECOND_IN_US);
+STATIC_ASSERT(RTC_SECOND_IN_US <= 200000);
+
+typedef struct rtc_state {
+    uint64_t microsecondBase;
+    uint32_t ticksPerUs, usPerTick;
+    uint16_t presc;
+    cb_t cb;
+    uint8_t lastSecond, needsSync;
+} ctx_t;
+
+static ctx_t ctx_;
 
 #if 0
 #define PIN_PWR_STATE PIN_AMOSI
@@ -18,24 +31,63 @@ static cb_t cb;
 #define PIN_PWR_LOG -1
 #endif
 
-static void rtc_set(uint32_t delta_us, cb_t f) {
+#define BCD(t, h) (((t)&0xf) + 10 * (((t) >> 4) & ((1 << h) - 1)))
+uint32_t rtc_get_seconds(void) {
+    uint32_t t = RTC->TR;
+    uint32_t d = RTC->DR;
+    DMESG("rtc %x %x", d,t);
+    uint32_t d0 = (BCD(d >> 0, 2) - 1) + 30 * (BCD(d >> 8, 1) - 1) + 365 * BCD(d >> 16, 4);
+    uint32_t r = BCD(t >> 0, 3) + 60 * (BCD(t >> 8, 3) + 60 * (BCD(t >> 16, 2) + 24 * d0));
+    return r;
+}
+
+// ~20us at 8MHz
+void rtc_sync_time() {
+    ctx_t *ctx = &ctx_;
+
+    if (!ctx->needsSync)
+        return;
+    pin_set(PIN_PWR_STATE, 1);
+    target_disable_irq();
+    uint16_t subsecond;
+    uint8_t newSecond;
+    for (;;) {
+        subsecond = LL_RTC_TIME_GetSubSecond(RTC); // this locks TR/DR
+        newSecond = RTC->TR & 0xf;
+        // normally, reading subsecond should lock TR/DR; it usually does
+        // but F031 errata says that this can happen
+        if (subsecond == LL_RTC_TIME_GetSubSecond(RTC)) {
+            (void)RTC->DR; // unlock DR/TR
+            break;
+        }
+    }
+    subsecond = ctx->presc - subsecond;
+    if (newSecond != ctx->lastSecond) {
+        ctx->lastSecond = newSecond;
+        ctx->microsecondBase += RTC_SECOND_IN_US;
+    }
+    tim_set_micros(ctx->microsecondBase + TICKS_TO_US(subsecond));
+    ctx->needsSync = false;
+    target_enable_irq();
+}
+
+static void rtc_set(ctx_t *ctx, uint32_t delta_us, cb_t f) {
     if (delta_us > 10000)
         jd_panic();
     uint32_t delta_tick = US_TO_TICKS(delta_us);
     if (delta_tick < 20)
         delta_tick = 20;
 
-    cb = f;
+    ctx->cb = f;
 
     LL_RTC_ALMA_Disable(RTC);
     while (!LL_RTC_IsActiveFlag_ALRAW(RTC))
         ;
 
     uint32_t v = LL_RTC_TIME_GetSubSecond(RTC);
-    lastSetSleep = v;
-    uint32_t nv = v + presc - delta_tick; // the timer counts back; also don't underflow
-    if (nv >= presc)
-        nv -= presc; // make sure it's in range
+    uint32_t nv = v + ctx->presc - delta_tick; // the timer counts back; also don't underflow
+    if (nv >= ctx->presc)
+        nv -= ctx->presc; // make sure it's in range
 
     LL_RTC_ALMA_SetSubSecond(RTC, nv);
     LL_RTC_ClearFlag_ALRA(RTC);
@@ -46,20 +98,7 @@ static void rtc_set(uint32_t delta_us, cb_t f) {
 }
 
 void rtc_cancel_cb() {
-    cb = NULL;
-}
-
-void rtc_sync_time() {
-    pin_set(PIN_PWR_STATE, 1);
-    target_disable_irq();
-    if ((lastSetSleep >> 15) == 0) {
-        int d = lastSetSleep + presc - LL_RTC_TIME_GetSubSecond(RTC);
-        if (d >= presc)
-            d -= presc;
-        tim_forward(TICKS_TO_US(d));
-        lastSetSleep = 0xffff;
-    }
-    target_enable_irq();
+    ctx_.cb = NULL;
 }
 
 void RTC_IRQHandler(void) {
@@ -69,8 +108,8 @@ void RTC_IRQHandler(void) {
         LL_RTC_ClearFlag_ALRA(RTC);
 
         target_disable_irq();
-        cb_t f = cb;
-        cb = NULL;
+        cb_t f = ctx_.cb;
+        ctx_.cb = NULL;
         target_enable_irq();
 
         if (f)
@@ -105,13 +144,17 @@ static void rtc_config(uint8_t p0, uint16_t p1) {
     LL_RTC_SetAsynchPrescaler(RTC, p0 - 1);
     LL_RTC_SetSynchPrescaler(RTC, p1 - 1);
 
+    RTC->TR = 0;
+    RTC->DR = 0x2101; // BCD! and one-based!
+    RTC->SSR = 0;
+
     // set alarm
     LL_RTC_ALMA_SetMask(RTC, LL_RTC_ALMA_MASK_ALL); // ignore all
 
     LL_RTC_ALMA_SetSubSecond(RTC, 0);
     LL_RTC_ALMA_SetSubSecondMask(RTC, 15); // compare entire sub-second reg
 
-    LL_RTC_ALMA_Enable(RTC);
+    LL_RTC_ALMA_Enable(RTC); // only enabled alarm when requested
     LL_RTC_ClearFlag_ALRA(RTC);
     LL_RTC_EnableIT_ALRA(RTC);
 
@@ -126,14 +169,14 @@ static void rtc_config(uint8_t p0, uint16_t p1) {
     LL_RTC_ClearFlag_RS(RTC);
     while (LL_RTC_IsActiveFlag_RS(RTC) != 1)
         ;
-
-    // LL_RTC_EnableWriteProtection(RTC);
 }
 
 // with more than 4000 it overflows!
 #define CALIB_CYCLES 1024
 
 void rtc_init() {
+    ctx_t *ctx = &ctx_;
+
     pin_setup_output(PIN_PWR_STATE);
     pin_setup_output(PIN_PWR_LOG);
 
@@ -145,18 +188,50 @@ void rtc_init() {
     uint32_t d = (tim_get_micros() - t0) + 20;
     target_enable_irq();
 
-    ticksPerUs = (1 << US_TICK_SCALE) * CALIB_CYCLES / d;
-    usPerTick = d * CALIB_CYCLES / (1 << TICK_US_SCALE);
+    ctx->ticksPerUs = (1 << US_TICK_SCALE) * CALIB_CYCLES / d;
+    ctx->usPerTick = d * CALIB_CYCLES / (1 << TICK_US_SCALE);
 
-    uint32_t ten_ms = US_TO_TICKS(10000);
-    DMESG("rtc: 10ms = %d ticks", ten_ms);
-    // we're expecting around 400, but there's large drift possible
-    if (!(300 <= ten_ms && ten_ms <= 500))
+    int tmp = US_TO_TICKS(RTC_SECOND_IN_US);
+    uint32_t h_ms = US_TO_TICKS(100000);
+    DMESG("rtc: 100ms = %d ticks; ctx->presc=%d", h_ms, tmp);
+    // we're expecting around 4000, but there's large drift possible
+    if (!(3000 <= h_ms && h_ms <= 5000))
         jd_panic();
+    if (tmp > 0x7f00)
+        jd_panic();
+    ctx->presc = tmp;
+    rtc_config(1, ctx->presc);
+    LL_RTC_ALMA_Disable(RTC);
+    rtc_sync_time();
+}
 
-    // use a little more than 10ms, so we don't have issues with wrap around
-    presc = US_TO_TICKS(12000);
-    rtc_config(1, presc);
+void rtc_set_to_seconds_and_standby() {
+    ctx_t *ctx = &ctx_;
+    int pr = US_TO_TICKS(1000000);
+    int async_pr = 3;
+    DMESG("pr=%d * %d", pr >> async_pr, 1 << async_pr);
+
+    rtc_config(1 << async_pr, pr >> async_pr);
+    LL_RTC_ALMA_Disable(RTC);
+    LL_RTC_EnableWriteProtection(RTC);
+
+    //    pin_setup_input(PA_0, -1);
+    LL_PWR_EnableWakeUpPin(LL_PWR_WAKEUP_PIN1);
+    LL_PWR_ClearFlag_SB();
+    LL_PWR_ClearFlag_WU();
+    LL_PWR_SetPowerMode(LL_PWR_MODE_STANDBY);
+    LL_LPM_EnableDeepSleep();
+    __enable_irq(); // just in case, otherwise WFI will do nothing
+    __WFI();
+}
+
+bool rtc_check_standby(void) {
+    if (LL_PWR_IsActiveFlag_SB()) {
+        LL_PWR_ClearFlag_SB();
+        LL_PWR_ClearFlag_WU();
+        return true;
+    }
+    return false;
 }
 
 void rtc_sleep(bool forceShallow) {
@@ -176,7 +251,7 @@ void rtc_sleep(bool forceShallow) {
         return;
     }
 
-    rtc_set(usec, f);
+    rtc_set(&ctx_, usec, f);
     LL_PWR_SetPowerMode(LL_PWR_MODE_STOP_LPREGU);
 
 // enable to test power in stand by; should be around 3.2uA
@@ -188,8 +263,13 @@ void rtc_sleep(bool forceShallow) {
     LL_PWR_SetPowerMode(LL_PWR_MODE_STANDBY);
 #endif
 
+    rtc_deepsleep();
+}
+
+void rtc_deepsleep(void) {
     LL_LPM_EnableDeepSleep();
     pin_set(PIN_PWR_STATE, 0);
+    ctx_.needsSync = true;
     __WFI();
     target_enable_irq();
     rtc_sync_time();      // likely already happened in ISR, but doesn't hurt to check again

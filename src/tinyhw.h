@@ -22,6 +22,11 @@ void adc_init_random(void);
 // rtc.c
 void rtc_init(void);
 void rtc_sleep(bool forceShallow);
+void rtc_deepsleep(void);
+// these three functions have to do with standby mode (where the RTC is the only thing that runs)
+void rtc_set_to_seconds_and_standby(void);
+uint32_t rtc_get_seconds(void);
+bool rtc_check_standby(void);
 
 // pwm.c
 uint8_t pwm_init(uint8_t pin, uint32_t period, uint32_t duty, uint8_t prescaler);

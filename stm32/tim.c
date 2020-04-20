@@ -5,19 +5,23 @@
 #define TIMx_IRQHandler TIM17_IRQHandler
 #define TIMx_CLK_EN() __HAL_RCC_TIM17_CLK_ENABLE()
 
-static volatile uint64_t timeoff;
+static volatile int64_t timeoff;
 static volatile cb_t timer_cb;
 
 uint16_t tim_max_sleep;
 
-// takes around 1us
 uint64_t tim_get_micros(void) {
     while (1) {
         uint32_t v0 = TIMx->CNT;
         uint64_t off = timeoff;
+        bool ovr = LL_TIM_IsActiveFlag_UPDATE(TIMx);
         uint32_t v1 = TIMx->CNT;
-        if (v0 <= v1)
+        if (v0 <= v1) {
+            // ovr can be set when the our interrupt is masked
+            if (ovr)
+                off += 0x10000;
             return off + v1;
+        }
     }
 }
 
@@ -36,8 +40,12 @@ cb_t tim_steal_callback(uint32_t *usec) {
     return f;
 }
 
-void tim_forward(int us) {
-    timeoff += us;
+void tim_set_micros(uint64_t us) {
+    timeoff = us;
+    LL_TIM_DisableCounter(TIMx);
+    TIMx->CNT = 0;
+    LL_TIM_EnableCounter(TIMx);
+    LL_TIM_ClearFlag_UPDATE(TIMx);
 }
 
 void tim_set_timer(int delta, cb_t cb) {
