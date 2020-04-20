@@ -10,10 +10,12 @@ static void unlock(void) {
         FLASH->KEYR = 0x45670123;
         FLASH->KEYR = 0xCDEF89AB;
     }
+    FLASH->SR = FLASH_SR_EOP;
+    FLASH->CR &= ~(FLASH_CR_PG | FLASH_CR_PER | FLASH_CR_STRT);
 }
 
 static void lock(void) {
-    FLASH->CR &= ~(FLASH_CR_PG | FLASH_CR_PER);
+    // FLASH->CR &= ~(FLASH_CR_PG | FLASH_CR_PER);
     FLASH->CR |= FLASH_CR_LOCK;
 }
 
