@@ -29,7 +29,7 @@
 // someone might enabled PLL in the middle of this function, so go safe with PLL delays
 
 void bspi_send(const void *src, uint32_t len) {
-    for (int i = 0; i < len; ++i) {
+    for (unsigned i = 0; i < len; ++i) {
         uint8_t b = ((uint8_t *)src)[i];
         if (pwr_in_pll())
             for (int j = 7; j >= 0; j--) {
@@ -44,7 +44,7 @@ void bspi_send(const void *src, uint32_t len) {
 }
 
 void bspi_recv(void *dst, uint32_t len) {
-    for (int i = 0; i < len; ++i) {
+    for (unsigned i = 0; i < len; ++i) {
         uint8_t b = 0x00;
         if (pwr_in_pll())
             for (int j = 7; j >= 0; j--) {

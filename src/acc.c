@@ -11,7 +11,7 @@ Standing on bottom edge: 0,1000,0
 */
 
 void acc_hw_get(int16_t sample[3]);
-void acc_hw_init();
+void acc_hw_init(void);
 
 // values for QMA7981
 #define SAMPLING_PERIOD (7695 * 2) // 64.98Hz

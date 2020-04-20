@@ -245,7 +245,7 @@ static void sparkle_step(srv_t *state) {
         set_all(state, 0);
     state->anim_value++;
 
-    if (state->anim_step < 0) {
+    if ((int)state->anim_step < 0) {
         state->anim_step = random_int(state->numpixels - 1);
         set(state, state->anim_step, state->color);
     } else {
@@ -334,7 +334,7 @@ static srv_cb_t animations[] = {
     anim_sparkle,
 };
 
-static void tx_done() {
+static void tx_done(void) {
     pwr_leave_pll();
     state_->in_tx = 0;
 }
@@ -387,7 +387,7 @@ static void sync_config(srv_t *state) {
 static void start_animation(srv_t *state, jd_packet_t *pkt) {
     if (pkt->service_size == 0)
         return;
-    int anim = pkt->data[0];
+    unsigned anim = pkt->data[0];
     if (anim < sizeof(animations) / sizeof(animations[0])) {
         srv_cb_t f = animations[anim];
         if (f) {

@@ -1,6 +1,6 @@
 #include "bl.h"
 
-static void start_app() {
+static void start_app(void) {
     BL_MAGIC_FLAG = BL_MAGIC_FLAG_APP;
     target_reset();
 }
@@ -12,7 +12,7 @@ static const uint8_t output_pins[] = {
     PIN_LED_GND, PIN_GLO0, PIN_GLO1, PIN_ACC_MOSI, PIN_ACC_SCK, PIN_ACC_VCC, PIN_ACC_CS,
 };
 
-void led_init() {
+void led_init(void) {
     for (unsigned i = 0; i < sizeof(output_pins); ++i) {
         pin_setup_output(output_pins[i]);
         // all power pins are reverse polarity; we don't care much for others
@@ -139,7 +139,7 @@ static void busy_sleep(int ms) {
         asm volatile("nop");
 }
 
-static void led_panic_blink() {
+static void led_panic_blink(void) {
     led_set(1);
     busy_sleep(70);
     led_set(0);
@@ -153,7 +153,7 @@ void jd_panic(void) {
     }
 }
 
-void fail_and_reset() {
+void fail_and_reset(void) {
     DMESG("FAIL!");
     for (int i = 0; i < 10; ++i) {
         led_panic_blink();

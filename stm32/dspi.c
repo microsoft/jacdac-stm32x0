@@ -146,7 +146,7 @@ void px_tx(const void *data, uint32_t numbytes, cb_t doneHandler) {
 }
 
 static uint16_t pxlookup[16];
-static void init_lookup() {
+static void init_lookup(void) {
     for (int i = 0; i < 16; ++i) {
         uint16_t v = 0;
         for (int mask = 0x8; mask > 0; mask >>= 1) {

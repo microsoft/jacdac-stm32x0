@@ -1,6 +1,6 @@
 #include "jdstm.h"
 
-uint16_t adc_convert() {
+uint16_t adc_convert(void) {
     if ((LL_ADC_IsEnabled(ADC1) == 1) && (LL_ADC_IsDisableOngoing(ADC1) == 0) &&
         (LL_ADC_REG_IsConversionOngoing(ADC1) == 0))
         LL_ADC_REG_StartConversion(ADC1);

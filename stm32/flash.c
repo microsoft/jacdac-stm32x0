@@ -4,7 +4,7 @@
     while (FLASH->SR & FLASH_SR_BSY)                                                               \
         ;
 
-static void unlock() {
+static void unlock(void) {
     WAIT_BUSY();
     if (FLASH->CR & FLASH_CR_LOCK) {
         FLASH->KEYR = 0x45670123;
@@ -12,12 +12,12 @@ static void unlock() {
     }
 }
 
-static void lock() {
+static void lock(void) {
     FLASH->CR &= ~(FLASH_CR_PG | FLASH_CR_PER);
     FLASH->CR |= FLASH_CR_LOCK;
 }
 
-static void check_eop() {
+static void check_eop(void) {
     WAIT_BUSY();
     if (FLASH->SR & FLASH_SR_EOP)
         FLASH->SR = FLASH_SR_EOP;

@@ -3,7 +3,7 @@
 
 static uint32_t timeoff;
 
-static void tim_update() {
+static void tim_update(void) {
     if (LL_TIM_IsActiveFlag_UPDATE(TIMx) == 1) {
         LL_TIM_ClearFlag_UPDATE(TIMx);
         timeoff += 0x10000;

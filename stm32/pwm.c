@@ -34,14 +34,14 @@ static const struct PinPWM pins[] = {
 };
 
 static const struct PinPWM *lookup_pwm(uint8_t pin) {
-    for (int i = 0; i < sizeof(pins) / sizeof(pins[0]); ++i)
+    for (unsigned i = 0; i < sizeof(pins) / sizeof(pins[0]); ++i)
         if (pins[i].pin == pin)
             return &pins[i];
     return NULL;
 }
 
 static const struct TimDesc *lookup_tim(TIM_TypeDef *tim) {
-    for (int i = 0; i < sizeof(tims) / sizeof(tims[0]); ++i)
+    for (unsigned i = 0; i < sizeof(tims) / sizeof(tims[0]); ++i)
         if (tims[i].tim == tim)
             return &tims[i];
     jd_panic();

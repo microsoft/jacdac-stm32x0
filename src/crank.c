@@ -8,7 +8,7 @@ struct srv_state {
     uint32_t nextSample;
 };
 
-const static int8_t posMap[] = {0, +1, -1, +2, -1, 0, -2, +1, +1, -2, 0, -1, +2, -1, +1, 0};
+static const int8_t posMap[] = {0, +1, -1, +2, -1, 0, -2, +1, +1, -2, 0, -1, +2, -1, +1, 0};
 static void update(srv_t *state) {
     // based on comments in https://github.com/PaulStoffregen/Encoder/blob/master/Encoder.h
     uint16_t s = state->state & 3;

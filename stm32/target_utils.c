@@ -23,13 +23,13 @@ void target_wait_us(uint32_t n) {
     target_wait_cycles(n);
 }
 
-void target_reset() {
+void target_reset(void) {
     NVIC_SystemReset();
 }
 
 static int8_t irq_disabled;
 
-void target_enable_irq() {
+void target_enable_irq(void) {
     irq_disabled--;
     if (irq_disabled <= 0) {
         irq_disabled = 0;
@@ -37,15 +37,15 @@ void target_enable_irq() {
     }
 }
 
-void target_disable_irq() {
+void target_disable_irq(void) {
     asm volatile("cpsid i" : : : "memory");
     irq_disabled++;
 }
 
-int target_in_irq() {
+int target_in_irq(void) {
     return (SCB->ICSR & SCB_ICSR_VECTACTIVE_Msk) != 0;
 }
 
-void __libc_init_array() {
+void __libc_init_array(void) {
     // do nothing - not using static constructors
 }

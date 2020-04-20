@@ -92,7 +92,7 @@ static int readReg(uint8_t reg) {
     return r;
 }
 
-static void init_chip() {
+static void init_chip(void) {
     writeReg(REG_PM, 0x80);
     writeReg(REG_SR, 0xB6);
     target_wait_us(100);
@@ -128,7 +128,7 @@ void acc_hw_get(int16_t sample[3]) {
     sample[2] = -data[2] >> 2;
 }
 
-void acc_hw_init() {
+void acc_hw_init(void) {
     pin_setup_output(PIN_ACC_MOSI);
     pin_setup_output(PIN_ACC_SCK);
     pin_setup_input(PIN_ACC_MISO, -1);

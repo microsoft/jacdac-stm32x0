@@ -7,7 +7,7 @@ static const uint8_t output_pins[] = {
     PIN_P1,   PIN_LED_GND, PIN_GLO0, PIN_GLO1, PIN_ACC_MOSI, PIN_ACC_SCK, PIN_ACC_VCC, PIN_ACC_CS,
 };
 
-void led_init() {
+void led_init(void) {
     // To save power, especially in STOP mode,
     // configure all pins in GPIOA,B,C as analog inputs (except for SWD)
     for (unsigned i = 0; i < 16 * 3; ++i)
@@ -114,7 +114,7 @@ int main(void) {
     }
 }
 
-static void led_panic_blink() {
+static void led_panic_blink(void) {
     led_set(1);
     target_wait_us(70000);
     led_set(0);
@@ -129,7 +129,7 @@ void jd_panic(void) {
     }
 }
 
-void fail_and_reset() {
+void fail_and_reset(void) {
     DMESG("FAIL!");
     target_disable_irq();
     for (int i = 0; i < 10; ++i) {

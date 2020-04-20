@@ -109,7 +109,7 @@ void *memset(void *dst, int v, size_t sz) {
     return dst;
 }
 
-uint32_t random_int(int max) {
+uint32_t random_int(uint32_t max) {
     if (max == 0)
         return 0;
     uint32_t mask = 0x1;

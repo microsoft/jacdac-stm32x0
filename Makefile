@@ -14,7 +14,9 @@ AS = $(PREFIX)as
 WARNFLAGS = -Wall -Wno-strict-aliasing
 CFLAGS = $(DEFINES) \
 	-mthumb -mfloat-abi=soft  \
-	-Os -g3 -Wall -ffunction-sections -fdata-sections -nostartfiles \
+	-Os -g3 \
+	-Wall -Wextra -Wno-unused-parameter -Wstrict-prototypes -Werror \
+	-ffunction-sections -fdata-sections -nostartfiles \
 	$(WARNFLAGS)
 CONFIG_DEPS = \
 	$(wildcard src/*.h) \

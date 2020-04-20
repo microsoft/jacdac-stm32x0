@@ -16,7 +16,7 @@ void fail_and_reset(void);
 // utils.c
 int itoa(int n, char *s);
 int string_reverse(char *s);
-uint32_t random_int(int max);
+uint32_t random_int(uint32_t max);
 void dump_pkt(jd_packet_t *pkt, const char *msg);
 
 // jdapp.c
@@ -32,7 +32,7 @@ void *txq_push(unsigned service_num, unsigned service_cmd, const void *data, uns
 // alloc.c
 void alloc_init(void);
 void *alloc(uint32_t size);
-void alloc_stack_check();
+void alloc_stack_check(void);
 void *alloc_emergency_area(uint32_t size);
 
 // pwr.c

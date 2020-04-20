@@ -48,7 +48,7 @@ void codal_dmesg(const char *format, ...);
 void codal_dmesgf(const char *format, ...);
 
 void codal_dmesg_set_flush_fn(void (*fn)(void));
-void codal_dmesg_flush();
+void codal_dmesg_flush(void);
 
 void codal_vdmesg(const char *format, va_list ap);
 

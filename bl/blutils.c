@@ -23,14 +23,14 @@ void target_wait_us(uint32_t n) {
     target_wait_cycles(n);
 }
 
-void target_reset() {
+void target_reset(void) {
     NVIC_SystemReset();
 }
 
-void __libc_init_array() {
+void __libc_init_array(void) {
     // do nothing - not using static constructors
 }
 
-void target_enable_irq() {}
+void target_enable_irq(void) {}
 
-void target_disable_irq() {}
+void target_disable_irq(void) {}

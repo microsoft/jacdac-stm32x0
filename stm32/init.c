@@ -16,7 +16,7 @@ void PendSV_Handler(void) {}
 void SysTick_Handler(void) {}
 #endif
 
-static void enable_nrst_pin() {
+static void enable_nrst_pin(void) {
 #ifdef FLASH_OPTR_NRST_MODE
 #define FLASH_KEY1 0x45670123U
 #define FLASH_KEY2 0xCDEF89ABU
@@ -63,11 +63,11 @@ static void enable_nrst_pin() {
 #endif
 }
 
-bool clk_is_pll() {
+bool clk_is_pll(void) {
     return LL_RCC_GetSysClkSource() == LL_RCC_SYS_CLKSOURCE_PLL;
 }
 
-void clk_setup_pll() {
+void clk_setup_pll(void) {
 #if defined(STM32G0)
     LL_FLASH_SetLatency(LL_FLASH_LATENCY_2);
     LL_RCC_PLL_ConfigDomain_SYS(LL_RCC_PLLSOURCE_HSI, LL_RCC_PLLM_DIV_1, 8, LL_RCC_PLLR_DIV_2);

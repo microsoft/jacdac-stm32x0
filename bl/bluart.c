@@ -23,7 +23,7 @@ __attribute__((noinline)) void gpio_probe_and_set(GPIO_TypeDef *gpio, uint32_t p
         gpio->MODER = mode;
 }
 
-static void uartOwnsPin() {
+static void uartOwnsPin(void) {
     LL_GPIO_SetPinMode(PIN_PORT, PIN_PIN, LL_GPIO_MODE_ALTERNATE);
     if ((UART_PIN & 0xf) <= 7)
         LL_GPIO_SetAFPin_0_7(PIN_PORT, PIN_PIN, UART_PIN_AF);
@@ -31,7 +31,7 @@ static void uartOwnsPin() {
         LL_GPIO_SetAFPin_8_15(PIN_PORT, PIN_PIN, UART_PIN_AF);
 }
 
-static void uartDoesntOwnPin() {
+static void uartDoesntOwnPin(void) {
     LL_GPIO_SetPinMode(PIN_PORT, PIN_PIN, LL_GPIO_MODE_INPUT);
 }
 

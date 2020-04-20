@@ -10,19 +10,19 @@ static void check_line(int ln) {
     }
 }
 
-void EXTI0_1_IRQHandler() {
+void EXTI0_1_IRQHandler(void) {
     rtc_sync_time();
     check_line(0);
     check_line(1);
 }
 
-void EXTI2_3_IRQHandler() {
+void EXTI2_3_IRQHandler(void) {
     rtc_sync_time();
     check_line(2);
     check_line(3);
 }
 
-void EXTI4_15_IRQHandler() {
+void EXTI4_15_IRQHandler(void) {
     rtc_sync_time();
 
 #ifdef UART_PIN

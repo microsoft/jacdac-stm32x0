@@ -11,7 +11,7 @@ static volatile cb_t timer_cb;
 uint16_t tim_max_sleep;
 
 // takes around 1us
-uint64_t tim_get_micros() {
+uint64_t tim_get_micros(void) {
     while (1) {
         uint32_t v0 = TIMx->CNT;
         uint64_t off = timeoff;
@@ -56,7 +56,7 @@ void tim_set_timer(int delta, cb_t cb) {
     target_enable_irq();
 }
 
-void tim_init() {
+void tim_init(void) {
     /* Peripheral clock enable */
     TIMx_CLK_EN();
 
@@ -85,7 +85,7 @@ void tim_init() {
     tim_set_timer(5000, NULL);
 }
 
-void TIMx_IRQHandler() {
+void TIMx_IRQHandler(void) {
     /* Check whether update interrupt is pending */
     if (LL_TIM_IsActiveFlag_UPDATE(TIMx) == 1) {
         /* Clear the update interrupt flag */
@@ -109,7 +109,7 @@ void TIMx_IRQHandler() {
         f();
 }
 
-void tim_update_prescaler() {
+void tim_update_prescaler(void) {
     LL_TIM_DisableCounter(TIMx);
     LL_TIM_SetPrescaler(TIMx, cpu_mhz - 1);
     LL_TIM_EnableCounter(TIMx);

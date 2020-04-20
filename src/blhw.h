@@ -86,7 +86,7 @@ struct app_top_handlers {
 #define app_handlers ((struct app_top_handlers *)0x8000000)
 #define app_dev_info app_handlers->devinfo
 
-static inline uint64_t device_id() {
+static inline uint64_t device_id(void) {
     return app_dev_info.device_id;
 }
 

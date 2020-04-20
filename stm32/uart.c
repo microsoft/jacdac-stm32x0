@@ -218,7 +218,7 @@ void uart_init() {
     USART_UART_Init();
 }
 
-static void check_idle() {
+static void check_idle(void) {
 #if 0
     if (LL_DMA_IsEnabledChannel(DMA1, LL_DMA_CHANNEL_4))
         jd_panic();

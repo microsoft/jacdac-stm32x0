@@ -9,7 +9,7 @@ struct srv_state {
 static uint8_t id_counter;
 static uint32_t nextblink;
 
-static void identify() {
+static void identify(void) {
     if (!id_counter)
         return;
     if (!should_sample(&nextblink, 150000))
