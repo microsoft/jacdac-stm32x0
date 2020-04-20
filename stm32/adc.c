@@ -15,6 +15,10 @@ static uint16_t adc_convert(void) {
 }
 
 static void set_channel(uint32_t chan) {
+    // might be from previous disable
+    while (LL_ADC_IsDisableOngoing(ADC1))
+        ;
+
 #ifdef STM32G0
     LL_ADC_REG_SetSequencerRanks(ADC1, LL_ADC_REG_RANK_1, chan);
     LL_ADC_SetChannelSamplingTime(ADC1, chan, LL_ADC_SAMPLINGTIME_COMMON_1);
@@ -31,7 +35,7 @@ static void set_channel(uint32_t chan) {
         ;
     target_wait_us(5); // ADC_DELAY_CALIB_ENABLE_CPU_CYCLES
 
-    // LL_ADC_SetLowPowerMode(ADC1, LL_ADC_LP_AUTOPOWEROFF);
+    // LL_ADC_SetLowPowerMode(ADC1, LL_ADC_LP_AUTOWAIT_AUTOPOWEROFF);
 
     LL_ADC_Enable(ADC1);
 
@@ -39,17 +43,23 @@ static void set_channel(uint32_t chan) {
         ;
 }
 
-// alternative would be build an RNG, eg http://robseward.com/misc/RNG2/
+static void set_temp_ref(int t) {
+    while (LL_ADC_IsDisableOngoing(ADC1))
+        ;
+    LL_ADC_SetCommonPathInternalCh(
+        __LL_ADC_COMMON_INSTANCE(ADC1),
+        t ? (LL_ADC_PATH_INTERNAL_VREFINT | LL_ADC_PATH_INTERNAL_TEMPSENSOR)
+          : LL_ADC_PATH_INTERNAL_NONE);
+    if (t)
+        target_wait_us(LL_ADC_DELAY_TEMPSENSOR_STAB_US);
+}
 
 // initializes RNG from TEMP sensor
+// alternative would be build an RNG, eg http://robseward.com/misc/RNG2/
 void adc_init_random(void) {
     __HAL_RCC_ADC_CLK_ENABLE();
 
-    LL_ADC_SetCommonPathInternalCh(
-        __LL_ADC_COMMON_INSTANCE(ADC1),
-        (LL_ADC_PATH_INTERNAL_VREFINT | LL_ADC_PATH_INTERNAL_TEMPSENSOR));
-    target_wait_us(LL_ADC_DELAY_TEMPSENSOR_STAB_US);
-
+    set_temp_ref(1);
     ADC1->CFGR1 = LL_ADC_REG_OVR_DATA_OVERWRITTEN;
 
 #ifdef STM32G0
@@ -79,7 +89,7 @@ void adc_init_random(void) {
     while (LL_ADC_IsDisableOngoing(ADC1))
         ;
 
-    // setup for future pin conversions
+        // setup for future pin conversions
 #ifdef STM32G0
     LL_ADC_SetSamplingTimeCommonChannels(ADC1, LL_ADC_SAMPLINGTIME_COMMON_1,
                                          LL_ADC_SAMPLINGTIME_7CYCLES_5);
@@ -87,13 +97,8 @@ void adc_init_random(void) {
     LL_ADC_SetSamplingTimeCommonChannels(ADC1, LL_ADC_SAMPLINGTIME_7CYCLES_5);
 #endif
 
-
     // this brings STOP draw to 4.4uA from 46uA
-    LL_ADC_REG_SetSequencerChannels(ADC1, 0);
-    LL_ADC_SetCommonPathInternalCh(__LL_ADC_COMMON_INSTANCE(ADC1), LL_ADC_PATH_INTERNAL_NONE);
-    target_wait_us(LL_ADC_DELAY_TEMPSENSOR_STAB_US);
-
-    __HAL_RCC_ADC_CLK_DISABLE();
+    set_temp_ref(0);
 }
 
 static const uint32_t channels_PA[] = {
@@ -105,6 +110,18 @@ static const uint32_t channels_PB[] = {
     LL_ADC_CHANNEL_8,
     LL_ADC_CHANNEL_9,
 };
+
+uint16_t adc_read_temp(void) {
+    set_temp_ref(1);
+    set_channel(LL_ADC_CHANNEL_TEMPSENSOR);
+
+    uint16_t r = adc_convert();
+
+    LL_ADC_Disable(ADC1);
+    set_temp_ref(0);
+
+    return r;
+}
 
 uint16_t adc_read_pin(uint8_t pin) {
     uint32_t chan;
@@ -124,15 +141,10 @@ uint16_t adc_read_pin(uint8_t pin) {
 
     pin_setup_analog_input(pin);
 
-    __HAL_RCC_ADC_CLK_ENABLE();
-
     set_channel(chan);
     uint16_t r = adc_convert();
 
     LL_ADC_Disable(ADC1);
-    while (LL_ADC_IsDisableOngoing(ADC1))
-        ;
-    __HAL_RCC_ADC_CLK_DISABLE();
 
     return r;
 }
