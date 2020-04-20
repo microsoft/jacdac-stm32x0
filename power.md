@@ -34,7 +34,8 @@ Shunt | Vdrop | Precision | Max Curr | Size
 0.05Ω |  0.5% |   0.322mA |   1320mA | 0805
 0.02Ω |  0.2% |   0.806mA |   3300mA | 0805
 
-Additionally, can add additional switching FET and another shunt.
+Additionally, can add additional switching FET and another shunt
+for precision measurements, when current is low.
 Voltage drops listed for 50mA.
 
 Shunt | Vdrop | Precision | Max Curr | Size
@@ -45,11 +46,18 @@ Shunt | Vdrop | Precision | Max Curr | Size
 ## Low pass filters
 
 With 100Hz RC filter, if the current goes from max to 0,
-the voltage will drop by 47% in 1ms, and it takes 2ms for
-voltage to reach 70% when it goes from 0 to max.
+the voltage will drop by ~45% in 1ms. This represents
+a measure of error (the current we may miss when not sampling).
+OTOH, it takes 2ms for voltage to reach 70% when it goes from 0 to max,
+which is a measure of latency.
 
-With 50Hz, it drops by 23% in 1ms and it takes 4ms to register
+With 50Hz, it drops by ~25% in 1ms and it takes 4ms to register
+70% of rise.
+
+With 25Hz, it drops by ~15% in 1ms and it takes 8ms to register
 70% of rise.
 
 50Hz is eg. 3.3kΩ and 1uF.
+
+Data from http://sim.okawa-denshi.jp/en/PWMtool.php
 
