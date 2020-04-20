@@ -54,16 +54,3 @@ int sensor_should_stream(srv_t *state) {
         return false;
     return should_sample(&state->next_streaming, state->streaming_interval * 1000);
 }
-
-bool should_sample(uint32_t *sample, uint32_t period) {
-    if (in_future(*sample))
-        return false;
-
-    *sample += period;
-
-    if (!in_future(*sample))
-        // we lost some samples
-        *sample = now + period;
-
-    return true;
-}

@@ -126,3 +126,16 @@ void dump_pkt(jd_packet_t *pkt, const char *msg) {
     DMESG("pkt[%s]; s#=%d sz=%d %x", msg, pkt->service_number, pkt->service_size,
           pkt->service_command);
 }
+
+bool should_sample(uint32_t *sample, uint32_t period) {
+    if (in_future(*sample))
+        return false;
+
+    *sample += period;
+
+    if (!in_future(*sample))
+        // we lost some samples
+        *sample = now + period;
+
+    return true;
+}
