@@ -36,6 +36,14 @@ if (w0 == 0x464c457f) {
     log("assuming BIN file")
 }
 
+function fnv1a(data) {
+    let h = 0x811c9dc5
+    for (let i = 0; i < data.length; ++i) {
+        h = Math.imul(h ^ data.charCodeAt(i), 0x1000193)
+    }
+    return h
+}
+
 w0 = buf.readUInt32LE(pos)
 if ((w0 & 0xff00_0000) == 0x2000_0000) {
     log("app mode")
@@ -46,12 +54,23 @@ if ((w0 & 0xff00_0000) == 0x2000_0000) {
 
     // figure out device class
     const profile_name = basename.replace(/.*\/app-/, "")
-    const src = fs.readFileSync(profiles_path + "/" + profile_name + ".c", "utf8")
-    const m = /DEVICE_CLASS\((0x3[0-9a-f]+)\)/.exec(src)
+    const profile_fn = profiles_path + "/" + profile_name + ".c"
+    const src = fs.readFileSync(profile_fn, "utf8")
+    const m = /DEVICE_CLASS\((0x3[0-9a-f]+),\s*"([^"]+)"\)/.exec(src)
     if (!m)
-        throw "DEVICE_CLASS(0x3...) missing"
-    const dev_class = parseInt(m[1])
-    log("device class: " + dev_class.toString(16))
+        throw "DEVICE_CLASS(0x3..., \"...\") missing"
+    let dev_class = parseInt(m[1])
+    const dev_class_name = m[2]
+    const computed_class = ((fnv1a(dev_class_name) << 4) >>> 4) | 0x30000000
+    if (computed_class != dev_class) {
+        const trg = "0x" + computed_class.toString(16)
+        const src2 = src.replace(m[1], trg)
+        if (src == src2) throw "whoops"
+        fs.writeFileSync(profile_fn, src2)
+        console.log(`Patching ${profile_fn}: dev_class ${m[1]} -> ${trg}`)
+        dev_class = computed_class
+    }
+    log(`device class: 0x${dev_class.toString(16)} "${dev_class_name}"`)
 
     const reset = buf.readUInt32LE(pos + 4)
     const app_reset = buf.readInt32LE(pos + 13 * 4)

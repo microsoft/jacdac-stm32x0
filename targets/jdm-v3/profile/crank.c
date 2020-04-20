@@ -1,6 +1,6 @@
 #include "jdprofile.h"
 
-DEVICE_CLASS(0x3d1868a7);
+DEVICE_CLASS(0x3beb4448, "JDM3 crank");
 
 void init_services() {
     crank_init(PIN_P0, PIN_P1);

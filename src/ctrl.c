@@ -36,6 +36,15 @@ void ctrl_handle_packet(srv_t *_state, jd_packet_t *pkt) {
     case JD_CMD_CTRL_RESET:
         target_reset();
         break;
+    case (JD_CMD_GET_REG | JD_REG_CTRL_DEVICE_DESCRIPTION):
+        txq_push(JD_SERVICE_NUMBER_CTRL, pkt->service_command, app_dev_class_name,
+                 strlen(app_dev_class_name));
+        break;
+    case (JD_CMD_GET_REG | JD_REG_CTRL_DEVICE_CLASS): {
+        uint32_t v = jd_hash_fnv1a(app_dev_class_name, strlen(app_dev_class_name));
+        v = (v << 4 >> 4) | (0x3 << 28);
+        txq_push(JD_SERVICE_NUMBER_CTRL, pkt->service_command, &v, sizeof(v));
+    } break;
     }
 }
 
