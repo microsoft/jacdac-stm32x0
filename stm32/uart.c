@@ -1,5 +1,7 @@
 #include "jdstm.h"
 
+#ifdef UART_PIN
+
 #define PORT(pin) ((GPIO_TypeDef *)(GPIOA_BASE + (0x400 * (pin >> 4))))
 #define PIN(pin) (1 << ((pin)&0xf))
 
@@ -326,3 +328,5 @@ void IRQHandler(void) {
     uart_disable();
     jd_rx_completed(dataLeft);
 }
+
+#endif

@@ -1,5 +1,7 @@
 #include "jdstm.h"
 
+#ifdef PIN_ASCK
+
 #if defined(STM32F031x6) || !defined(SPI2)
 #define SPI_IDX 1
 #else
@@ -256,3 +258,5 @@ void px_init() {
 
     init_lookup();
 }
+
+#endif
