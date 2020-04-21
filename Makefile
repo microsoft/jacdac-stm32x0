@@ -16,6 +16,7 @@ CFLAGS = $(DEFINES) \
 	-mthumb -mfloat-abi=soft  \
 	-Os -g3 \
 	-Wall -Wextra -Wno-unused-parameter -Wstrict-prototypes -Werror \
+	-Wno-error=unused-function \
 	-ffunction-sections -fdata-sections -nostartfiles \
 	$(WARNFLAGS)
 CONFIG_DEPS = \

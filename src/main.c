@@ -3,8 +3,9 @@
 uint32_t now;
 
 static const uint8_t output_pins[] = {
-    PIN_LOG0, PIN_LOG1,    PIN_LOG2, PIN_LOG3, PIN_LED,      PIN_LED2,    PIN_PWR,     PIN_P0,
-    PIN_P1,   PIN_LED_GND, PIN_GLO0, PIN_GLO1, PIN_ACC_MOSI, PIN_ACC_SCK, PIN_ACC_VCC, PIN_ACC_CS,
+    PIN_LOG0,    PIN_LOG1,   PIN_LOG2,    PIN_LOG3,  PIN_LED,  PIN_LED2,     PIN_PWR,
+    PIN_P0,      PIN_P1,     PIN_LED_GND, PIN_GLO0,  PIN_GLO1, PIN_ACC_MOSI, PIN_ACC_SCK,
+    PIN_ACC_VCC, PIN_ACC_CS, PIN_ASCK,    PIN_AMOSI, PA_6,
 };
 
 void led_init(void) {
@@ -55,6 +56,30 @@ void log_pin_set(int line, int v) {
 
 static uint64_t led_off_time;
 
+// AP2112
+// reg 85ua
+// reg back 79uA
+// no reg 30uA
+
+static void do_nothing(void) {}
+void sleep_forever(void) {
+    target_wait_us(500000);
+    led_set(0);
+    int cnt = 0;
+    for (;;) {
+        pin_pulse(PIN_P0, 2);
+        tim_set_timer(10000, do_nothing);
+        if (cnt++ > 30) {
+            cnt = 0;
+            adc_read_pin(PIN_LED_GND);
+            adc_read_temp();
+        }
+        pwr_sleep();
+        // rtc_deepsleep();
+        // rtc_set_to_seconds_and_standby();
+    }
+}
+
 void led_set(int state) {
     pin_set(PIN_LED, state);
 }
@@ -72,11 +97,12 @@ int main(void) {
     tim_init();
 
     adc_init_random(); // 300b
+    rtc_init();
+
+    //sleep_forever();
 
     txq_init();
     jd_init();
-
-    rtc_init();
 
     app_init_services();
 
