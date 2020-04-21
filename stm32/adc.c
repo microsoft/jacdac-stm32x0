@@ -1,5 +1,13 @@
 #include "jdstm.h"
 
+static void set_sampling_time(uint32_t time) {
+#ifdef STM32G0
+    LL_ADC_SetSamplingTimeCommonChannels(ADC1, LL_ADC_SAMPLINGTIME_COMMON_1, time);
+#else
+    LL_ADC_SetSamplingTimeCommonChannels(ADC1, time);
+#endif
+}
+
 static uint16_t adc_convert(void) {
     if ((LL_ADC_IsEnabled(ADC1) == 1) && (LL_ADC_IsDisableOngoing(ADC1) == 0) &&
         (LL_ADC_REG_IsConversionOngoing(ADC1) == 0))
@@ -67,11 +75,9 @@ void adc_init_random(void) {
     target_wait_us(5);
 
     LL_ADC_REG_SetSequencerConfigurable(ADC1, LL_ADC_REG_SEQ_CONFIGURABLE);
-    LL_ADC_SetSamplingTimeCommonChannels(ADC1, LL_ADC_SAMPLINGTIME_COMMON_1,
-                                         LL_ADC_SAMPLINGTIME_1CYCLE_5);
-#else
-    LL_ADC_SetSamplingTimeCommonChannels(ADC1, LL_ADC_SAMPLINGTIME_1CYCLE_5);
 #endif
+
+    set_sampling_time(LL_ADC_SAMPLINGTIME_1CYCLE_5); // get maximum noise
 
     ADC1->CFGR2 = LL_ADC_CLOCK_SYNC_PCLK_DIV2;
 
@@ -89,14 +95,6 @@ void adc_init_random(void) {
     while (LL_ADC_IsDisableOngoing(ADC1))
         ;
 
-        // setup for future pin conversions
-#ifdef STM32G0
-    LL_ADC_SetSamplingTimeCommonChannels(ADC1, LL_ADC_SAMPLINGTIME_COMMON_1,
-                                         LL_ADC_SAMPLINGTIME_7CYCLES_5);
-#else
-    LL_ADC_SetSamplingTimeCommonChannels(ADC1, LL_ADC_SAMPLINGTIME_7CYCLES_5);
-#endif
-
     // this brings STOP draw to 4.4uA from 46uA
     set_temp_ref(0);
 }
@@ -111,7 +109,13 @@ static const uint32_t channels_PB[] = {
     LL_ADC_CHANNEL_9,
 };
 
+#ifdef STM32F0
+#define TS_CAL1 *(uint16_t*)0x1FFFF7B8
+#define TS_CAL2 *(uint16_t*)0x1FFFF7C2
+#endif
+
 uint16_t adc_read_temp(void) {
+    set_sampling_time(LL_ADC_SAMPLINGTIME_71CYCLES_5); // min. sampling time for temp is 4us
     set_temp_ref(1);
     set_channel(LL_ADC_CHANNEL_TEMPSENSOR);
 
@@ -120,7 +124,7 @@ uint16_t adc_read_temp(void) {
     LL_ADC_Disable(ADC1);
     set_temp_ref(0);
 
-    return r;
+    return ((110 - 30) * (r - TS_CAL1)) / (TS_CAL2-TS_CAL1) + 30;
 }
 
 uint16_t adc_read_pin(uint8_t pin) {
@@ -140,6 +144,8 @@ uint16_t adc_read_pin(uint8_t pin) {
     }
 
     pin_setup_analog_input(pin);
+
+    set_sampling_time(LL_ADC_SAMPLINGTIME_7CYCLES_5);
 
     set_channel(chan);
     uint16_t r = adc_convert();

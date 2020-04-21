@@ -19,6 +19,7 @@ void px_set(const void *data, uint32_t index, uint8_t intensity, uint32_t color)
 // adc.c
 void adc_init_random(void);
 uint16_t adc_read_pin(uint8_t pin);
+uint16_t adc_read_temp(void);
 
 // rtc.c
 void rtc_init(void);
