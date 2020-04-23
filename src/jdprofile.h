@@ -37,5 +37,6 @@ void light_init(void);
 void pwm_light_init(uint8_t pin);
 void servo_init(uint8_t pin);
 void btn_init(uint8_t pin);
+void touch_init(uint8_t pin);
 
 extern const char app_dev_class_name[];

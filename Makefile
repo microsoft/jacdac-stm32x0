@@ -1,5 +1,5 @@
 TARGET ?= jd-v0
-PROF ?= btn
+PROF ?= touch
 FORCE ?=
 
 .SECONDARY: # this prevents object files from being removed
