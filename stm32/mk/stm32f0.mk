@@ -29,7 +29,7 @@ BMP = 1
 PLATFORM = stm32
 
 # TODO move some of this to common stm32.mk
-AS_SRC = $(DRV)/CMSIS/Device/ST/STM32F0xx/Source/Templates/gcc/startup_$(MCU:STM32F%=stm32f%).s
+AS_SRC = $(STARTUP_FILE)
 CUBE = stm32/STM32Cube$(SERIES)
 DRV = $(CUBE)/Drivers
 CPPFLAGS += 	\

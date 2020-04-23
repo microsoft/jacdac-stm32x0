@@ -1,4 +1,4 @@
-TARGET ?= jdm-v3
+TARGET ?= jd-v0
 PROF ?= acc
 FORCE ?=
 
