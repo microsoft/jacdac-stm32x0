@@ -20,6 +20,7 @@ int sensor_handle_packet(srv_t *state, jd_packet_t *pkt) {
             if (state->streaming_interval == 0)
                 state->streaming_interval = 100;
             state->next_streaming = now;
+            state->got_query = 1;
         }
         break;
     case JD_REG_STREAMING_INTERVAL:
@@ -42,6 +43,7 @@ int sensor_handle_packet_simple(srv_t *state, jd_packet_t *pkt, const void *samp
     int r = sensor_handle_packet(state, pkt);
 
     if (pkt->service_command == (JD_CMD_GET_REG | JD_REG_READING)) {
+        state->got_query = 1;
         txq_push(pkt->service_number, pkt->service_command, sample, sample_size);
         r = -JD_REG_READING;
     }

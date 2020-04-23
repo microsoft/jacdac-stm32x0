@@ -211,6 +211,10 @@ void DMA_Handler(void) {
     }
 }
 
+// WS2812B timings, +-0.15us
+// 0 - 0.40us hi 0.85us low
+// 1 - 0.80us hi 0.45us low
+
 void px_init() {
     SPI_CLK_ENABLE();
     __HAL_RCC_DMA1_CLK_ENABLE();
