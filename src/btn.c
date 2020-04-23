@@ -10,6 +10,7 @@ struct srv_state {
     uint8_t pin;
     uint8_t pressed;
     uint8_t prev_pressed;
+    uint8_t num_zero;
     uint32_t press_time;
     uint32_t nextSample;
 };
@@ -28,6 +29,7 @@ static void update(srv_t *state) {
                 txq_push_event(state, EVT_LONG_CLICK);
             else
                 txq_push_event(state, EVT_CLICK);
+            state->num_zero = 0;
         }
     }
 }
@@ -36,9 +38,11 @@ void btn_process(srv_t *state) {
     if (should_sample(&state->nextSample, 9000)) {
         update(state);
 
-        if (sensor_should_stream(state) && state->pressed)
+        if (sensor_should_stream(state) && (state->pressed || state->num_zero < 20)) {
+            state->num_zero++;
             txq_push(state->service_number, JD_CMD_GET_REG | JD_REG_READING, &state->pressed,
                      sizeof(state->pressed));
+        }
     }
 }
 
@@ -51,6 +55,6 @@ SRV_DEF(btn, JD_SERVICE_CLASS_BUTTON);
 void btn_init(uint8_t pin) {
     SRV_ALLOC(btn);
     state->pin = pin;
-    pin_setup_input(state->pin, 0);
+    pin_setup_input(state->pin, 1);
     update(state);
 }
