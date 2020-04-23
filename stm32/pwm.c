@@ -7,8 +7,10 @@ struct TimDesc {
 };
 
 static const struct TimDesc tims[] = {
-    {TIM1, 2, RCC_APB2ENR_TIM1EN},   //
-    {TIM2, 1, RCC_APB1ENR_TIM2EN},   //
+    {TIM1, 2, RCC_APB2ENR_TIM1EN}, //
+#ifdef TIM2
+    {TIM2, 1, RCC_APB1ENR_TIM2EN},
+#endif
     {TIM3, 1, RCC_APB1ENR_TIM3EN},   //
     {TIM14, 1, RCC_APB1ENR_TIM14EN}, //
     {TIM16, 2, RCC_APB2ENR_TIM16EN}, //
@@ -23,12 +25,14 @@ struct PinPWM {
 };
 
 static const struct PinPWM pins[] = {
-    {PA_1, 2, LL_GPIO_AF_2, TIM2}, // LED on jdm-v2
-    {PA_3, 4, LL_GPIO_AF_2, TIM2}, // POWER on jdm-v2
+#ifdef TIM2
+    {PA_1, 2, LL_GPIO_AF_2, TIM2},  // LED on jdm-v2
+    {PA_3, 4, LL_GPIO_AF_2, TIM2},  // POWER on jdm-v2
+    {PA_15, 1, LL_GPIO_AF_2, TIM2}, // LED on jdm-v3 (TIM2_CH1_ETR?)
+#endif
     //{PA_6, 1, LL_GPIO_AF_5, TIM16}, // SERVO on jdm-v2,3 - doesn't seem to work, TIM3 works
     {PA_6, 1, LL_GPIO_AF_1, TIM3},  // SERVO on jdm-v2,3
     {PA_11, 4, LL_GPIO_AF_2, TIM1}, // POWER on jdm-v3
-    {PA_15, 1, LL_GPIO_AF_2, TIM2}, // LED on jdm-v3 (TIM2_CH1_ETR?)
     {PB_0, 3, LL_GPIO_AF_1, TIM3},  // GLO0 on jdm-v3, also TIM1:2N
     {PB_1, 1, LL_GPIO_AF_0, TIM14}, // GLO1 on jdm-v3; also TIM3:4, TIM1:3N
 };

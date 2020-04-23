@@ -7,10 +7,7 @@ static void start_app(void) {
 
 ctx_t ctx_;
 
-static const uint8_t output_pins[] = {
-    PIN_LOG0,    PIN_LOG1, PIN_LOG2, PIN_LOG3,     PIN_LED,     PIN_LED2,    PIN_PWR,
-    PIN_LED_GND, PIN_GLO0, PIN_GLO1, PIN_ACC_MOSI, PIN_ACC_SCK, PIN_ACC_VCC, PIN_ACC_CS,
-};
+static const uint8_t output_pins[] = {OUTPUT_PINS};
 
 void led_init(void) {
     for (unsigned i = 0; i < sizeof(output_pins); ++i) {

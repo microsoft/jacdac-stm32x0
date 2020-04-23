@@ -1,5 +1,7 @@
 #include "jdstm.h"
 
+#ifdef PIN_ACC_SCK
+
 #define MASK_SET(p) (1 << ((p)&0xf))
 #define MASK_CLR(p) (1 << (((p)&0xf) + 16))
 
@@ -57,3 +59,5 @@ void bspi_recv(void *dst, uint32_t len) {
         ((uint8_t *)dst)[i] = b;
     }
 }
+
+#endif

@@ -1,5 +1,7 @@
 #include "jdsimple.h"
 
+#ifdef PIN_ACC_VCC
+
 #define REG_CHIP_ID 0x00
 #define REG_DX 0x01
 #define REG_DY 0x03
@@ -167,3 +169,5 @@ void acc_hw_init(void) {
 
     pin_setup_analog_input(PIN_ACC_MISO);
 }
+
+#endif

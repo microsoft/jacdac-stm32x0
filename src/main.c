@@ -2,11 +2,7 @@
 
 uint32_t now;
 
-static const uint8_t output_pins[] = {
-    PIN_LOG0,    PIN_LOG1,   PIN_LOG2,    PIN_LOG3,  PIN_LED,  PIN_LED2,     PIN_PWR,
-    PIN_P0,      PIN_P1,     PIN_LED_GND, PIN_GLO0,  PIN_GLO1, PIN_ACC_MOSI, PIN_ACC_SCK,
-    PIN_ACC_VCC, PIN_ACC_CS, PIN_ASCK,    PIN_AMOSI, PA_6,
-};
+static const uint8_t output_pins[] = {OUTPUT_PINS};
 
 void led_init(void) {
     // To save power, especially in STOP mode,
@@ -29,8 +25,10 @@ void led_init(void) {
 
     // all power pins are reverse polarity
     pin_set(PIN_PWR, 1);
+#ifdef PIN_GLO0
     pin_set(PIN_GLO0, 1);
     pin_set(PIN_GLO1, 1);
+#endif
 }
 
 void log_pin_set(int line, int v) {
@@ -99,7 +97,7 @@ int main(void) {
     adc_init_random(); // 300b
     rtc_init();
 
-    //sleep_forever();
+    // sleep_forever();
 
     txq_init();
     jd_init();
