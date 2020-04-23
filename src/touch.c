@@ -17,7 +17,7 @@ static void update(srv_t *state) {
     pin_set(pin, 1);
     pin_setup_output(pin);
     pin_setup_analog_input(pin);
-    target_wait_us(2000);
+    target_wait_us(50);
     state->reading = adc_read_pin(pin);
 }
 
