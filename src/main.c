@@ -90,6 +90,9 @@ int main(void) {
     led_init();
     led_set(1);
 
+    if ((device_id() + 1) == 0)
+        target_reset();
+
     alloc_init();
 
     tim_init();
