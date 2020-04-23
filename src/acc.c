@@ -71,17 +71,11 @@ struct srv_state {
 #define sample state->sample
 #define shake state->shake
 
-static void emit_event(srv_t *state, int ev) {
-    if (ev & ~0xff)
-        jd_panic();
-    txq_push(state->service_number, JD_CMD_EVENT, &ev, 4);
-}
-
 static void emit_g_event(srv_t *state, int ev) {
     if (state->g_events & (1 << ev))
         return;
     state->g_events |= 1 << ev;
-    emit_event(state, ev);
+    txq_push_event(state, ev);
 }
 
 static uint16_t instantaneousPosture(srv_t *state, uint32_t force) {
@@ -198,7 +192,7 @@ static void process_events(srv_t *state) {
     uint16_t g = instantaneousPosture(state, force);
 
     if (g == ACCELEROMETER_EVT_SHAKE) {
-        emit_event(state, ACCELEROMETER_EVT_SHAKE);
+        txq_push_event(state, ACCELEROMETER_EVT_SHAKE);
     } else {
         // Perform some low pass filtering to reduce jitter from any detected effects
         if (g == state->currentGesture) {
@@ -213,7 +207,7 @@ static void process_events(srv_t *state) {
         if (state->currentGesture != state->lastGesture &&
             state->sigma >= ACCELEROMETER_GESTURE_DAMPING) {
             state->lastGesture = state->currentGesture;
-            emit_event(state, state->lastGesture);
+            txq_push_event(state, state->lastGesture);
         }
     }
 }

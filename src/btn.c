@@ -14,26 +14,20 @@ struct srv_state {
     uint32_t nextSample;
 };
 
-static void emit_event(srv_t *state, int ev) {
-    if (ev & ~0xff)
-        jd_panic();
-    txq_push(state->service_number, JD_CMD_EVENT, &ev, 4);
-}
-
 static void update(srv_t *state) {
     state->pressed = !pin_get(state->pin);
     if (state->pressed != state->prev_pressed) {
         state->prev_pressed = state->pressed;
         if (state->pressed) {
-            emit_event(state, EVT_DOWN);
+            txq_push_event(state, EVT_DOWN);
             state->press_time = now;
         } else {
-            emit_event(state, EVT_UP);
+            txq_push_event(state, EVT_UP);
             uint32_t presslen = now - state->press_time;
             if (presslen > 500000)
-                emit_event(state, EVT_LONG_CLICK);
+                txq_push_event(state, EVT_LONG_CLICK);
             else
-                emit_event(state, EVT_CLICK);
+                txq_push_event(state, EVT_CLICK);
         }
     }
 }

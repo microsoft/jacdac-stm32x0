@@ -24,6 +24,13 @@ void *txq_push(unsigned service_num, unsigned service_cmd, const void *data,
     return trg;
 }
 
+void txq_push_event(srv_t *srv, uint32_t eventid) {
+    srv_common_t *state = (srv_common_t *)srv;
+    if (eventid >> 16)
+        jd_panic();
+    txq_push(state->service_number, JD_CMD_EVENT, &eventid, 4);
+}
+
 jd_frame_t *app_pull_frame(void) {
     isSending = true;
     return &sendFrame[bufferPtr ^ 1];
