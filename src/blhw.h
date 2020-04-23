@@ -90,3 +90,6 @@ static inline uint64_t device_id(void) {
     return app_dev_info.device_id;
 }
 
+#ifndef BL
+#define bl_info (*((struct bl_info_block*)(0x8000000 + FLASH_SIZE - BL_SIZE)))
+#endif

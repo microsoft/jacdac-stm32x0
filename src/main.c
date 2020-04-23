@@ -141,6 +141,9 @@ int main(void) {
 }
 
 static void led_panic_blink(void) {
+    pin_setup_output(PIN_LED);
+    pin_setup_output(PIN_LED_GND);
+    pin_set(PIN_LED_GND, 0);
     led_set(1);
     target_wait_us(70000);
     led_set(0);

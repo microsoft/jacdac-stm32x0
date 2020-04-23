@@ -1,5 +1,5 @@
 TARGET ?= jdm-v3
-PROF ?= light
+PROF ?= acc
 FORCE ?=
 
 .SECONDARY: # this prevents object files from being removed

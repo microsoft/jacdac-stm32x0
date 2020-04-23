@@ -109,6 +109,8 @@ static const uint32_t channels_PB[] = {
     LL_ADC_CHANNEL_9,
 };
 
+#define NO_CHANNEL 0xffffffff
+
 #ifdef STM32F0
 #define TS_CAL1 *(uint16_t *)0x1FFFF7B8
 #ifdef STM32F031x6
@@ -136,21 +138,29 @@ uint16_t adc_read_temp(void) {
 #endif
 }
 
-uint16_t adc_read_pin(uint8_t pin) {
-    uint32_t chan;
-
+static uint32_t pin_channel(uint8_t pin) {
     if (pin >> 4 == 0) {
         if ((pin & 0xf) >= sizeof(channels_PA) / sizeof(channels_PA[0]))
-            jd_panic();
-        chan = channels_PA[pin & 0xf];
+            return NO_CHANNEL;
+        return channels_PA[pin & 0xf];
     } else if (pin >> 4 == 1) {
         if ((pin & 0xf) >= sizeof(channels_PB) / sizeof(channels_PB[0]))
-            jd_panic();
-        chan = channels_PB[pin & 0xf];
+            return NO_CHANNEL;
+        return channels_PB[pin & 0xf];
     } else {
-        chan = 0;
-        jd_panic();
+        return NO_CHANNEL;
     }
+}
+
+bool adc_can_read_pin(uint8_t pin) {
+    return pin_channel(pin) != NO_CHANNEL;
+}
+
+uint16_t adc_read_pin(uint8_t pin) {
+    uint32_t chan = pin_channel(pin);
+
+    if (chan == NO_CHANNEL)
+        jd_panic();
 
     pin_setup_analog_input(pin);
 
