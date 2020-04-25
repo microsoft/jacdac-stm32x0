@@ -154,12 +154,14 @@ $(BUILT)/%.o: %.s
 	@echo AS $<
 	$(V)$(CC) $(CFLAGS) $(CPPFLAGS) -o $@ -c $<
 
-%.hex: %.elf scripts/mk-jdpk.js
+%.hex: %.elf scripts/bin2uf2.js
 	@echo BIN/HEX $<
 	$(V)$(PREFIX)objcopy -O binary $< $(@:.hex=.bin)
 	$(V)$(PREFIX)objcopy -O ihex $< $@
-	@echo JDPK $<
-	$(V)node scripts/mk-jdpk.js -q $(@:.hex=.bin)
+ifeq ($(BL),)
+	@echo UF2 $<
+	$(V)node scripts/bin2uf2.js $(@:.hex=.bin)
+endif
 
 built/compress.js: scripts/compress.ts
 	cd scripts; tsc
