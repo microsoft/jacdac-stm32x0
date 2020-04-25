@@ -414,26 +414,25 @@ function frameToPackets(frame: Uint8Array, timestamp: number) {
     } else {
         const computed = crc(frame.slice(2, size + 12))
         const actual = U.read16(frame, 0)
-        if (actual != computed) {
+        if (actual != computed)
             console.log(`crc mismatch; sz=${size} got:${actual}, exp:${computed}`)
-        } else {
-            const res: Packet[] = []
-            if (frame.length != 12 + frame[2])
-                warn(`${timestamp}ms: unexpected packet len: ${frame.length}`)
-            for (let ptr = 12; ptr < 12 + frame[2];) {
-                const psz = frame[ptr] + 4
-                const sz = ALIGN(psz)
-                const pkt = U.bufferConcat(frame.slice(0, 12), frame.slice(ptr, ptr + psz))
-                if (ptr + sz > 12 + frame[2])
-                    warn(`${timestamp}ms: invalid frame compression, res len=${res.length}`)
-                const p = Packet.fromBinary(pkt)
-                p.timestamp = timestamp
-                res.push(p)
-                ptr += sz
-            }
 
-            return res
+        const res: Packet[] = []
+        if (frame.length != 12 + frame[2])
+            warn(`${timestamp}ms: unexpected packet len: ${frame.length}`)
+        for (let ptr = 12; ptr < 12 + frame[2];) {
+            const psz = frame[ptr] + 4
+            const sz = ALIGN(psz)
+            const pkt = U.bufferConcat(frame.slice(0, 12), frame.slice(ptr, ptr + psz))
+            if (ptr + sz > 12 + frame[2])
+                warn(`${timestamp}ms: invalid frame compression, res len=${res.length}`)
+            const p = Packet.fromBinary(pkt)
+            p.timestamp = timestamp
+            res.push(p)
+            ptr += sz
         }
+
+        return res
     }
 
     return []

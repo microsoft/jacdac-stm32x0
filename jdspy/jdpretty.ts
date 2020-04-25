@@ -102,20 +102,22 @@ export interface Options {
 export function printPkt(pkt: jd.Packet, opts: Options = {}) {
     const frame_flags = pkt._header[3]
 
-    const devname = pkt.dev ? pkt.dev.name || pkt.dev.shortId : pkt.device_identifier
+    let devname = pkt.dev ? pkt.dev.name || pkt.dev.shortId : pkt.device_identifier
+
+    if (frame_flags & jd.JD_FRAME_FLAG_IDENTIFIER_IS_SERVICE_CLASS)
+        devname = "[mul] " + serviceName(pkt.multicommand_class)
 
     const service_name =
         pkt.service_number == jd.JD_SERVICE_NUMBER_CRC_ACK ? "CRC-ACK"
             : `${serviceName(pkt?.dev?.serviceAt(pkt.service_number))} (${pkt.service_number})`
     let pdesc = `${devname}/${service_name}: ${commandName(pkt.service_command)}; sz=${pkt.size}`
+
     if (frame_flags & jd.JD_FRAME_FLAG_COMMAND)
         pdesc = 'to ' + pdesc
     else
         pdesc = 'from ' + pdesc
     if (frame_flags & jd.JD_FRAME_FLAG_ACK_REQUESTED)
         pdesc = `[ack:${toHex(pkt.crc)}] ` + pdesc
-    if (frame_flags & jd.JD_FRAME_FLAG_IDENTIFIER_IS_SERVICE_CLASS)
-        pdesc = "[mul] " + pdesc
 
     const d = pkt.data
     if (pkt.dev && pkt.service_number == 0 && pkt.service_command == jd.CMD_ADVERTISEMENT_DATA) {
