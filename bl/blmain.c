@@ -108,11 +108,13 @@ int main(void) {
     while (1) {
         uint32_t now = ctx->now = tim_get_micros();
 
+        //pin_pulse(PIN_LOG0, 1);
+
         jd_process(ctx);
 
         if (now >= ctx->next_announce && !ctx->tx_full) {
             memcpy(ctx->txBuffer.data, announce_data, sizeof(announce_data));
-            ctx->tx_full = 1;
+            jd_prep_send(ctx);
             ctx->next_announce = now + 512 * 1024;
         }
 

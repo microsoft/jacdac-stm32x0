@@ -9,7 +9,7 @@ static int setup_tx(ctx_t *ctx, int cmd, const void *data, int size) {
     pkt->service_size = size;
     pkt->service_number = 1;
     memcpy(pkt->data, data, size);
-    ctx->tx_full = 1;
+    jd_prep_send(ctx);
 
     return 0;
 }
@@ -27,6 +27,7 @@ void bl_process(ctx_t *ctx) {
     if (ctx->bl_ad_queued &&
         setup_tx(ctx, JD_CMD_ADVERTISEMENT_DATA, bl_ad_data, sizeof(bl_ad_data)) == 0) {
         ((uint32_t *)ctx->txBuffer.data)[4] = bl_dev_info.device_class;
+        jd_prep_send(ctx);
         ctx->bl_ad_queued = 0;
     }
 }

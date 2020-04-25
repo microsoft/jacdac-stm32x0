@@ -64,9 +64,11 @@ static void process_frame(ctx_t *ctx, jd_frame_t *frame) {
         bl_handle_packet(ctx, pkt);
 }
 
-static void prep_frame(jd_frame_t *frame) {
+void jd_prep_send(ctx_t *ctx) {
+    jd_frame_t *frame = &ctx->txBuffer;
     frame->size = ((jd_packet_t *)frame)->service_size + 4;
     jd_compute_crc(frame);
+    ctx->tx_full = 1;
 }
 
 void jd_process(ctx_t *ctx) {
@@ -79,13 +81,12 @@ void jd_process(ctx_t *ctx) {
                 ctx->rx_full = 1;
                 uart_start_rx(ctx, &ctx->rxBuffer, sizeof(ctx->rxBuffer));
             } else if (ctx->tx_full == 1 && !ctx->tx_start_time) {
-                ctx->tx_start_time = now + 20 + (random(ctx) & 127);
+                ctx->tx_start_time = now + 40 + (random(ctx) & 127);
             } else if (ctx->tx_start_time && ctx->tx_start_time <= now) {
-                prep_frame(&ctx->txBuffer);
+                ctx->tx_start_time = 0;
                 if (uart_start_tx(ctx, &ctx->txBuffer, JD_FRAME_SIZE(&ctx->txBuffer)) == 0) {
                     // sent OK
                     ctx->tx_full = 2;
-                    ctx->tx_start_time = 0;
                 } else {
                     // not sent because line was low
                     // next loop iteration will pick it up as RX
@@ -95,6 +96,7 @@ void jd_process(ctx_t *ctx) {
         } else {
             if (!ctx->low_start)
                 ctx->low_start = now;
+            ctx->tx_start_time = 0;
         }
 
         // only process frame when uart isn't busy

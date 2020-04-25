@@ -55,6 +55,7 @@ typedef struct ctx {
 extern ctx_t ctx_;
 
 void jd_process(ctx_t *ctx);
+void jd_prep_send(ctx_t *ctx);
 
 void tim_init(void);
 uint32_t tim_get_micros(void);
