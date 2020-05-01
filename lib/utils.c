@@ -122,11 +122,6 @@ uint32_t random_int(uint32_t max) {
     }
 }
 
-void dump_pkt(jd_packet_t *pkt, const char *msg) {
-    DMESG("pkt[%s]; s#=%d sz=%d %x", msg, pkt->service_number, pkt->service_size,
-          pkt->service_command);
-}
-
 bool should_sample(uint32_t *sample, uint32_t period) {
     if (in_future(*sample))
         return false;

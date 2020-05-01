@@ -115,3 +115,9 @@ void app_process() {
 
     txq_flush();
 }
+
+void dump_pkt(jd_packet_t *pkt, const char *msg) {
+    DMESG("pkt[%s]; s#=%d sz=%d %x", msg, pkt->service_number, pkt->service_size,
+          pkt->service_command);
+}
+
