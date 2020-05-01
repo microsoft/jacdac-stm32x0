@@ -1,5 +1,5 @@
 TARGET ?= jd-v0
-PROF ?= touch
+PROF ?= servo
 FORCE ?=
 
 .SECONDARY: # this prevents object files from being removed

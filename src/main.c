@@ -107,6 +107,18 @@ int main(void) {
 
     app_init_services();
 
+#if 0
+    while(1) {
+        led_set(1);
+        pin_set(PIN_PWR, 0);
+        target_wait_us(300000);
+        pin_set(PIN_PWR, 1);
+        target_wait_us(100000);
+        led_set(0);
+        target_wait_us(10 * 1000 * 1000);
+    }
+#endif
+
     led_blink(200000); // initial (on reset) blink
 
     // When BMP attaches, and we're in deep sleep mode, it will scan us as generic Cortex-M0.
