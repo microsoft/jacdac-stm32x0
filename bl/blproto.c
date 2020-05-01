@@ -21,7 +21,7 @@ static const uint32_t bl_ad_data[] = {
 };
 
 void bl_process(ctx_t *ctx) {
-    if (ctx->subpageno == 0xff && setup_tx(ctx, BL_CMD_PAGE_DATA, &ctx->subpageerr, 8) == 0)
+    if (ctx->subpageno == 0xff && setup_tx(ctx, BL_CMD_PAGE_DATA, &ctx->session_id, 12) == 0)
         ctx->subpageno = 0;
     if (ctx->bl_ad_queued &&
         setup_tx(ctx, JD_CMD_ADVERTISEMENT_DATA, bl_ad_data, sizeof(bl_ad_data) + 4) == 0) {
@@ -56,10 +56,14 @@ bool bl_fixup_app_handlers(ctx_t *ctx) {
 }
 
 static void page_data(ctx_t *ctx, struct bl_page_data *d, int datasize) {
-    if (datasize <= 0) {
+    if (ctx->session_id != d->session_id)
+        return;
+
+    if (datasize < 0) {
         ctx->subpageerr = 1;
         return;
     }
+
     if (d->subpageno == 0) {
         memset(ctx->pagedata, 0, BL_PAGE_SIZE);
         ctx->subpageerr = 0;
@@ -99,6 +103,10 @@ void bl_handle_packet(ctx_t *ctx, jd_packet_t *pkt) {
         break;
     case BL_CMD_PAGE_DATA:
         page_data(ctx, (struct bl_page_data *)pkt->data, pkt->service_size - 28);
+        break;
+    case BL_CMD_SET_SESSION:
+        ctx->session_id = *(uint32_t *)pkt->data;
+        ctx->subpageno = 0xff;
         break;
     }
 }

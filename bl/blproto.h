@@ -8,10 +8,11 @@ struct bl_page_data {
     uint32_t pageaddr;
     uint16_t pageoffset;
     uint8_t subpageno;
-    uint8_t subpagemax;    
+    uint8_t subpagemax;
+    uint32_t session_id;
     uint32_t reserved[5];
     uint8_t data[BL_SUBPAGE_SIZE];
 };
 
-
 #define BL_CMD_PAGE_DATA 0x80
+#define BL_CMD_SET_SESSION 0x81
