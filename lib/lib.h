@@ -73,3 +73,6 @@ bool should_sample(uint32_t *sample, uint32_t period);
     if (!(cond))                                                                                   \
     jd_panic()
 
+
+uint32_t hw_temp(void);
+uint32_t hw_humidity(void);

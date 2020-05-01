@@ -30,6 +30,7 @@
 #define JD_SERVICE_CLASS_DEVICE_NAME 0x117729bd
 #define JD_SERVICE_CLASS_PWM_LIGHT 0x1fb57453
 #define JD_SERVICE_CLASS_BOOTLOADER 0x1ffa9948
+#define JD_SERVICE_CLASS_HUMIDITY 0x16c810b8
 
 // to generate a new class number, head to https://microsoft.github.io/uf2/patcher/
 // click link at the bottom and replace first digit with '1'

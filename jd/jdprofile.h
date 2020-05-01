@@ -38,5 +38,7 @@ void pwm_light_init(uint8_t pin);
 void servo_init(uint8_t pin);
 void btn_init(uint8_t pin);
 void touch_init(uint8_t pin);
+void temp_init(void);
+void humidity_init(void);
 
 extern const char app_dev_class_name[];
