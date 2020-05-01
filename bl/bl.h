@@ -46,6 +46,7 @@ typedef struct ctx {
     uint32_t next_announce;
     uint32_t next_id_blink;
     uint32_t app_start_time;
+    uint32_t rx_timeout;
 
     jd_frame_t rxBuffer;
     jd_frame_t txBuffer;

@@ -74,13 +74,14 @@ void uart_start_rx(ctx_t *ctx, void *data, uint32_t maxbytes) {
 
     ctx->uart_data = data;
     ctx->uart_bytesleft = maxbytes;
+    ctx->rx_timeout = ctx->now + maxbytes * 15;
     ctx->uart_mode = UART_MODE_RX;
 }
 
 int uart_process(ctx_t *ctx) {
     uint32_t isr = USARTx->ISR;
     if (ctx->uart_mode == UART_MODE_RX) {
-        if (isr & USART_ISR_FE) {
+        if (isr & USART_ISR_FE || ctx->now > ctx->rx_timeout) {
             uart_disable(ctx);
             return UART_END_RX;
         } else if (isr & USART_ISR_RXNE) {
