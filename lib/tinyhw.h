@@ -48,6 +48,11 @@ void pwm_enable(uint8_t pwm_id, bool enabled);
 void bspi_send(const void *src, uint32_t len);
 void bspi_recv(void *dst, uint32_t len);
 
+// display.c
+void disp_show(uint8_t *img);
+void disp_refresh(void);
+int disp_light_level(void);
+
 // target_utils.c
 void target_reset(void);
 RAM_FUNC
