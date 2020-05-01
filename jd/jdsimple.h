@@ -9,7 +9,6 @@
 // main.c
 void led_set(int state);
 void led_blink(int us);
-void fail_and_reset(void);
 
 // jdapp.c
 void app_process(void);

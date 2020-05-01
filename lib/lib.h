@@ -1,5 +1,34 @@
 #pragma once
 
+#include <stdint.h>
+#include <stdbool.h>
+#include <string.h>
+#include "dmesg.h"
+#include "pinnames.h"
+#include "board.h"
+
+typedef void (*cb_t)(void);
+
+// Required by jdlow.c
+void jd_panic(void);
+void target_enable_irq(void);
+void target_disable_irq(void);
+void target_wait_us(uint32_t n);
+
+void tim_init(void);
+uint64_t tim_get_micros(void);
+void tim_set_timer(int delta, cb_t cb);
+
+// Provided jdutil.c
+uint32_t jd_random_around(uint32_t v);
+uint32_t jd_random(void);
+void jd_seed_random(uint32_t s);
+uint32_t jd_hash_fnv1a(const void *data, unsigned len);
+uint16_t jd_crc16(const void *data, uint32_t size);
+
+int jd_is_busy(void);
+void fail_and_reset(void);
+
 #include "tinyhw.h"
 
 #define RTC_ALRM_US 10000
