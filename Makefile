@@ -1,5 +1,5 @@
-TARGET ?= jd-v0
-PROF ?= btn
+TARGET ?= jd-v0-i2c
+PROF ?= weather
 FORCE ?=
 
 .SECONDARY: # this prevents object files from being removed
