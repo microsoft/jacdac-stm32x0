@@ -2,6 +2,10 @@
 
 #ifdef PIN_ACC_VCC
 
+#ifndef ACC_I2C_ADDR
+#define ACC_I2C_ADDR 0x12
+#endif
+
 #define REG_CHIP_ID 0x00
 #define REG_DX 0x01
 #define REG_DY 0x03
@@ -59,6 +63,9 @@ void bspi_send(const void *src, uint32_t len);
 void bspi_recv(void *dst, uint32_t len);
 
 static void writeReg(uint8_t reg, uint8_t val) {
+#ifdef ACC_I2C
+    i2c_write_reg(ACC_I2C_ADDR, reg, val);
+#else
     // target_wait_us(200);
     uint8_t cmd[] = {
         0xAE, // IDW
@@ -71,9 +78,13 @@ static void writeReg(uint8_t reg, uint8_t val) {
     pin_set(PIN_ACC_CS, 0);
     bspi_send(cmd, sizeof(cmd));
     pin_set(PIN_ACC_CS, 1);
+#endif
 }
 
 static void readData(uint8_t reg, uint8_t *dst, int len) {
+#ifdef ACC_I2C
+    i2c_read_buf(ACC_I2C_ADDR, reg, dst, len);
+#else
     pin_set(PIN_ACC_CS, 0);
     uint8_t cmd[] = {
         0xAF, // IDR
@@ -86,6 +97,7 @@ static void readData(uint8_t reg, uint8_t *dst, int len) {
     bspi_send(cmd, sizeof(cmd));
     bspi_recv(dst, len);
     pin_set(PIN_ACC_CS, 1);
+#endif
 }
 
 static int readReg(uint8_t reg) {
@@ -100,7 +112,11 @@ static void init_chip(void) {
     target_wait_us(100);
     writeReg(REG_SR, 0x00);
     writeReg(REG_PM, 0x80);
-    writeReg(REG_INT_CFG, 0x1C | (1 << 5));     // disable I2C
+#ifdef ACC_I2C
+    writeReg(REG_INT_CFG, 0x1C);
+#else
+    writeReg(REG_INT_CFG, 0x1C | (1 << 5)); // disable I2C
+#endif
     writeReg(REG_INTPIN_CONF, 0x05 | (1 << 7)); // disable pull-up on CS
     writeReg(REG_FSR, QMAX981_RANGE_8G);
 
@@ -131,23 +147,24 @@ static void init_chip(void) {
 
 void acc_hw_get(int16_t sample[3]) {
     int16_t data[3];
-    pin_setup_input(PIN_ACC_MISO, -1);
     readData(REG_DX, (uint8_t *)data, 6);
-    pin_setup_analog_input(PIN_ACC_MISO);
     sample[0] = data[1] >> 2;
     sample[1] = -data[0] >> 2;
     sample[2] = -data[2] >> 2;
 }
 
 void acc_hw_init(void) {
+#ifdef ACC_I2C
+    i2c_init();
+#else
     pin_setup_output(PIN_ACC_MOSI);
     pin_setup_output(PIN_ACC_SCK);
     pin_setup_input(PIN_ACC_MISO, -1);
+    pin_setup_output(PIN_ACC_CS);
+    pin_set(PIN_ACC_CS, 1);
+#endif
 
     pin_setup_output(PIN_ACC_VCC);
-    pin_setup_output(PIN_ACC_CS);
-
-    pin_set(PIN_ACC_CS, 1);
     pin_set(PIN_ACC_VCC, 1);
 
     // 9us is enough; datasheet claims 250us for I2C ready and 2ms for conversion ready
@@ -166,8 +183,6 @@ void acc_hw_init(void) {
     }
 
     init_chip();
-
-    pin_setup_analog_input(PIN_ACC_MISO);
 }
 
 #endif
