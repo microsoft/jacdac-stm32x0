@@ -20,10 +20,17 @@ if (dev_class >> 28 != 3)
     throw "invalid dev_class: " + dev_class.toString(16)
 const familyID = dev_class
 
+// We first flash the bootBlock with 0xff, then at the end of the file
+// we flash it with the correct values.
+// This is so that bootloader will detect failed flash and don't try to
+// boot damaged application.
+const bootBlockSize = 1024
+
 const flags = 0x00002000 // familyID present
-const numBlocks = (buf.length + 255) >> 8
+const numBlocks = (bootBlockSize + buf.length + 255) >> 8
 const outp = []
-for (let pos = 0; pos < buf.length; pos += 256) {
+
+function addBlock(pos, buf) {
     const bl = Buffer.alloc(512)
     bl.writeUInt32LE(UF2_MAGIC_START0, 0)
     bl.writeUInt32LE(UF2_MAGIC_START1, 4)
@@ -34,9 +41,17 @@ for (let pos = 0; pos < buf.length; pos += 256) {
     bl.writeUInt32LE(numBlocks, 24)
     bl.writeUInt32LE(familyID, 28) // reserved
     for (let i = 0; i < 256; ++i)
-        bl[i + 32] = buf[pos + i]
+        bl[i + 32] = buf ? buf[pos + i] : 0xff
     bl.writeUInt32LE(UF2_MAGIC_END, 512 - 4)
     outp.push(bl)
+
+}
+
+for (let pos = 0; pos < buf.length; pos += 256) {
+    addBlock(pos, pos < bootBlockSize ? null : buf)
+}
+for (let pos = 0; pos < bootBlockSize; pos += 256) {
+    addBlock(pos, buf)
 }
 
 if (numBlocks != outp.length) throw "oops";
