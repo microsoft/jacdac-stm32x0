@@ -2,11 +2,6 @@
 
 #ifdef UART_PIN
 
-#define PORT(pin) ((GPIO_TypeDef *)(GPIOA_BASE + (0x400 * (pin >> 4))))
-#define PIN(pin) (1 << ((pin)&0xf))
-
-#define PIN_PORT PORT(UART_PIN)
-#define PIN_PIN PIN(UART_PIN)
 #define PIN_MODER (1 << (UART_PIN & 0xf) * 2)
 
 #if USART_IDX == 1
@@ -46,15 +41,15 @@ __attribute__((noinline)) void gpio_probe_and_set(GPIO_TypeDef *gpio, uint32_t p
 
 static void uartOwnsPin(int doesIt) {
     if (doesIt) {
-        LL_GPIO_SetPinMode(PIN_PORT, PIN_PIN, LL_GPIO_MODE_ALTERNATE);
+        LL_GPIO_SetPinMode(PIN_PORT(UART_PIN), PIN_MASK(UART_PIN), LL_GPIO_MODE_ALTERNATE);
         if ((UART_PIN & 0xf) <= 7)
-            LL_GPIO_SetAFPin_0_7(PIN_PORT, PIN_PIN, UART_PIN_AF);
+            LL_GPIO_SetAFPin_0_7(PIN_PORT(UART_PIN), PIN_MASK(UART_PIN), UART_PIN_AF);
         else
-            LL_GPIO_SetAFPin_8_15(PIN_PORT, PIN_PIN, UART_PIN_AF);
+            LL_GPIO_SetAFPin_8_15(PIN_PORT(UART_PIN), PIN_MASK(UART_PIN), UART_PIN_AF);
     } else {
-        LL_GPIO_SetPinMode(PIN_PORT, PIN_PIN, LL_GPIO_MODE_INPUT);
-        exti_clear(PIN_PIN);
-        exti_enable(PIN_PIN);
+        LL_GPIO_SetPinMode(PIN_PORT(UART_PIN), PIN_MASK(UART_PIN), LL_GPIO_MODE_INPUT);
+        exti_clear(PIN_MASK(UART_PIN));
+        exti_enable(PIN_MASK(UART_PIN));
     }
 }
 
@@ -99,10 +94,10 @@ void DMA_Handler(void) {
 // the standard BRK signal is too short - it's 10uS - to be detected as break at least on NRF52
 #if 1
             LL_USART_Disable(USARTx);
-            LL_GPIO_SetPinMode(PIN_PORT, PIN_PIN, LL_GPIO_MODE_OUTPUT);
-            LL_GPIO_ResetOutputPin(PIN_PORT, PIN_PIN);
+            LL_GPIO_SetPinMode(PIN_PORT(UART_PIN), PIN_MASK(UART_PIN), LL_GPIO_MODE_OUTPUT);
+            LL_GPIO_ResetOutputPin(PIN_PORT(UART_PIN), PIN_MASK(UART_PIN));
             target_wait_us(12);
-            LL_GPIO_SetOutputPin(PIN_PORT, PIN_PIN);
+            LL_GPIO_SetOutputPin(PIN_PORT(UART_PIN), PIN_MASK(UART_PIN));
 #else
             LL_USART_RequestBreakSending(USARTx);
             // DMESG("USARTx %x", USARTx->ISR);
@@ -138,9 +133,9 @@ static void USART_UART_Init(void) {
 #error "bad usart"
 #endif
 
-    LL_GPIO_SetPinPull(PIN_PORT, PIN_PIN, LL_GPIO_PULL_UP);
-    LL_GPIO_SetPinSpeed(PIN_PORT, PIN_PIN, LL_GPIO_SPEED_FREQ_HIGH);
-    LL_GPIO_SetPinOutputType(PIN_PORT, PIN_PIN, LL_GPIO_OUTPUT_PUSHPULL);
+    LL_GPIO_SetPinPull(PIN_PORT(UART_PIN), PIN_MASK(UART_PIN), LL_GPIO_PULL_UP);
+    LL_GPIO_SetPinSpeed(PIN_PORT(UART_PIN), PIN_MASK(UART_PIN), LL_GPIO_SPEED_FREQ_HIGH);
+    LL_GPIO_SetPinOutputType(PIN_PORT(UART_PIN), PIN_MASK(UART_PIN), LL_GPIO_OUTPUT_PUSHPULL);
     uartOwnsPin(0);
 
 #ifdef STM32F0
@@ -233,7 +228,7 @@ static void check_idle(void) {
 
 int uart_wait_high() {
     int timeout = 5000;
-    while (timeout-- > 0 && !LL_GPIO_IsInputPinSet(PIN_PORT, PIN_PIN))
+    while (timeout-- > 0 && !LL_GPIO_IsInputPinSet(PIN_PORT(UART_PIN), PIN_MASK(UART_PIN)))
         ;
     if (timeout <= 0)
         return -1;
@@ -242,8 +237,8 @@ int uart_wait_high() {
 }
 
 int uart_start_tx(const void *data, uint32_t numbytes) {
-    exti_disable(PIN_PIN);
-    exti_clear(PIN_PIN);
+    exti_disable(PIN_MASK(UART_PIN));
+    exti_clear(PIN_MASK(UART_PIN));
     // We assume EXTI runs at higher priority than us
     // If we got hit by EXTI, before we managed to disable it,
     // the reception routine would have enabled UART in RX mode
@@ -255,9 +250,9 @@ int uart_start_tx(const void *data, uint32_t numbytes) {
         return -1;
     }
 
-    LL_GPIO_ResetOutputPin(PIN_PORT, PIN_PIN);
-    gpio_probe_and_set(PIN_PORT, PIN_PIN, PIN_MODER | PIN_PORT->MODER);
-    if (!(PIN_PORT->MODER & PIN_MODER)) {
+    LL_GPIO_ResetOutputPin(PIN_PORT(UART_PIN), PIN_MASK(UART_PIN));
+    gpio_probe_and_set(PIN_PORT(UART_PIN), PIN_MASK(UART_PIN), PIN_MODER | PIN_PORT(UART_PIN)->MODER);
+    if (!(PIN_PORT(UART_PIN)->MODER & PIN_MODER)) {
         // this is equivalent to irq priority when running from EXTI
         target_disable_irq();
         jd_line_falling();
@@ -265,7 +260,7 @@ int uart_start_tx(const void *data, uint32_t numbytes) {
         return -1;
     }
     target_wait_us(11);
-    LL_GPIO_SetOutputPin(PIN_PORT, PIN_PIN);
+    LL_GPIO_SetOutputPin(PIN_PORT(UART_PIN), PIN_MASK(UART_PIN));
 
     // from here...
     uartOwnsPin(1);
@@ -303,8 +298,8 @@ void uart_start_rx(void *data, uint32_t maxbytes) {
     // DMESG("start rx");
     check_idle();
 
-    exti_disable(PIN_PIN);
-    exti_clear(PIN_PIN);
+    exti_disable(PIN_MASK(UART_PIN));
+    exti_clear(PIN_MASK(UART_PIN));
 
     uartOwnsPin(1);
     LL_USART_DisableDirectionTx(USARTx);
