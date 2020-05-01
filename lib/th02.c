@@ -27,6 +27,14 @@ typedef struct state {
 static ctx_t state;
 
 static int read_data(void) {
+    int v = i2c_read_reg(TH02_ADDR, TH02_STATUS);
+    if (v & 1)
+        return -1;
+
+    int h = i2c_read_reg(TH02_ADDR, TH02_DATA_H);
+    int l = i2c_read_reg(TH02_ADDR, TH02_DATA_L);
+    return (h << 8) | l;
+    /*
     uint8_t data[3];
     if (i2c_read_buf(TH02_ADDR, TH02_STATUS, data, 3) < 0)
         return -1;
@@ -34,6 +42,7 @@ static int read_data(void) {
     if (data[0] & 1)
         return (data[1] << 8) | data[2];
     return -1;
+    */
 }
 
 static void weather_hw_process(void) {
@@ -53,7 +62,7 @@ static void weather_hw_process(void) {
             int v = read_data();
             if (v >= 0) {
                 ctx->in_temp = 0;
-                ctx->temp = (v << PRECISION) / 32 - (50 << PRECISION);
+                ctx->temp = ((v << PRECISION) >> 7) - (50 << PRECISION);
                 ctx->in_humidity = 1;
                 i2c_write_reg(TH02_ADDR, TH02_CONFIG, TH02_CFG_START);
             }
@@ -61,9 +70,9 @@ static void weather_hw_process(void) {
             int v = read_data();
             if (v >= 0) {
                 ctx->in_humidity = 0;
-                ctx->humidity = (v << PRECISION) / 16 - (24 << PRECISION);
+                ctx->humidity = ((v << PRECISION) >> 8) - (24 << PRECISION);
                 ctx->nextsample = now + SAMPLING_MS * 1000;
-                DMESG("t=%d h=%d", ctx->temp >> PRECISION, ctx->humidity >> PRECISION);
+                DMESG("t=%dC h=%d%%", ctx->temp >> PRECISION, ctx->humidity >> PRECISION);
             }
         } else {
             ctx->in_temp = 1;
