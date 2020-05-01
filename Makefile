@@ -20,7 +20,8 @@ CFLAGS = $(DEFINES) \
 	-ffunction-sections -fdata-sections -nostartfiles \
 	$(WARNFLAGS)
 CONFIG_DEPS = \
-	$(wildcard src/*.h) \
+	$(wildcard jd/*.h) \
+	$(wildcard lib/*.h) \
 	$(wildcard bl/*.h) \
 	$(wildcard $(PLATFORM)/*.h) \
 	$(wildcard $(JD_CORE)/*.h) \
@@ -43,7 +44,8 @@ PROFILES = $(patsubst targets/$(TARGET)/profile/%.c,%,$(wildcard targets/$(TARGE
 
 ifeq ($(BL),)
 DEFINES += -DDEVICE_DMESG_BUFFER_SIZE=1024
-C_SRC += $(wildcard src/*.c)
+C_SRC += $(wildcard jd/*.c)
+C_SRC += $(wildcard lib/*.c)
 C_SRC += $(wildcard $(PLATFORM)/*.c)
 C_SRC += $(JD_CORE)/jdlow.c
 C_SRC += $(JD_CORE)/jdutil.c
@@ -55,7 +57,7 @@ C_SRC += $(wildcard bl/*.c)
 C_SRC += $(PLATFORM)/pins.c
 C_SRC += $(PLATFORM)/init.c
 C_SRC += $(PLATFORM)/flash.c
-C_SRC += src/dmesg.c
+C_SRC += lib/dmesg.c
 C_SRC += $(JD_CORE)/jdutil.c
 AS_SRC += bl/boothandler.s
 endif
@@ -75,7 +77,8 @@ CPPFLAGS += \
 	-Itargets/$(TARGET) \
 	-Itargets/$(BASE_TARGET) \
 	-I$(PLATFORM) \
-	-Isrc \
+	-Ijd \
+	-Ilib \
 	-I$(JD_CORE) \
 	-I$(BUILT)
 
@@ -145,7 +148,8 @@ $(BUILT)/%.o: %.c
 	$(V)$(CC) $(CFLAGS) $(CPPFLAGS) -o $@ -c $<
 
 $(wildcard $(BUILT)/bl/*.o): $(CONFIG_DEPS)
-$(wildcard $(BUILT)/src/*.o): $(CONFIG_DEPS)
+$(wildcard $(BUILT)/jd/*.o): $(CONFIG_DEPS)
+$(wildcard $(BUILT)/lib/*.o): $(CONFIG_DEPS)
 $(wildcard $(BUILT)/$(PLATFORM)/*.o): $(CONFIG_DEPS)
 $(wildcard $(BUILT)/$(JD_CORE)/*.o): $(CONFIG_DEPS)
 
@@ -178,12 +182,12 @@ st:
 stf:
 	$(V)node scripts/map-file-stats.js  $(BUILT)/output.map -fun
 
-$(BUILT)/src/prof-%.o: targets/$(TARGET)/profile/%.c
+$(BUILT)/jd/prof-%.o: targets/$(TARGET)/profile/%.c
 	@echo CC $<
-	@mkdir -p $(BUILT)/src
+	@mkdir -p $(BUILT)/jd
 	$(V)$(CC) $(CFLAGS) $(CPPFLAGS) -o $@ -c $<
 
-$(BUILT_BIN)/$(PREF)-%.elf: $(BUILT)/src/prof-%.o $(OBJ) Makefile $(LD_SCRIPT) scripts/patch-bin.js $(FORCE)
+$(BUILT_BIN)/$(PREF)-%.elf: $(BUILT)/jd/prof-%.o $(OBJ) Makefile $(LD_SCRIPT) scripts/patch-bin.js $(FORCE)
 	@echo LD $@
 	$(V)$(CC) $(CFLAGS) $(LDFLAGS) -Wl,-Map=$@.map  -o $@ $(OBJ) $< -lm
 	@echo BIN-PATCH $@
