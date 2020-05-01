@@ -19,6 +19,7 @@
 #define PIN_SDA PA_10
 #define PIN_SCL PA_9
 #define I2C_FAST_MODE 0
+#define I2C_AF 4
 
 #define OUTPUT_PINS                                                                                \
     PIN_LOG0, PIN_LOG1, PIN_LOG2, PIN_LOG3, PIN_LED, PIN_LED2, PIN_PWR, PIN_P0, PIN_P1,            \
