@@ -10,7 +10,7 @@ struct bl_page_data {
     uint8_t subpageno;
     uint8_t subpagemax;
     uint32_t session_id;
-    uint32_t reserved[5];
+    uint32_t reserved[4];
     uint8_t data[BL_SUBPAGE_SIZE];
 };
 
