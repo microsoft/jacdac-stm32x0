@@ -18,14 +18,14 @@ static const uint32_t bl_ad_data[] = {
     JD_SERVICE_CLASS_BOOTLOADER,
     BL_PAGE_SIZE,
     FLASH_SIZE - BL_SIZE,
-    0,
 };
 
 void bl_process(ctx_t *ctx) {
     if (ctx->subpageno == 0xff && setup_tx(ctx, BL_CMD_PAGE_DATA, &ctx->subpageerr, 8) == 0)
         ctx->subpageno = 0;
     if (ctx->bl_ad_queued &&
-        setup_tx(ctx, JD_CMD_ADVERTISEMENT_DATA, bl_ad_data, sizeof(bl_ad_data)) == 0) {
+        setup_tx(ctx, JD_CMD_ADVERTISEMENT_DATA, bl_ad_data, sizeof(bl_ad_data) + 4) == 0) {
+        // append our device class
         ((uint32_t *)ctx->txBuffer.data)[4] = bl_dev_info.device_class;
         jd_prep_send(ctx);
         ctx->bl_ad_queued = 0;
@@ -38,8 +38,7 @@ static void bl_write_page(ctx_t *ctx) {
         memcpy(&a->devinfo, &bl_dev_info, sizeof(bl_dev_info));
         if (a->app_reset_handler == 0 || a->app_reset_handler + 1 == 0)
             a->app_reset_handler = a->boot_reset_handler;
-        a->boot_reset_handler =
-            (uint32_t)&bl_dev_info + 32 + 1; // +1 for thumb state
+        a->boot_reset_handler = (uint32_t)&bl_dev_info + 32 + 1; // +1 for thumb state
     }
     flash_erase((void *)ctx->pageaddr);
     flash_program((void *)ctx->pageaddr, ctx->pagedata, BL_PAGE_SIZE);
