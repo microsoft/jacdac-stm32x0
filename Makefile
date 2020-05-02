@@ -1,5 +1,5 @@
 TARGET ?= jd-v0-i2c
-PROF ?= weather
+PROF ?= oled
 FORCE ?=
 
 .SECONDARY: # this prevents object files from being removed
