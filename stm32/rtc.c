@@ -53,18 +53,19 @@ void rtc_sync_time() {
     uint8_t newSecond;
     for (;;) {
         subsecond = LL_RTC_TIME_GetSubSecond(RTC); // this locks TR/DR
-        newSecond = RTC->TR & 0xf;
-        // normally, reading subsecond should lock TR/DR; it usually does
-        // but F031 errata says that this can happen
-        if (subsecond == LL_RTC_TIME_GetSubSecond(RTC)) {
+        newSecond = RTC->TR & 0x7f;
+        if (subsecond == LL_RTC_TIME_GetSubSecond(RTC) && (RTC->TR & 0x7f) == newSecond) {
             (void)RTC->DR; // unlock DR/TR
             break;
         }
     }
     subsecond = ctx->presc - subsecond;
     if (newSecond != ctx->lastSecond) {
+        int diff = 60 + BCD(newSecond, 3) - BCD(ctx->lastSecond, 3);
+        if (diff >= 60)
+            diff -= 60;
         ctx->lastSecond = newSecond;
-        ctx->microsecondBase += RTC_SECOND_IN_US;
+        ctx->microsecondBase += diff * RTC_SECOND_IN_US;
     }
     tim_set_micros(ctx->microsecondBase + TICKS_TO_US(subsecond));
     ctx->needsSync = false;
@@ -141,6 +142,8 @@ static void rtc_config(uint8_t p0, uint16_t p1) {
     while (LL_RTC_IsActiveFlag_INIT(RTC) != 1)
         ;
 
+    LL_RTC_EnableShadowRegBypass(RTC);
+
     LL_RTC_SetAsynchPrescaler(RTC, p0 - 1);
     LL_RTC_SetSynchPrescaler(RTC, p1 - 1);
 
@@ -165,10 +168,6 @@ static void rtc_config(uint8_t p0, uint16_t p1) {
     NVIC_EnableIRQ(RTC_IRQn);
 
     LL_RTC_DisableInitMode(RTC);
-
-    LL_RTC_ClearFlag_RS(RTC);
-    while (LL_RTC_IsActiveFlag_RS(RTC) != 1)
-        ;
 }
 
 // with more than 4000 it overflows!
@@ -202,6 +201,7 @@ void rtc_init() {
     ctx->presc = tmp;
     rtc_config(1, ctx->presc);
     LL_RTC_ALMA_Disable(RTC);
+    ctx->needsSync = true;
     rtc_sync_time();
 }
 
