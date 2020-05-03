@@ -34,6 +34,11 @@ void pwr_leave_tim() {
     tim_cnt--;
 }
 
+void pwr_wait_tim() {
+    while (pll_cnt || tim_cnt)
+        rtc_sleep(true);
+}
+
 void pwr_sleep() {
     rtc_sleep(pll_cnt || tim_cnt || jd_is_busy());
 }

@@ -54,6 +54,8 @@ void pwr_enter_tim(void);
 void pwr_leave_tim(void);
 // go to sleep, deep or shallow
 void pwr_sleep(void);
+// do WFI until PLL/TIM mode is left
+void pwr_wait_tim(void);
 
 extern uint32_t now;
 
@@ -87,4 +89,3 @@ typedef struct oled_state {
 void oled_set_pixel(oled_state_t *ctx, int x, int y);
 void oled_setup(oled_state_t *ctx);
 void oled_flush(oled_state_t *ctx);
-
