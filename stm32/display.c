@@ -2,13 +2,13 @@
 
 #ifdef NUM_DISPLAY_ROWS
 
-//#define DISP_DELAY_OVERRIDE 300 // for power measurements
+//#define DISP_DELAY_OVERRIDE 1700 // for power measurements
 #define DISP_LIGHT_SENSE 1
 
 #define DISP_LEVEL_MAX 1800 // regulate brightness here
 #define DISP_LEVEL_MIN 1
 
-#define DISP_DELAY_MAX 1300 // assuming 10ms frames, we use 66% of it
+#define DISP_DELAY_MAX 1700 // assuming 10ms frames, we use 85% of it
 #define DISP_DELAY_MIN 20
 
 #define DISP_STEP (((DISP_DELAY_MAX - DISP_DELAY_MIN) << 10) / (DISP_LEVEL_MAX - DISP_LEVEL_MIN))
@@ -29,6 +29,7 @@ typedef struct ctx {
     uint16_t target_delay;
     uint16_t delay;
     uint8_t num_cached;
+    uint8_t curr_line;
 
     uint16_t frames_until_reading;
     uint16_t reading;
@@ -153,8 +154,32 @@ int disp_light_level() {
     return ctx_.reading;
 }
 
+static void show_line(ctx_t *ctx, int i) {
+    turn_off(ctx); // avoid bleeding between rows
+    set_masks(ctx, ctx->cached_rows[i], ctx->cached_cols[i]);
+}
+
+static void finish_refresh(ctx_t *ctx) {
+    turn_off(ctx);
+    if (ctx->frames_until_reading-- == 0) {
+        ctx->frames_until_reading = 50;
+        measure_light(ctx);
+    }
+}
+
 #ifdef DISP_USE_TIMER
-static void do_nothing(void) {}
+static void disp_cb(void) {
+        pin_pulse(PIN_P0, 2);
+    ctx_t *ctx = &ctx_;
+    if (ctx->curr_line < ctx->num_cached) {
+        show_line(ctx, ctx->curr_line++);
+        tim_set_timer(ctx->delay, disp_cb);
+    } else {
+        finish_refresh(ctx);
+        pin_pulse(PIN_P0, 4);
+        pwr_leave_tim();
+    }
+}
 #endif
 
 void disp_refresh() {
@@ -171,21 +196,18 @@ void disp_refresh() {
     ctx->delay += dd;
 
     disp_init(ctx);
-    for (int i = 0; i < ctx->num_cached; ++i) {
-        set_masks(ctx, ctx->cached_rows[i], ctx->cached_cols[i]);
-#ifdef DISP_USE_TIMER
-        tim_set_timer(ctx->delay, do_nothing);
-        __WFI();
-#else
-        target_wait_us(ctx->delay);
-#endif
-    }
-    turn_off(ctx);
 
-    if (ctx->frames_until_reading-- == 0) {
-        ctx->frames_until_reading = 50;
-        measure_light(ctx);
+#ifdef DISP_USE_TIMER
+    ctx->curr_line = 0;
+    pwr_enter_tim();
+    disp_cb();
+#else
+    for (int i = 0; i < ctx->num_cached; ++i) {
+        show_line(ctx, i);
+        target_wait_us(ctx->delay);
     }
+    finish_refresh(ctx);
+#endif
 }
 
 #endif
