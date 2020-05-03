@@ -153,6 +153,10 @@ void acc_hw_get(int16_t sample[3]) {
     sample[2] = -data[2] >> 2;
 }
 
+void acc_hw_sleep(void) {
+    writeReg(REG_PM, 0x00);
+}
+
 void acc_hw_init(void) {
 #ifdef ACC_I2C
     i2c_init();
