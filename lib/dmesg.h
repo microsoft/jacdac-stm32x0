@@ -52,6 +52,8 @@ void codal_dmesg_flush(void);
 
 void codal_vdmesg(const char *format, va_list ap);
 
+int codal_vsprintf(char *dst, unsigned dstsize, const char *format, va_list ap);
+
 #define DMESG  codal_dmesg
 #define DMESGF  codal_dmesgf
 

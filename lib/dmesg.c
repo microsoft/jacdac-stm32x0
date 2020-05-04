@@ -4,8 +4,6 @@
 
 struct CodalLogStore codalLogStore;
 
-static void logwrite(const char *msg);
-
 static void logwriten(const char *msg, int l) {
     target_disable_irq();
     if (codalLogStore.ptr + l >= sizeof(codalLogStore.buffer)) {
@@ -15,7 +13,7 @@ static void logwriten(const char *msg, int l) {
         codalLogStore.buffer[2] = '.';
         codalLogStore.ptr = 3;
 #else
-    // this messes with timings too much
+        // this messes with timings too much
         const int jump = sizeof(codalLogStore.buffer) / 4;
         codalLogStore.ptr -= jump;
         memmove(codalLogStore.buffer, codalLogStore.buffer + jump, codalLogStore.ptr);
@@ -24,18 +22,12 @@ static void logwriten(const char *msg, int l) {
                sizeof(codalLogStore.buffer) - codalLogStore.ptr);
 #endif
     }
-    if (l + codalLogStore.ptr >= sizeof(codalLogStore.buffer)) {
-        logwrite("DMESG line too long!\n");
-        return;
-    }
+    if (l + codalLogStore.ptr >= sizeof(codalLogStore.buffer))
+        return; // shouldn't happen
     memcpy(codalLogStore.buffer + codalLogStore.ptr, msg, l);
     codalLogStore.ptr += l;
     codalLogStore.buffer[codalLogStore.ptr] = 0;
     target_enable_irq();
-}
-
-static void logwrite(const char *msg) {
-    logwriten(msg, strlen(msg));
 }
 
 static void writeNum(char *buf, uint32_t n, bool full) {
@@ -49,19 +41,6 @@ static void writeNum(char *buf, uint32_t n, bool full) {
         sh -= 4;
     }
     buf[i] = 0;
-}
-
-static void logwritenum(uint32_t n, bool full, bool hex) {
-    char buff[20];
-
-    if (hex) {
-        writeNum(buff, n, full);
-        logwrite("0x");
-    } else {
-        itoa(n, buff);
-    }
-
-    logwrite(buff);
 }
 
 void codal_dmesg(const char *format, ...) {
@@ -80,41 +59,71 @@ void codal_dmesgf(const char *format, ...) {
 }
 
 void codal_vdmesg(const char *format, va_list ap) {
-    const char *end = format;
+    char tmp[80];
+    codal_vsprintf(tmp, sizeof(tmp) - 1, format, ap);
+    int len = strlen(tmp);
+    tmp[len] = '\n';
+    tmp[len + 1] = 0;
+    logwriten(tmp, len + 1);
+}
 
-    while (*end) {
-        if (*end++ == '%') {
-            logwriten(format, end - format - 1);
+#define WRITEN(p, sz_)                                                                             \
+    do {                                                                                           \
+        sz = sz_;                                                                                  \
+        ptr += sz;                                                                                 \
+        if (ptr < dstsize) {                                                                       \
+            memcpy(dst + ptr - sz, p, sz);                                                         \
+            dst[ptr] = 0;                                                                          \
+        }                                                                                          \
+    } while (0)
+
+int codal_vsprintf(char *dst, unsigned dstsize, const char *format, va_list ap) {
+    const char *end = format;
+    unsigned ptr = 0, sz;
+    char buf[16];
+
+    for (;;) {
+        char c = *end++;
+        if (c == 0 || c == '%') {
+            if (format != end)
+                WRITEN(format, end - format - 1);
+            if (c == 0)
+                break;
+
             uint32_t val = va_arg(ap, uint32_t);
-            switch (*end++) {
+            c = *end++;
+            buf[1] = 0;
+            switch (c) {
             case 'c':
-                logwriten((const char *)&val, 1);
+                buf[0] = val;
                 break;
             case 'd':
-                logwritenum(val, false, false);
+                itoa(val, buf);
                 break;
             case 'x':
-                logwritenum(val, false, true);
-                break;
             case 'p':
             case 'X':
-                logwritenum(val, true, true);
+                buf[0] = '0';
+                buf[1] = 'x';
+                writeNum(buf + 2, val, c != 'x');
                 break;
             case 's':
-                logwrite((char *)(void *)val);
+                WRITEN((char *)(void *)val, strlen((char *)(void *)val));
+                buf[0] = 0;
                 break;
             case '%':
-                logwrite("%");
+                buf[0] = c;
                 break;
             default:
-                logwrite("???");
+                buf[0] = '?';
                 break;
             }
             format = end;
+            WRITEN(buf, strlen(buf));
         }
     }
-    logwriten(format, end - format);
-    logwrite("\r\n");
+
+    return ptr;
 }
 
 #endif
