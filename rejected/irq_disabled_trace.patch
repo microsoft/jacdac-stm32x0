@@ -1,0 +1,39 @@
+diff --git a/stm32/target_utils.c b/stm32/target_utils.c
+index dfae316..43cf5d7 100644
+--- a/stm32/target_utils.c
++++ b/stm32/target_utils.c
+@@ -29,16 +29,34 @@ void target_reset(void) {
+ 
+ static int8_t irq_disabled;
+ 
++static uint16_t irq_d_time;
++
+ void target_enable_irq(void) {
++    irq_disabled--;
++    if (irq_disabled <= 0) {
++        irq_disabled = 0;
++        volatile uint16_t dd = TIM17->CNT - irq_d_time;
++        if (dd > 1000)
++            jd_panic();
++        asm volatile("cpsie i" : : : "memory");
++        pin_set(PIN_P0, 0);
++    }
++}
++
++void target_enable_irq_long(void) {
+     irq_disabled--;
+     if (irq_disabled <= 0) {
+         irq_disabled = 0;
+         asm volatile("cpsie i" : : : "memory");
++        pin_set(PIN_P0, 0);
+     }
+ }
+ 
+ void target_disable_irq(void) {
++    pin_set(PIN_P0, 1);
+     asm volatile("cpsid i" : : : "memory");
++    if (irq_disabled == 0)
++        irq_d_time = TIM17->CNT;
+     irq_disabled++;
+ }
+ 
