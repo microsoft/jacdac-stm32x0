@@ -7,6 +7,7 @@ struct CodalLogStore codalLogStore;
 static void logwrite(const char *msg);
 
 static void logwriten(const char *msg, int l) {
+    target_disable_irq();
     if (codalLogStore.ptr + l >= sizeof(codalLogStore.buffer)) {
 #if 1
         codalLogStore.buffer[0] = '.';
@@ -30,6 +31,7 @@ static void logwriten(const char *msg, int l) {
     memcpy(codalLogStore.buffer + codalLogStore.ptr, msg, l);
     codalLogStore.ptr += l;
     codalLogStore.buffer[codalLogStore.ptr] = 0;
+    target_enable_irq();
 }
 
 static void logwrite(const char *msg) {
@@ -80,7 +82,6 @@ void codal_dmesgf(const char *format, ...) {
 void codal_vdmesg(const char *format, va_list ap) {
     const char *end = format;
 
-    target_disable_irq();
     while (*end) {
         if (*end++ == '%') {
             logwriten(format, end - format - 1);
@@ -114,7 +115,6 @@ void codal_vdmesg(const char *format, va_list ap) {
     }
     logwriten(format, end - format);
     logwrite("\r\n");
-    target_enable_irq();
 }
 
 #endif
