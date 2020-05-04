@@ -2,6 +2,11 @@
 
 #include "blhw.h"
 
+#ifndef RTC_SECOND_IN_US
+// use a little more than 10ms, so we don't have issues with wrap around
+#define RTC_SECOND_IN_US 25000
+#endif
+
 // exti.c
 #define EXTI_FALLING 0x01
 #define EXTI_RISING 0x02
@@ -52,7 +57,9 @@ void bspi_recv(void *dst, uint32_t len);
 // display.c
 void disp_show(uint8_t *img);
 void disp_refresh(void);
+void disp_sleep(void);
 int disp_light_level(void);
+void disp_set_dark_level(int v);
 
 // target_utils.c
 void target_reset(void);

@@ -30,4 +30,8 @@ void rtc_cancel_cb(void);
 #define PIN_PORT(pin) ((GPIO_TypeDef *)(GPIOA_BASE + (0x400 * (pin >> 4))))
 #define PIN_MASK(pin) (1 << ((pin)&0xf))
 
+#ifndef RTC_MIN_TIME_US
+#define RTC_MIN_TIME_US 500
+#endif
+
 #endif

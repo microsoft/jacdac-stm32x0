@@ -31,7 +31,7 @@ cb_t tim_steal_callback(uint32_t *usec) {
     if (f) {
         uint16_t delta = LL_TIM_OC_GetCompareCH1(TIMx) - TIMx->CNT;
         *usec = delta;
-        if (500 <= delta && delta <= 10000) {
+        if (RTC_MIN_TIME_US <= delta && (int)delta <= (RTC_SECOND_IN_US / 2)) {
             timer_cb = NULL;
         } else {
             f = NULL;

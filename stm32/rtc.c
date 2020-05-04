@@ -1,9 +1,5 @@
 #include "jdstm.h"
 
-#ifndef RTC_SECOND_IN_US
-// use a little more than 10ms, so we don't have issues with wrap around
-#define RTC_SECOND_IN_US 25000
-#endif
 
 #define US_TICK_SCALE 16
 #define TICK_US_SCALE 10
@@ -73,11 +69,11 @@ void rtc_sync_time() {
 }
 
 static void rtc_set(ctx_t *ctx, uint32_t delta_us, cb_t f) {
-    if (delta_us > 10000)
+    if (delta_us > RTC_SECOND_IN_US)
         jd_panic();
+    if (delta_us < RTC_MIN_TIME_US)
+        delta_us = RTC_MIN_TIME_US;
     uint32_t delta_tick = US_TO_TICKS(delta_us);
-    if (delta_tick < 20)
-        delta_tick = 20;
 
     ctx->cb = f;
 
@@ -86,6 +82,7 @@ static void rtc_set(ctx_t *ctx, uint32_t delta_us, cb_t f) {
         ;
 
     uint32_t v = LL_RTC_TIME_GetSubSecond(RTC);
+    (void)RTC->DR;                             // unlock DR/TR
     uint32_t nv = v + ctx->presc - delta_tick; // the timer counts back; also don't underflow
     if (nv >= ctx->presc)
         nv -= ctx->presc; // make sure it's in range
@@ -239,6 +236,7 @@ bool rtc_check_standby(void) {
 void rtc_sleep(bool forceShallow) {
     if (forceShallow) {
         pin_pulse(PIN_PWR_LOG, 1);
+        LL_RTC_ALMA_Disable(RTC);
         __WFI();
         return;
     }
@@ -249,6 +247,7 @@ void rtc_sleep(bool forceShallow) {
     if (!f) {
         target_enable_irq();
         pin_pulse(PIN_PWR_LOG, 2);
+        LL_RTC_ALMA_Disable(RTC);
         __WFI();
         return;
     }
