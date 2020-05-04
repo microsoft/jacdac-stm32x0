@@ -2,11 +2,12 @@
 
 #ifdef NUM_DISPLAY_ROWS
 
-//#define DISP_DELAY_OVERRIDE 1700 // for power measurements
+//#define DISP_DELAY_OVERRIDE 150 // for power measurements
 #define DISP_LIGHT_SENSE 1
 
-#define DISP_LEVEL_MAX 1800 // regulate brightness here
-#define DISP_LEVEL_MIN 1
+//#define DISP_LEVEL_MAX 1200 // regulate brightness here
+#define DISP_LEVEL_MAX 1200 // regulate brightness here
+#define DISP_LEVEL_MIN 10
 
 #define DISP_DELAY_MAX 1700 // assuming 10ms frames, we use 85% of it
 #define DISP_DELAY_MIN 20
@@ -26,10 +27,12 @@ typedef struct ctx {
     uint16_t row_mask[NUM_DISPLAY_ROWS];
     uint16_t col_mask[NUM_DISPLAY_COLS];
 
-    uint16_t target_delay;
-    uint16_t delay;
+    uint32_t target_delay;
+    uint32_t delay;
+    uint16_t dark_level;
     uint8_t num_cached;
     uint8_t curr_line;
+    volatile uint8_t in_refresh;
 
     uint16_t frames_until_reading;
     uint16_t reading;
@@ -72,19 +75,47 @@ static void measure_light(ctx_t *ctx) {
     turn_off(ctx);
 
 #ifdef DISP_LIGHT_SENSE
+#if 0
     for (int i = 0; i < NUM_DISPLAY_COLS; ++i) {
         pin_set(col_pins[i], 1);
         pin_setup_analog_input(col_pins[i]);
     }
 
-    uint8_t pin = col_pins[0];
+    uint8_t pin = col_pins[1];
     pin_set(pin, 0);
     pin_setup_output(pin);
     pin_setup_analog_input(pin);
     target_wait_us(2000);
     ctx->reading = adc_read_pin(pin);
+    //int lux = (ctx->reading - 73) * 10 / 3;500
+#else
+#if 0
+    int res[5];
+    ctx->reading =0 ;
+    for (int i = 0; i < 5; ++i) {
+    uint8_t pin = row_pins[i];
+    pin_setup_analog_input(pin);
+    target_wait_us(1000);
+    res[i] = adc_read_pin(pin);
+    if(res[i]>ctx->reading)
+    ctx->reading=res[i];
+    pin_setup_output(pin);
+    }
+    DMESG("%d %d %d %d %d %d", ctx->reading, ctx->reading-res[0],
+        ctx->reading-res[1],
+        ctx->reading-res[2],
+        ctx->reading-res[3],
+        ctx->reading-res[4]);
+#else
+    uint8_t pin = row_pins[2];
+    pin_setup_analog_input(pin);
+    target_wait_us(1000);
+    ctx->reading = adc_read_pin(pin);
+    pin_setup_output(pin);
+#endif
+#endif
 
-    int v = ctx->reading;
+    int v = ctx->dark_level - ctx->reading;
 
     if (v > DISP_LEVEL_MAX)
         v = DISP_LEVEL_MAX;
@@ -92,16 +123,14 @@ static void measure_light(ctx_t *ctx) {
         v = DISP_LEVEL_MIN;
 
     v -= DISP_LEVEL_MIN;
-    ctx->target_delay = DISP_DELAY_MIN + (v * DISP_STEP >> 10);
+    ctx->target_delay = (DISP_DELAY_MIN << 10) + (v * DISP_STEP);
 #else
-    ctx->target_delay = DISP_DELAY_OVERRIDE;
+    ctx->target_delay = DISP_DELAY_OVERRIDE << 10;
 #endif
 
 #ifdef DISP_DELAY_OVERRIDE
-    ctx->target_delay = DISP_DELAY_OVERRIDE;
+    ctx->target_delay = DISP_DELAY_OVERRIDE << 10;
 #endif
-
-    // ctx->delay = 100;
 
     for (int i = 0; i < NUM_DISPLAY_COLS; ++i) {
         pin_set(col_pins[i], 0);
@@ -115,7 +144,7 @@ static void measure_light(ctx_t *ctx) {
 static void disp_init(ctx_t *ctx) {
     if (ctx->row_port)
         return;
-    ctx->delay = DISP_DELAY_MIN;
+    ctx->delay = DISP_DELAY_MIN << 10;
     ctx->row_port = compute_masks(NUM_DISPLAY_ROWS, ctx->row_mask, row_pins, &ctx->row_all);
     ctx->col_port = compute_masks(NUM_DISPLAY_COLS, ctx->col_mask, col_pins, &ctx->col_all);
     measure_light(ctx);
@@ -154,6 +183,11 @@ int disp_light_level() {
     return ctx_.reading;
 }
 
+void disp_set_dark_level(int v) {
+    DMESG("set dark lvl: %d", v);
+    ctx_.dark_level = v;
+}
+
 static void show_line(ctx_t *ctx, int i) {
     turn_off(ctx); // avoid bleeding between rows
     set_masks(ctx, ctx->cached_rows[i], ctx->cached_cols[i]);
@@ -162,23 +196,32 @@ static void show_line(ctx_t *ctx, int i) {
 static void finish_refresh(ctx_t *ctx) {
     turn_off(ctx);
     if (ctx->frames_until_reading-- == 0) {
-        ctx->frames_until_reading = 50;
+        ctx->frames_until_reading = 200;
         measure_light(ctx);
     }
 }
 
 #ifdef DISP_USE_TIMER
 static void disp_cb(void) {
-        pin_pulse(PIN_P0, 2);
+    pin_pulse(PIN_P0, 3);
     ctx_t *ctx = &ctx_;
     if (ctx->curr_line < ctx->num_cached) {
         show_line(ctx, ctx->curr_line++);
-        tim_set_timer(ctx->delay, disp_cb);
+        tim_set_timer(ctx->delay >> 10, disp_cb);
     } else {
         finish_refresh(ctx);
         pin_pulse(PIN_P0, 4);
-        pwr_leave_tim();
+        ctx->in_refresh = 0;
+        // set fake callback, so that rtc_sleep() does deepsleep
+        tim_set_timer(20000, disp_cb);
     }
+}
+void disp_sleep() {
+    rtc_sleep(false);
+}
+#else
+void disp_sleep() {
+    rtc_deepsleep();
 }
 #endif
 
@@ -186,28 +229,35 @@ void disp_refresh() {
     ctx_t *ctx = &ctx_;
 
     int dd = ctx->target_delay - ctx->delay;
-    int max = ctx->target_delay >> 6;
+    int max = (ctx->delay + ctx->target_delay) >> 9;
     if (max < 1)
         max = 1;
     if (dd < -max)
         dd = -max;
     else if (dd > max)
         dd = max;
-    ctx->delay += dd;
+    if (dd) {
+        //DMESG("a %d", dd);
+        ctx->delay += dd;
+    }
 
     disp_init(ctx);
 
 #ifdef DISP_USE_TIMER
     ctx->curr_line = 0;
-    pwr_enter_tim();
+    ctx->in_refresh = 1;
     disp_cb();
 #else
     for (int i = 0; i < ctx->num_cached; ++i) {
         show_line(ctx, i);
-        target_wait_us(ctx->delay);
+        target_wait_us(ctx->delay >> 10);
+        for (int i = 0; i < ctx->num_cached; ++i) {
+            show_line(ctx, i);
+            target_wait_us(ctx->delay >> 10);
+        }
     }
-    finish_refresh(ctx);
 #endif
 }
+
 
 #endif
