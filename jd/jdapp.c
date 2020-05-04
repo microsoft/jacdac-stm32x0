@@ -30,6 +30,7 @@ void app_init_services() {
     tmp[MAX_SERV] = (srv_t *)hashes; // avoid global variable
     services = tmp;
     ctrl_init();
+    jdcon_init();
     init_services();
     services = alloc(sizeof(void *) * num_services);
     memcpy(services, tmp, sizeof(void *) * num_services);
@@ -120,4 +121,3 @@ void dump_pkt(jd_packet_t *pkt, const char *msg) {
     DMESG("pkt[%s]; s#=%d sz=%d %x", msg, pkt->service_number, pkt->service_size,
           pkt->service_command);
 }
-

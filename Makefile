@@ -1,5 +1,5 @@
-TARGET ?= jd-v0-i2c
-PROF ?= oled
+TARGET ?= jd-v0
+PROF ?= servo
 FORCE ?=
 
 .SECONDARY: # this prevents object files from being removed

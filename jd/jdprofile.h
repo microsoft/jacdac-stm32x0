@@ -31,6 +31,12 @@
 void init_services(void);
 
 void ctrl_init(void);
+
+void jdcon_init(void);
+void jdcon_logv(int level, const char *format, va_list ap);
+void jdcon_log(const char *format, ...);
+void jdcon_warn(const char *format, ...);
+
 void acc_init(void);
 void crank_init(uint8_t pin0, uint8_t pin1);
 void light_init(void);
