@@ -46,6 +46,23 @@ void app_queue_annouce() {
     for (int i = 0; i < num_services; ++i)
         dst[i] = services[i]->vt->service_class;
 
+#if 0
+    static uint32_t pulsesample;
+    static uint32_t pulse = 850 * 1000;
+
+    if (should_sample(&pulsesample, 15 * 1000 * 1000)) {
+        pin_set(PIN_PWR, 0);
+        target_wait_us(pulse);
+        pin_set(PIN_PWR, 1);
+        jdcon_warn("P: %d t=%ds", pulse, now / 1000000);
+        pulse = (pulse * 9) / 10;
+        #if 1
+        if(pulse<1000)
+        pulse=1000;
+        #endif
+    }
+#endif
+
 #ifdef JDM_V2
     pin_setup_output(PIN_P0);
     pin_setup_output(PIN_SERVO);
