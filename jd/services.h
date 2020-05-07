@@ -32,6 +32,7 @@
 #define JD_SERVICE_CLASS_BOOTLOADER 0x1ffa9948
 #define JD_SERVICE_CLASS_HUMIDITY 0x16c810b8
 #define JD_SERVICE_CLASS_MONO_DISPLAY 0x1f43e195
+#define JD_SERVICE_CLASS_ARCADE_CONTROLS 0x1deaa06e
 
 // to generate a new class number, head to https://microsoft.github.io/uf2/patcher/
 // click link at the bottom and replace first digit with '1'

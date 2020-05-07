@@ -33,6 +33,7 @@ const service_classes: U.SMap<number> = {
     DNS: 0x117729bd,
     PWM_LIGHT: 0x1fb57453,
     BOOTLOADER: 0x1ffa9948,
+    ARCADE_CONTROLS: 0x1deaa06e,
 }
 
 const generic_commands: U.SMap<number> = {
@@ -162,6 +163,8 @@ export function printPkt(pkt: jd.Packet, opts: Options = {}) {
         const decoded = decoder ? decoder(pkt) : null
         if (decoded) {
             pdesc += "; " + decoded
+        } else if (pkt.service_command == jd.CMD_EVENT) {
+            pdesc += "; ev=" + num2str(pkt.intData) + " arg=" + (U.read32(pkt.data, 4) | 0)
         } else if (0 < d.length && d.length <= 4) {
             let v0 = pkt.uintData, v1 = pkt.intData
             pdesc += "; " + num2str(v0)

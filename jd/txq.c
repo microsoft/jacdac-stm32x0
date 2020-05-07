@@ -24,11 +24,12 @@ void *txq_push(unsigned service_num, unsigned service_cmd, const void *data,
     return trg;
 }
 
-void txq_push_event(srv_t *srv, uint32_t eventid) {
+void txq_push_event_ex(srv_t *srv, uint32_t eventid, uint32_t arg) {
     srv_common_t *state = (srv_common_t *)srv;
     if (eventid >> 16)
         jd_panic();
-    txq_push(state->service_number, JD_CMD_EVENT, &eventid, 4);
+    uint32_t data[] = {eventid, arg};
+    txq_push(state->service_number, JD_CMD_EVENT, data, 8);
 }
 
 jd_frame_t *app_pull_frame(void) {

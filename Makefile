@@ -1,5 +1,5 @@
 TARGET ?= jm-v1.0
-PROF ?= btn
+PROF ?= dpad
 FORCE ?=
 
 .SECONDARY: # this prevents object files from being removed
