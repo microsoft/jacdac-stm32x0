@@ -1,5 +1,5 @@
 TARGET ?= jm-v1.0
-PROF ?= dpad
+PROF ?= npx
 FORCE ?=
 
 .SECONDARY: # this prevents object files from being removed

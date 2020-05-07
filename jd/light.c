@@ -132,14 +132,9 @@ static int isin(uint8_t theta) {
 }
 
 static bool is_empty(const uint8_t *data, uint32_t size) {
-    unsigned st = 1;
     for (unsigned i = 0; i < size; ++i) {
-        uint8_t exp = st >> 1 == 0 ? 0x49 : st >> 1 == 1 ? 0x92 : 0x24;
-        if (data[i] && data[i] != exp)
+        if (data[i])
             return false;
-        st++;
-        if (st >= 6)
-            st = 0;
     }
     return true;
 }
@@ -352,10 +347,10 @@ void light_process(srv_t *state) {
     if (state->dirty && !state->in_tx) {
         state->dirty = 0;
         if (is_empty((uint8_t *)state->pxbuffer, PX_WORDS(state->numpixels) * 4)) {
-            pin_set(PIN_PWR, 1);
+            pwr_pin_enable(0);
             return;
         } else {
-            pin_set(PIN_PWR, 0);
+            pwr_pin_enable(1);
         }
         state->in_tx = 1;
         pwr_enter_pll();
@@ -365,8 +360,7 @@ void light_process(srv_t *state) {
 
 static void sync_config(srv_t *state) {
     if (!is_enabled(state)) {
-        // PIN_PWR has reverse polarity
-        pin_set(PIN_PWR, 1);
+        pwr_pin_enable(0);
         return;
     }
 
@@ -381,7 +375,7 @@ static void sync_config(srv_t *state) {
         state->pxbuffer = alloc(needed * 4);
     }
 
-    pin_set(PIN_PWR, 0);
+    pwr_pin_enable(1);
 }
 
 static void start_animation(srv_t *state, jd_packet_t *pkt) {
@@ -398,6 +392,17 @@ static void start_animation(srv_t *state, jd_packet_t *pkt) {
             f(state);
         }
     }
+}
+
+static unsigned light_power(srv_t *state) {
+    uint8_t *d = (uint8_t *)state->pxbuffer;
+    unsigned n = state->numpixels * 3;
+
+    unsigned r = 14000 + 930 * state->numpixels;
+    while (n--)
+        r += *d++ * 46;
+
+    return r;
 }
 
 void light_handle_packet(srv_t *state, jd_packet_t *pkt) {
@@ -419,4 +424,14 @@ void light_init() {
     state->intensity = DEFAULT_INTENSITY;
     state->numpixels = DEFAULT_NUMPIXELS;
     state->maxpower = DEFAULT_MAXPOWER;
+
+#if 0
+    state->intensity = 0x01;
+    //    state->numpixels = 3;
+    sync_config(state);
+    state->intensity = 0x02;
+    set_all(state, 0xff0000);
+    show(state);
+    // pwr_pin_enable(0);
+#endif
 }

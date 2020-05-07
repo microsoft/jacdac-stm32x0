@@ -175,7 +175,6 @@ static void px_fill_buffer(uint16_t *dst) {
 }
 
 static void px_dma(void) {
-    dma_clear_flag(DMA_FLAG_G);
     if (dma_has_flag(DMA_FLAG_TC)) {
         dma_clear_flag(DMA_FLAG_TC);
         px_fill_buffer(px_state.pxscratch + (PX_SCRATCH_LEN >> 2));
@@ -184,6 +183,7 @@ static void px_dma(void) {
         dma_clear_flag(DMA_FLAG_HT);
         px_fill_buffer(px_state.pxscratch);
     }
+    dma_clear_flag(DMA_FLAG_G);
     if (px_state.pxdata_ptr == 0 && doneH) {
         cb_t f = doneH;
         doneH = NULL;
@@ -218,15 +218,15 @@ static void init_lookup(void) {
         for (int mask = 0x8; mask > 0; mask >>= 1) {
             v <<= 4;
             if (i & mask)
-                v |= 0x8;
-            else
                 v |= 0xe;
+            else
+                v |= 0x8;
         }
-        px_state.pxlookup[i] = v;
+        px_state.pxlookup[i] = (v >> 8) | (v << 8);
     }
 }
 
-#define SCALE(c, i) ((((c)&0xff) * (i & 0xff)) >> 8)
+#define SCALE(c, i) ((((c)&0xff) * (1 + (i & 0xff))) >> 8)
 void px_set(const void *data, uint32_t index, uint8_t intensity, uint32_t color) {
     uint8_t *dst = (uint8_t *)data + index * 3;
     // assume GRB
@@ -289,8 +289,8 @@ void px_init() {
                               LL_DMA_MODE_CIRCULAR |          //
                               LL_DMA_PERIPH_NOINCREMENT |     //
                               LL_DMA_MEMORY_INCREMENT |       //
-                              LL_DMA_PDATAALIGN_HALFWORD |    //
-                              LL_DMA_MDATAALIGN_HALFWORD);
+                              LL_DMA_PDATAALIGN_BYTE |        //
+                              LL_DMA_MDATAALIGN_BYTE);
 
     // LL_SPI_EnableIT_TXE(SPIx);
     // LL_SPI_EnableIT_RXNE(SPIx);
