@@ -1,5 +1,5 @@
-TARGET ?= jd-v0
-PROF ?= servo
+TARGET ?= jm-v1.0
+PROF ?= btn
 FORCE ?=
 
 .SECONDARY: # this prevents object files from being removed
