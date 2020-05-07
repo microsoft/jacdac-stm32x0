@@ -18,4 +18,5 @@ SRV_DEF(humidity, JD_SERVICE_CLASS_HUMIDITY);
 
 void humidity_init() {
     SRV_ALLOC(humidity);
+    state->streaming_interval = 1000;
 }

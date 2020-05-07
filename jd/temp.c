@@ -18,4 +18,5 @@ SRV_DEF(temp, JD_SERVICE_CLASS_THERMOMETER);
 
 void temp_init() {
     SRV_ALLOC(temp);
+    state->streaming_interval = 1000;
 }
