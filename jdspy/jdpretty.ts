@@ -58,6 +58,23 @@ const generic_regs: U.SMap<number> = {
     REG_READING: 0x101
 }
 
+const serv_decoders: U.SMap<(p: jd.Packet) => string> = {
+    LOGGER: (pkt: jd.Packet) => {
+        const pri = priority()
+        if (!pri) return null
+        return `${pri} "${U.bufferToString(pkt.data)}"`
+
+        function priority() {
+            switch (pkt.service_command) {
+                case 0x80: return "dbg"
+                case 0x81: return "log"
+                case 0x82: return "warn"
+                case 0x83: return "err"
+                default: return null
+            }
+        }
+    }
+}
 
 function reverseLookup(map: U.SMap<number>, n: number) {
     for (let k of Object.keys(map)) {
@@ -107,9 +124,10 @@ export function printPkt(pkt: jd.Packet, opts: Options = {}) {
     if (frame_flags & jd.JD_FRAME_FLAG_IDENTIFIER_IS_SERVICE_CLASS)
         devname = "[mul] " + serviceName(pkt.multicommand_class)
 
+    const serv_id = serviceName(pkt?.dev?.serviceAt(pkt.service_number))
     const service_name =
         pkt.service_number == jd.JD_SERVICE_NUMBER_CRC_ACK ? "CRC-ACK"
-            : `${serviceName(pkt?.dev?.serviceAt(pkt.service_number))} (${pkt.service_number})`
+            : `${serv_id} (${pkt.service_number})`
     let pdesc = `${devname}/${service_name}: ${commandName(pkt.service_command)}; sz=${pkt.size}`
 
     if (frame_flags & jd.JD_FRAME_FLAG_COMMAND)
@@ -140,7 +158,11 @@ export function printPkt(pkt: jd.Packet, opts: Options = {}) {
             pkt.dev.currentReading = pkt.data
         }
 
-        if (0 < d.length && d.length <= 4) {
+        const decoder = serv_decoders[serv_id]
+        const decoded = decoder ? decoder(pkt) : null
+        if (decoded) {
+            pdesc += "; " + decoded
+        } else if (0 < d.length && d.length <= 4) {
             let v0 = pkt.uintData, v1 = pkt.intData
             pdesc += "; " + num2str(v0)
             if (v0 != v1)
