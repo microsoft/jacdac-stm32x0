@@ -4,6 +4,19 @@ uint32_t now;
 
 static const uint8_t output_pins[] = {OUTPUT_PINS};
 
+void pwr_pin_enable(int en) {
+#ifdef PWR_PIN_PULLUP
+    if (en) {
+        pin_setup_output(PIN_PWR);
+        pin_set(PIN_PWR, 0);
+    } else {
+        pin_setup_input(PIN_PWR, 0);
+    }
+#else
+    pin_set(PIN_PWR, !en);
+#endif
+}
+
 void led_init(void) {
     // To save power, especially in STOP mode,
     // configure all pins in GPIOA,B,C as analog inputs (except for SWD)
@@ -24,7 +37,7 @@ void led_init(void) {
         pin_setup_output(output_pins[i]);
 
     // all power pins are reverse polarity
-    pin_set(PIN_PWR, 1);
+    pwr_pin_enable(0);
 #ifdef PIN_GLO0
     pin_set(PIN_GLO0, 1);
     pin_set(PIN_GLO1, 1);
@@ -86,6 +99,7 @@ void led_blink(int us) {
     led_off_time = tim_get_micros() + us;
     led_set(1);
 }
+
 int main(void) {
     led_init();
     led_set(1);
@@ -110,9 +124,9 @@ int main(void) {
 #if 0
     while(1) {
         led_set(1);
-        pin_set(PIN_PWR, 0);
+        pwr_pin_enable(1);
         target_wait_us(300000);
-        pin_set(PIN_PWR, 1);
+        pwr_pin_enable(0);
         target_wait_us(100000);
         led_set(0);
         target_wait_us(10 * 1000 * 1000);

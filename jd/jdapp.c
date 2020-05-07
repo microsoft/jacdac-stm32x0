@@ -51,9 +51,9 @@ void app_queue_annouce() {
     static uint32_t pulse = 850 * 1000;
 
     if (should_sample(&pulsesample, 15 * 1000 * 1000)) {
-        pin_set(PIN_PWR, 0);
+        pwr_pin_enable(1);
         target_wait_us(pulse);
-        pin_set(PIN_PWR, 1);
+        pwr_pin_enable(0);
         jdcon_warn("P: %d t=%ds", pulse, now / 1000000);
         pulse = (pulse * 9) / 10;
         #if 1

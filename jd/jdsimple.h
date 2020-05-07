@@ -9,6 +9,7 @@
 // main.c
 void led_set(int state);
 void led_blink(int us);
+void pwr_pin_enable(int en);
 
 // jdapp.c
 void app_process(void);

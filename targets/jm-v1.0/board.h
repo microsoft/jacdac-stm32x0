@@ -18,6 +18,8 @@
 #define UART_PIN_AF LL_GPIO_AF_1
 #define USART_IDX 1
 
+#define PWR_PIN_PULLUP 1
+
 // left, up, right, down, a, b, menu, menu2, reset, exit
 #define GAMEPAD_BUTTONS PA_2, PA_5, PA_4, PA_3
 
