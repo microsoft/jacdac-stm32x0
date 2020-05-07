@@ -8,6 +8,12 @@
 #define SPI_IDX 2
 #endif
 
+#ifdef SPI_I2S_SUPPORT
+#define I2S_SUPPORTED 1
+#else
+#define I2S_SUPPORTED 0
+#endif
+
 #if SPI_IDX == 1
 #define SPIx SPI1
 #define IRQn SPI1_IRQn
@@ -25,15 +31,11 @@
 #endif
 
 #if SPI_IDX == 1
-#define PIN_PORT GPIOA
-#define PIN_SCK LL_GPIO_PIN_5
-#define PIN_MOSI LL_GPIO_PIN_7
 #define PIN_AF LL_GPIO_AF_0
 STATIC_ASSERT(PIN_ASCK == PA_5);
 STATIC_ASSERT(PIN_AMOSI == PA_7);
 #define SPI_CLK_ENABLE __HAL_RCC_SPI1_CLK_ENABLE
 #elif SPI_IDX == 2
-#define PIN_PORT GPIOB
 #define SPI_CLK_ENABLE __HAL_RCC_SPI2_CLK_ENABLE
 #ifdef STM32G0
 #define PIN_SCK LL_GPIO_PIN_8
@@ -75,15 +77,8 @@ void dspi_init() {
     SPI_CLK_ENABLE();
     __HAL_RCC_DMA1_CLK_ENABLE();
 
-    LL_GPIO_InitTypeDef GPIO_InitStruct = {0};
-
-    GPIO_InitStruct.Pin = PIN_SCK | PIN_MOSI;
-    GPIO_InitStruct.Mode = LL_GPIO_MODE_ALTERNATE;
-    GPIO_InitStruct.Speed = LL_GPIO_SPEED_FREQ_HIGH;
-    GPIO_InitStruct.OutputType = LL_GPIO_OUTPUT_PUSHPULL;
-    GPIO_InitStruct.Pull = LL_GPIO_PULL_DOWN;
-    GPIO_InitStruct.Alternate = PIN_AF;
-    LL_GPIO_Init(PIN_PORT, &GPIO_InitStruct);
+    pin_setup_output_af(PIN_ASCK, PIN_AF);
+    pin_setup_output_af(PIN_AMOSI, PIN_AF);
 
     SPIx->CR1 = LL_SPI_HALF_DUPLEX_TX | LL_SPI_MODE_MASTER | LL_SPI_NSS_SOFT |
                 LL_SPI_BAUDRATEPRESCALER_DIV2;
@@ -141,6 +136,7 @@ void dspi_tx(const void *data, uint32_t numbytes, cb_t doneHandler) {
     LL_DMA_EnableChannel(DMA1, DMA_CH);
 }
 
+#if I2S_SUPPORTED
 void px_tx(const void *data, uint32_t numbytes, cb_t doneHandler) {
     tx_core(data, numbytes >> 1, doneHandler);
     LL_I2S_Enable(SPIx);
@@ -183,6 +179,7 @@ void px_set(const void *data, uint32_t index, uint8_t intensity, uint32_t color)
     set_byte(dst + 3, SCALE(color >> 0, intensity));
     set_byte(dst + 6, SCALE(color >> 16, intensity));
 }
+#endif
 
 // this is only enabled for error events
 void IRQHandler(void) {
@@ -215,19 +212,12 @@ void DMA_Handler(void) {
 // 0 - 0.40us hi 0.85us low
 // 1 - 0.80us hi 0.45us low
 
+#if I2S_SUPPORTED
 void px_init() {
     SPI_CLK_ENABLE();
     __HAL_RCC_DMA1_CLK_ENABLE();
 
-    LL_GPIO_InitTypeDef GPIO_InitStruct = {0};
-
-    GPIO_InitStruct.Pin = PIN_MOSI;
-    GPIO_InitStruct.Mode = LL_GPIO_MODE_ALTERNATE;
-    GPIO_InitStruct.Speed = LL_GPIO_SPEED_FREQ_HIGH;
-    GPIO_InitStruct.OutputType = LL_GPIO_OUTPUT_PUSHPULL;
-    GPIO_InitStruct.Pull = LL_GPIO_PULL_DOWN;
-    GPIO_InitStruct.Alternate = PIN_AF;
-    LL_GPIO_Init(PIN_PORT, &GPIO_InitStruct);
+    pin_setup_output_af(PIN_MOSI, PIN_AF);
 
     SPIx->I2SPR = 10;
     SPIx->I2SCFGR = SPI_I2SCFGR_I2SMOD | LL_I2S_MODE_MASTER_TX;
@@ -262,5 +252,6 @@ void px_init() {
 
     init_lookup();
 }
+#endif
 
 #endif
