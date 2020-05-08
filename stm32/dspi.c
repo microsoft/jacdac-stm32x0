@@ -1,5 +1,7 @@
 #include "jdstm.h"
 
+#define PX_SCRATCH_LEN 128
+
 #ifdef PIN_ASCK
 
 #if defined(STM32F031x6) || !defined(SPI2)
@@ -77,8 +79,6 @@ static inline bool dma_has_flag(int flag) {
     return (READ_BIT(DMA1->ISR, flag << ((DMA_CH - 1) * 4)) != 0);
 }
 
-#define PX_SCRATCH_LEN 128
-
 typedef struct px_state {
     uint16_t pxlookup[16];
     uint16_t *pxscratch;
@@ -128,6 +128,21 @@ void dspi_init() {
     NVIC_EnableIRQ(IRQn);
 }
 
+static void stop_dma(void) {
+    LL_DMA_DisableChannel(DMA1, DMA_CH);
+
+    while (LL_SPI_GetTxFIFOLevel(SPIx))
+        ;
+    while (LL_SPI_IsActiveFlag_BSY(SPIx))
+        ;
+
+    cb_t f = doneH;
+    if (f) {
+        doneH = NULL;
+        f();
+    }
+}
+
 static void tx_core(const void *data, uint32_t numbytes, cb_t doneHandler) {
     // DMESG("dspi tx");
 
@@ -160,10 +175,13 @@ static void px_fill_buffer(uint16_t *dst) {
         // just zero-out the whole thing, so we don't get junk at the end
         memset(dst, 0, PX_SCRATCH_LEN / 2);
         end = px_state.pxdata_len;
-        if (px_state.pxdata_ptr == end)
+        int past = px_state.pxdata_ptr - end;
+        if (past > 3)
             px_state.pxdata_ptr = 0;
+        else if (past >= 0)
+            px_state.pxdata_ptr++;
         else
-            px_state.pxdata_ptr = end; // we do one more round, with an empty buffer
+            px_state.pxdata_ptr = end;
     } else {
         px_state.pxdata_ptr = end;
     }
@@ -184,32 +202,29 @@ static void px_dma(void) {
         px_fill_buffer(px_state.pxscratch);
     }
     dma_clear_flag(DMA_FLAG_G);
-    if (px_state.pxdata_ptr == 0 && doneH) {
-        cb_t f = doneH;
-        doneH = NULL;
-        f();
+    if (px_state.pxdata_ptr == 0) {
+        stop_dma();
     }
 }
 
 void px_tx(const void *data, uint32_t numbytes, cb_t doneHandler) {
-    int firstTime = px_state.pxdata == NULL;
+    if (px_state.pxscratch == NULL) {
+        px_state.pxscratch = alloc(PX_SCRATCH_LEN);
+        dma_handler = px_dma;
+    }
+
     px_state.pxdata = data;
     px_state.pxdata_len = numbytes;
-    if (firstTime) {
-        pwr_enter_pll();
-        px_state.pxscratch = alloc(PX_SCRATCH_LEN);
-        px_state.pxdata_ptr = 0;
-        dma_clear_flag(DMA_FLAG_TC);
-        dma_clear_flag(DMA_FLAG_HT);
-        px_fill_buffer(px_state.pxscratch);
-        px_fill_buffer(px_state.pxscratch + (PX_SCRATCH_LEN >> 2));
-        dma_handler = px_dma;
+    px_state.pxdata_ptr = 0;
 
-        tx_core(px_state.pxscratch, PX_SCRATCH_LEN, NULL);
-        LL_SPI_Enable(SPIx);
-        LL_DMA_EnableChannel(DMA1, DMA_CH);
-    }
-    doneH = doneHandler;
+    dma_clear_flag(DMA_FLAG_TC);
+    dma_clear_flag(DMA_FLAG_HT);
+    px_fill_buffer(px_state.pxscratch);
+    px_fill_buffer(px_state.pxscratch + (PX_SCRATCH_LEN >> 2));
+
+    tx_core(px_state.pxscratch, PX_SCRATCH_LEN, doneHandler);
+    LL_SPI_Enable(SPIx);
+    LL_DMA_EnableChannel(DMA1, DMA_CH);
 }
 
 static void init_lookup(void) {
@@ -247,18 +262,7 @@ void DMA_Handler(void) {
     }
 
     dma_clear_flag(DMA_FLAG_G);
-    LL_DMA_DisableChannel(DMA1, DMA_CH);
-
-    while (LL_SPI_GetTxFIFOLevel(SPIx))
-        ;
-    while (LL_SPI_IsActiveFlag_BSY(SPIx))
-        ;
-
-    cb_t f = doneH;
-    if (f) {
-        doneH = NULL;
-        f();
-    }
+    stop_dma();
 }
 
 // WS2812B timings, +-0.15us
@@ -266,7 +270,6 @@ void DMA_Handler(void) {
 // 1 - 0.80us hi 0.45us low
 
 void px_init() {
-
     SPI_CLK_ENABLE();
     __HAL_RCC_DMA1_CLK_ENABLE();
 

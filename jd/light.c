@@ -354,7 +354,7 @@ void light_process(srv_t *state) {
         }
         state->in_tx = 1;
         pwr_enter_pll();
-        px_tx(state->pxbuffer, PX_WORDS(state->numpixels) << 2, tx_done);
+        px_tx(state->pxbuffer, state->numpixels * 3, tx_done);
     }
 }
 
@@ -378,10 +378,7 @@ static void sync_config(srv_t *state) {
     pwr_pin_enable(1);
 }
 
-static void start_animation(srv_t *state, jd_packet_t *pkt) {
-    if (pkt->service_size == 0)
-        return;
-    unsigned anim = pkt->data[0];
+static void start_animation(srv_t *state, unsigned anim) {
     if (anim < sizeof(animations) / sizeof(animations[0])) {
         srv_cb_t f = animations[anim];
         if (f) {
@@ -409,7 +406,8 @@ void light_handle_packet(srv_t *state, jd_packet_t *pkt) {
     switch (pkt->service_command) {
     case LIGHT_CMD_START_ANIMATION:
         sync_config(state);
-        start_animation(state, pkt);
+        if (pkt->service_size > 0)
+            start_animation(state, pkt->data[0]);
         break;
     default:
         srv_handle_reg(state, pkt, light_regs);
@@ -426,6 +424,13 @@ void light_init() {
     state->maxpower = DEFAULT_MAXPOWER;
 
 #if 0
+    state->numpixels = 190;
+    state->intensity = 0x0f;
+    state->color = 0x00ff00;
+
+    sync_config(state);
+    start_animation(state, 2);
+
     state->intensity = 0x01;
     //    state->numpixels = 3;
     sync_config(state);
