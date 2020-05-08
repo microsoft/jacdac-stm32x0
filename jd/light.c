@@ -338,6 +338,35 @@ static void tx_done(void) {
     state_->in_tx = 0;
 }
 
+static void limit_intensity(srv_t *state) {
+    uint8_t *d = (uint8_t *)state->pxbuffer;
+    unsigned n = state->numpixels * 3;
+
+    int current_full = 0;
+    int current = 0;
+    while (n--) {
+        uint8_t v = *d++;
+        current += SCALE0(v, state->intensity) * 46;
+        current_full += v * 46;
+    }
+
+    // 14mA is the chip at 48MHz, 930uA per LED is static
+    int base_current = 14000 + 930 * state->numpixels;
+    int current_limit = state->maxpower * 1000 - base_current;
+
+    if (current <= current_limit) {
+        DMESG("curr: %dmA; not limiting %d", (base_current + current) / 1000, state->intensity);
+        return;
+    }
+
+    int inten = current_limit / (current_full >> 8) - 1;
+    if (inten < 0)
+        inten = 0;
+    DMESG("limiting %d -> %d; %dmA", state->intensity, inten,
+          (base_current + (current_full * inten >> 8)) / 1000);
+    state->intensity = inten;
+}
+
 void light_process(srv_t *state) {
     // we always check timer to avoid problem with timer overflows
     bool should = should_sample(&state->nextFrame, FRAME_TIME);
@@ -358,6 +387,7 @@ void light_process(srv_t *state) {
         }
         state->in_tx = 1;
         pwr_enter_pll();
+        limit_intensity(state);
         px_tx(state->pxbuffer, state->numpixels * 3, state->intensity, tx_done);
     }
 }
@@ -395,17 +425,6 @@ static void start_animation(srv_t *state, unsigned anim) {
     }
 }
 
-static unsigned light_power(srv_t *state) {
-    uint8_t *d = (uint8_t *)state->pxbuffer;
-    unsigned n = state->numpixels * 3;
-
-    unsigned r = 14000 + 930 * state->numpixels;
-    while (n--)
-        r += *d++ * 46;
-
-    return r;
-}
-
 void light_handle_packet(srv_t *state, jd_packet_t *pkt) {
     switch (pkt->service_command) {
     case LIGHT_CMD_START_ANIMATION:
@@ -427,20 +446,15 @@ void light_init() {
     state->numpixels = DEFAULT_NUMPIXELS;
     state->maxpower = DEFAULT_MAXPOWER;
 
-    // state->numpixels = 190;
-    state->intensity = 0x02;
+#if 0
+    state->maxpower = 20;
+
+    state->numpixels = 14;
+    state->intensity = 0xff;
     state->color = 0x00ff00;
+    state->duration = 100;
 
     sync_config(state);
     start_animation(state, 2);
-#if 0
-
-    state->intensity = 0x01;
-    //    state->numpixels = 3;
-    sync_config(state);
-    state->intensity = 0x02;
-    set_all(state, 0xff0000);
-    show(state);
-    // pwr_pin_enable(0);
 #endif
 }
