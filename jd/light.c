@@ -145,7 +145,7 @@ static bool is_enabled(srv_t *state) {
 }
 
 static void set(srv_t *state, uint32_t index, uint32_t color) {
-    px_set(state->pxbuffer, index, state->intensity, color);
+    px_set(state->pxbuffer, index, color);
 }
 
 static void show(srv_t *state) {
@@ -210,6 +210,10 @@ static void anim_rainbow(srv_t *state) {
 // running lights
 // ---------------------------------------------------------------------------------------
 
+#define SCALE0(c, i) ((((c)&0xff) * (1 + (i & 0xff))) >> 8)
+#define SCALE(c, i)                                                                                \
+    (SCALE0((c) >> 0, i) << 0) | (SCALE0((c) >> 8, i) << 8) | (SCALE0((c) >> 16, i) << 16)
+
 static void running_lights_step(srv_t *state) {
     if (state->anim_value >= state->numpixels * 2) {
         state->anim_value = 0;
@@ -220,7 +224,7 @@ static void running_lights_step(srv_t *state) {
     state->anim_value++;
     for (int i = 0; i < state->numpixels; ++i) {
         int level = (state->intensity * ((isin(i + state->anim_value) * 127) + 128)) >> 8;
-        px_set(state->pxbuffer, i, level, state->color);
+        px_set(state->pxbuffer, i, SCALE(state->color, level));
     }
 }
 
@@ -354,7 +358,7 @@ void light_process(srv_t *state) {
         }
         state->in_tx = 1;
         pwr_enter_pll();
-        px_tx(state->pxbuffer, state->numpixels * 3, tx_done);
+        px_tx(state->pxbuffer, state->numpixels * 3, state->intensity, tx_done);
     }
 }
 
@@ -423,13 +427,13 @@ void light_init() {
     state->numpixels = DEFAULT_NUMPIXELS;
     state->maxpower = DEFAULT_MAXPOWER;
 
-#if 0
-    state->numpixels = 190;
-    state->intensity = 0x0f;
+    // state->numpixels = 190;
+    state->intensity = 0x02;
     state->color = 0x00ff00;
 
     sync_config(state);
     start_animation(state, 2);
+#if 0
 
     state->intensity = 0x01;
     //    state->numpixels = 3;

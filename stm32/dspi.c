@@ -85,6 +85,7 @@ typedef struct px_state {
     const uint8_t *pxdata;
     uint16_t pxdata_len;
     uint16_t pxdata_ptr;
+    uint8_t intensity;
 } px_state_t;
 static px_state_t px_state;
 
@@ -166,6 +167,8 @@ void dspi_tx(const void *data, uint32_t numbytes, cb_t doneHandler) {
     LL_DMA_EnableChannel(DMA1, DMA_CH);
 }
 
+#define SCALE(c, i) ((((c)&0xff) * (1 + (i & 0xff))) >> 8)
+
 static void px_fill_buffer(uint16_t *dst) {
     unsigned numbytes = PX_SCRATCH_LEN / 2 / 4;
     unsigned start = px_state.pxdata_ptr;
@@ -185,8 +188,9 @@ static void px_fill_buffer(uint16_t *dst) {
     } else {
         px_state.pxdata_ptr = end;
     }
+
     while (start < end) {
-        uint8_t c = px_state.pxdata[start++];
+        uint8_t c = SCALE(px_state.pxdata[start++], px_state.intensity);
         *dst++ = px_state.pxlookup[c >> 4];
         *dst++ = px_state.pxlookup[c & 0xf];
     }
@@ -207,7 +211,7 @@ static void px_dma(void) {
     }
 }
 
-void px_tx(const void *data, uint32_t numbytes, cb_t doneHandler) {
+void px_tx(const void *data, uint32_t numbytes, uint8_t intensity, cb_t doneHandler) {
     if (px_state.pxscratch == NULL) {
         px_state.pxscratch = alloc(PX_SCRATCH_LEN);
         dma_handler = px_dma;
@@ -216,6 +220,7 @@ void px_tx(const void *data, uint32_t numbytes, cb_t doneHandler) {
     px_state.pxdata = data;
     px_state.pxdata_len = numbytes;
     px_state.pxdata_ptr = 0;
+    px_state.intensity = intensity;
 
     dma_clear_flag(DMA_FLAG_TC);
     dma_clear_flag(DMA_FLAG_HT);
@@ -241,13 +246,12 @@ static void init_lookup(void) {
     }
 }
 
-#define SCALE(c, i) ((((c)&0xff) * (1 + (i & 0xff))) >> 8)
-void px_set(const void *data, uint32_t index, uint8_t intensity, uint32_t color) {
+void px_set(const void *data, uint32_t index, uint32_t color) {
     uint8_t *dst = (uint8_t *)data + index * 3;
     // assume GRB
-    dst[0] = SCALE(color >> 8, intensity);
-    dst[1] = SCALE(color >> 0, intensity);
-    dst[2] = SCALE(color >> 16, intensity);
+    dst[0] = color >> 8;
+    dst[1] = color >> 0;
+    dst[2] = color >> 16;
 }
 
 // this is only enabled for error events
