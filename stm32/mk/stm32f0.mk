@@ -28,6 +28,8 @@ BMP = 1
 
 PLATFORM = stm32
 
+LD_FLASH_SIZE ?= $(FLASH_SIZE)
+
 # TODO move some of this to common stm32.mk
 AS_SRC = $(STARTUP_FILE)
 CUBE = stm32/STM32Cube$(SERIES)
@@ -44,17 +46,17 @@ include stm32/mk/$(MCU).mk
 CONFIG_DEPS += $(wildcard stm32/mk/*.mk)
 
 LD_SCRIPT = $(BUILT)/linker.ld
-$(BUILT)/linker.ld: $(wildcard stm32/mk/*.mk)
+$(BUILT)/linker.ld: $(wildcard stm32/mk/*.mk) Makefile
 	mkdir -p $(BUILT)
 	: > $@
 	echo "MEMORY {" >> $@
 	echo "RAM (rwx)   : ORIGIN = 0x20000000, LENGTH = $(RAM_SIZE)K" >> $@
 ifeq ($(BL),)
-	echo "FLASH (rx)  : ORIGIN = 0x8000000, LENGTH = $(FLASH_SIZE)K - $(BL_SIZE)K" >> $@
+	echo "FLASH (rx)  : ORIGIN = 0x8000000, LENGTH = $(LD_FLASH_SIZE)K - $(BL_SIZE)K" >> $@
 	echo "}" >> $@
 	echo "INCLUDE ld/gcc_arm.ld" >> $@
 else
-	echo "FLASH (rx)  : ORIGIN = 0x8000000 + $(FLASH_SIZE)K - $(BL_SIZE)K, LENGTH = $(BL_SIZE)K" >> $@
+	echo "FLASH (rx)  : ORIGIN = 0x8000000 + $(LD_FLASH_SIZE)K - $(BL_SIZE)K, LENGTH = $(BL_SIZE)K" >> $@
 	echo "}" >> $@
 	echo "INCLUDE ld/gcc_arm_bl_at_end.ld" >> $@
 endif
