@@ -1,0 +1,43 @@
+diff --git a/lib/blhw.h b/lib/blhw.h
+index 07159fc..1c691e5 100644
+--- a/lib/blhw.h
++++ b/lib/blhw.h
+@@ -34,6 +34,8 @@ void clk_setup_pll(void);
+ // flash.c
+ void flash_program(void *dst, const void *src, uint32_t len);
+ void flash_erase(void *page_addr);
++bool flash_is_erase_finished(void);
++void flash_begin_erase(void *page_addr);
+ 
+ void jd_panic(void);
+ void target_reset(void);
+diff --git a/stm32/flash.c b/stm32/flash.c
+index 8b3bb25..f462c59 100644
+--- a/stm32/flash.c
++++ b/stm32/flash.c
+@@ -53,4 +53,23 @@ void flash_erase(void *page_addr) {
+     FLASH->CR |= FLASH_CR_STRT;
+     check_eop();
+     lock();
+-}
+\ No newline at end of file
++}
++
++void flash_begin_erase(void *page_addr) {
++    unlock();
++    pwr_enter_tim();
++    FLASH->CR |= FLASH_CR_PER;
++    FLASH->AR = (uint32_t)page_addr;
++    FLASH->CR |= FLASH_CR_STRT;
++}
++
++bool flash_is_erase_finished(void) {
++    if (FLASH->CR & FLASH_CR_LOCK)
++        return true;
++    if (FLASH->SR & FLASH_SR_BSY)
++        return false;
++    check_eop();
++    lock();
++    pwr_leave_tim();
++    return true;
++}
