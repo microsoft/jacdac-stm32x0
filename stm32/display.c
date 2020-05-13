@@ -9,8 +9,8 @@
 #define DISP_LEVEL_MAX 1200 // regulate brightness here
 #define DISP_LEVEL_MIN 10
 
-#define DISP_DELAY_MAX 1700 // assuming 10ms frames, we use 85% of it
-#define DISP_DELAY_MIN 20
+#define DISP_DELAY_MAX 1000 // at 5 lines, this is 5ms - which would be min. frame time
+#define DISP_DELAY_MIN 10
 
 #define DISP_STEP (((DISP_DELAY_MAX - DISP_DELAY_MIN) << 10) / (DISP_LEVEL_MAX - DISP_LEVEL_MIN))
 

@@ -138,12 +138,21 @@ static void init_chip(void) {
     // writeReg(REG_PM, 0x84); // MCK 50kHz
     // writeReg(REG_BW, 0xE3); // sample 50kHz/975 = 51.3Hz
 
+#if 0
     // ~60uA
     writeReg(REG_PM, 0x83); // MCK 100kHz
 #ifdef ACC_100HZ
     writeReg(REG_BW, 0xE3); // sample 100kHz/975 =~ 100Hz
 #else
     writeReg(REG_BW, 0xE2);                 // sample 100kHz/1935 = 51.7Hz
+#endif
+#else
+    writeReg(REG_PM, 0x80); // MCK 500kHz
+#ifdef ACC_100HZ
+    writeReg(REG_BW, 0xE1); // sample 500kHz/3855 =~ 130Hz
+#else
+    writeReg(REG_BW, 0xE0);                 // sample 100kHz/7695 = 65Hz
+#endif
 #endif
 
 #ifdef PIN_ACC_INT
