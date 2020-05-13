@@ -32,7 +32,7 @@ static void set_pwr(srv_t *state, int on) {
         pwm_enable(state->pwm_pin, 0);
         pwr_leave_pll();
     }
-    pin_set(PIN_PWR, !on);
+    pwr_pin_enable(on);
     state->is_on = on;
 }
 

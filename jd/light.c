@@ -223,7 +223,7 @@ static void running_lights_step(srv_t *state) {
 
     state->anim_value++;
     for (int i = 0; i < state->numpixels; ++i) {
-        int level = (state->intensity * ((isin(i + state->anim_value) * 127) + 128)) >> 8;
+        int level = (isin(i + state->anim_value) * 127) + 128;
         px_set(state->pxbuffer, i, SCALE(state->color, level));
     }
 }
@@ -355,7 +355,7 @@ static void limit_intensity(srv_t *state) {
     int current_limit = state->maxpower * 1000 - base_current;
 
     if (current <= current_limit) {
-        DMESG("curr: %dmA; not limiting %d", (base_current + current) / 1000, state->intensity);
+        // DMESG("curr: %dmA; not limiting %d", (base_current + current) / 1000, state->intensity);
         return;
     }
 

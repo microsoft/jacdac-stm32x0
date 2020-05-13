@@ -40,6 +40,7 @@ void jdcon_warn(const char *format, ...);
 void acc_init(void);
 void crank_init(uint8_t pin0, uint8_t pin1);
 void light_init(void);
+void snd_init(uint8_t pin);
 void pwm_light_init(uint8_t pin);
 void servo_init(uint8_t pin);
 void btn_init(uint8_t pin);
