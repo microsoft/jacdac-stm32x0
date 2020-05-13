@@ -59,6 +59,20 @@
 #define QMAX981_BW_258HZ 0xE2
 #define QMAX981_BW_513HZ 0xE3
 
+#ifndef ACC_RANGE
+#define ACC_RANGE 8
+#endif
+
+#if ACC_RANGE == 8
+#define QMAX981_RANGE QMAX981_RANGE_8G
+#define ACC_SHIFT 2
+#elif ACC_RANGE == 16
+#define QMAX981_RANGE QMAX981_RANGE_16G
+#define ACC_SHIFT 1
+#else
+#error "untested range"
+#endif
+
 void bspi_send(const void *src, uint32_t len);
 void bspi_recv(void *dst, uint32_t len);
 
@@ -118,7 +132,7 @@ static void init_chip(void) {
     writeReg(REG_INT_CFG, 0x1C | (1 << 5)); // disable I2C
 #endif
     writeReg(REG_INTPIN_CONF, 0x05 | (1 << 7)); // disable pull-up on CS
-    writeReg(REG_FSR, QMAX981_RANGE_8G);
+    writeReg(REG_FSR, QMAX981_RANGE);
 
     // ~50uA
     // writeReg(REG_PM, 0x84); // MCK 50kHz
@@ -129,7 +143,7 @@ static void init_chip(void) {
 #ifdef ACC_100HZ
     writeReg(REG_BW, 0xE3); // sample 100kHz/975 =~ 100Hz
 #else
-    writeReg(REG_BW, 0xE2); // sample 100kHz/1935 = 51.7Hz
+    writeReg(REG_BW, 0xE2);                 // sample 100kHz/1935 = 51.7Hz
 #endif
 
 #ifdef PIN_ACC_INT
@@ -148,9 +162,9 @@ static void init_chip(void) {
 void acc_hw_get(int16_t sample[3]) {
     int16_t data[3];
     readData(REG_DX, (uint8_t *)data, 6);
-    sample[0] = data[1] >> 2;
-    sample[1] = -data[0] >> 2;
-    sample[2] = -data[2] >> 2;
+    sample[0] = data[1] >> ACC_SHIFT;
+    sample[1] = -data[0] >> ACC_SHIFT;
+    sample[2] = -data[2] >> ACC_SHIFT;
 }
 
 void acc_hw_sleep(void) {
