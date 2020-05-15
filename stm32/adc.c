@@ -1,5 +1,7 @@
 #include "jdstm.h"
 
+static bool adc_calibrated;
+
 static void set_sampling_time(uint32_t time) {
 #ifdef STM32G0
     LL_ADC_SetSamplingTimeCommonChannels(ADC1, LL_ADC_SAMPLINGTIME_COMMON_1, time);
@@ -37,11 +39,15 @@ static void set_channel(uint32_t chan) {
     LL_ADC_REG_SetSequencerChannels(ADC1, chan);
 #endif
 
-    LL_ADC_StartCalibration(ADC1);
+    if (!adc_calibrated) {
+        adc_calibrated = 1;
+        LL_ADC_StartCalibration(ADC1);
 
-    while (LL_ADC_IsCalibrationOnGoing(ADC1) != 0)
-        ;
-    target_wait_us(5); // ADC_DELAY_CALIB_ENABLE_CPU_CYCLES
+        while (LL_ADC_IsCalibrationOnGoing(ADC1) != 0)
+            ;
+        target_wait_us(5); // ADC_DELAY_CALIB_ENABLE_CPU_CYCLES
+        DMESG("ADC calib: %x", ADC1->DR);
+    }
 
     // LL_ADC_SetLowPowerMode(ADC1, LL_ADC_LP_AUTOWAIT_AUTOPOWEROFF);
 
@@ -164,7 +170,7 @@ uint16_t adc_read_pin(uint8_t pin) {
 
     pin_setup_analog_input(pin);
 
-    set_sampling_time(LL_ADC_SAMPLINGTIME_7CYCLES_5);
+    set_sampling_time(LL_ADC_SAMPLINGTIME_41CYCLES_5);
 
     set_channel(chan);
     uint16_t r = adc_convert();
