@@ -1,5 +1,5 @@
 TARGET ?= jm-v1.0
-PROF ?= snd
+PROF ?= power
 FORCE ?=
 
 .SECONDARY: # this prevents object files from being removed
