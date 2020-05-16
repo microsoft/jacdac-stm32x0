@@ -13,6 +13,12 @@ void pin_setup_output(int pin) {
     LL_GPIO_SetPinOutputType(GPIOx, currentpin, LL_GPIO_OUTPUT_PUSHPULL);
 }
 
+void pin_set_opendrain(int pin) {
+    if ((uint8_t)pin == 0xff)
+        return;
+    LL_GPIO_SetPinOutputType(PIN_PORT(pin), PIN_MASK(pin), LL_GPIO_OUTPUT_OPENDRAIN);
+}
+
 void pin_setup_input(int pin, int pull) {
     if ((uint8_t)pin == 0xff)
         return;

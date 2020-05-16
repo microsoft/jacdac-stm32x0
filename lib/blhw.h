@@ -18,6 +18,7 @@ static inline void pin_set(int pin, int v) {
     _pin_set(pin, v);
 }
 void pin_setup_output(int pin);
+void pin_set_opendrain(int pin);
 void pin_toggle(int pin);
 int pin_get(int pin);
 // pull: -1, 0, 1
