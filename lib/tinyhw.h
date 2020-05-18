@@ -60,6 +60,7 @@ void disp_refresh(void);
 void disp_sleep(void);
 int disp_light_level(void);
 void disp_set_dark_level(int v);
+int disp_get_dark_level(void);
 
 // target_utils.c
 void target_reset(void);

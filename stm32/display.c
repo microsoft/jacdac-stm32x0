@@ -6,7 +6,7 @@
 #define DISP_LIGHT_SENSE 1
 
 //#define DISP_LEVEL_MAX 1200 // regulate brightness here
-#define DISP_LEVEL_MAX 1200 // regulate brightness here
+#define DISP_LEVEL_MAX 2000 // regulate brightness here
 #define DISP_LEVEL_MIN 10
 
 #define DISP_DELAY_MAX 1000 // at 5 lines, this is 5ms - which would be min. frame time
@@ -115,7 +115,13 @@ static void measure_light(ctx_t *ctx) {
 #endif
 #endif
 
-    int v = ctx->dark_level - ctx->reading;
+    int v0 = ctx->dark_level - ctx->reading;
+    int v = v0;
+
+    if (v0 < 0) {
+        // auto-adjust
+        ctx->dark_level = ctx->reading;
+    }
 
     if (v > DISP_LEVEL_MAX)
         v = DISP_LEVEL_MAX;
@@ -124,6 +130,8 @@ static void measure_light(ctx_t *ctx) {
 
     v -= DISP_LEVEL_MIN;
     ctx->target_delay = (DISP_DELAY_MIN << 10) + (v * DISP_STEP);
+
+    DMESG("disp: [%d] -> %dus", ctx->reading, ctx->target_delay >> 10);
 #else
     ctx->target_delay = DISP_DELAY_OVERRIDE << 10;
 #endif
@@ -183,6 +191,10 @@ int disp_light_level() {
     return ctx_.reading;
 }
 
+int disp_get_dark_level() {
+    return ctx_.dark_level;
+}
+
 void disp_set_dark_level(int v) {
     DMESG("set dark lvl: %d", v);
     ctx_.dark_level = v;
@@ -237,7 +249,7 @@ void disp_refresh() {
     else if (dd > max)
         dd = max;
     if (dd) {
-        //DMESG("a %d", dd);
+        // DMESG("a %d", dd);
         ctx->delay += dd;
     }
 
@@ -258,6 +270,5 @@ void disp_refresh() {
     }
 #endif
 }
-
 
 #endif
