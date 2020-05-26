@@ -111,7 +111,7 @@ and aligned to 4, `JD_SERIAL_PAYLOAD_SIZE` is `236`.
 Communication is done over a single line, using UART peripheral running at 1MHz,
 8 bit per byte, no parity, 1 stop bit, LSB first (standard).
 The line is held high when idle with either internal or external pull up of
-around 30kΩ per device.
+around 20-50kΩ per device.
 
 ### Reception
 
@@ -211,6 +211,8 @@ The JACDAC frames contain only one device identifier.
 * if lowest frame flag bit is set, we call all packets in that frame _command packets_ and the device identifier is the destination
 * otherwise, the packets in frame are _report packet_ and the device identifier is the source
 
+### Multicast commands
+
 Additionally, is the third bit of frame flags is set (_multicast commands_),
 the low order 32 bits of device identifier contain service class.
 The command is then directed to all services with that service class.
@@ -252,8 +254,27 @@ The payload is an array of unsigned 32 bit integers that represent service class
 The position in the array is the service number.
 For services that are missing or disabled use `0xffffffff`.
 
-The clients should send the `0x00000000` class for control service, but should allow
-for possibility of that word being used for something else in future.
+The first word of advertisement data would logically contain the class of the control
+service, which is zero.
+Instead, the first word is used to communicate critical information about the device
+advertising itself.
+
+| Bits  | Description
+|------:| ------------------------------------
+|   3:0 | Reset detection counter
+|   7:4 | Reserved
+|     8 | Device can send ACKs (see below)
+|  31:9 | Reserved
+
+The reset detection counter starts at `1` (not `0`) on the first advertisement packet
+sent after reset. 
+`2` is used for the second, and so on.
+Once `15` is reached, all following advertisement packets use `15`.
+
+If a device detects that the counter in advertisements packets of another device
+decreases, it can infer that that other device went through reset
+(and for example needs to be re-configured).
+
 
 ### ACKs
 
@@ -266,6 +287,10 @@ and the second bit of frame flags is set.
 ACK packet uses our device identifier, service number of `0x3f`,
 and uses the CRC of the packet being acknowledged as the service command.
 The payload is zero-sized.
+
+All devices, except for the most resource-constrained bootloaders,
+should be able to send ACKs.
+They should indicate that in their advertisement packet.
 
 ## Commands
 
@@ -314,4 +339,41 @@ Client implementations should:
 These requirements can be used as guideline when to use a register vs a command
 in a service design.
 
-TODO: add counter in announce packet to detect reset?
+### Streams
+
+Streams are application-level mechanism for establishing reliable one-way data links.
+
+The way to initially establish a stream depends on service, but typically
+device A would send a command to device B to establish a stream.
+Device A would include its device identifier and a requested _port_
+(a 12 bit number of A's choosing) in the command.
+Device B would then state the acceptance of the connection with a report,
+and then start sending commands carrying the stream data to B address.
+
+The stream commands use a fixed service number of `0x3e` and set the require-ACK
+flag on frames.
+The low four bits of the service command field are used for a counter,
+which starts at `0x0` goes up to `0xf`, and then back to `0x0`.
+The high bits are used for the port.
+
+The protocol for device B is:
+* wait for any data that needs to be sent over the stream
+* send it as a command; wait for ACK
+* if we timeout waiting for ACK, repeat previous step
+* if we repeated 10 times already, close the stream
+* increment the stream counter
+* go back to the first step
+
+The wait for ACK should follow exponential back-off, starting with 1ms up to 1024ms.
+
+The protocol above has an effective window of 1.
+The counter allows increasing that up to 15, but this is currently out of scope.
+
+Streams should be considered closed when the device at the other end resets.
+
+TODO: Zero-length stream commands can be sent as keep-alive packets.
+Is this needed? 
+
+If a bi-directional stream needs to be established, the acceptance report from device B
+should include the port to use for the other stream direction.
+
