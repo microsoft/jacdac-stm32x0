@@ -361,7 +361,7 @@ Streams should generally not be used for:
 The way to initially establish a stream depends on service, but typically
 device A would send a command to device B to establish a stream.
 Device A would include its device identifier and _port_
-(a 10 bit number of A's choosing; there would normally be one port per stream) in the command.
+(a 9 bit number of A's choosing; there would normally be one port per stream) in the command.
 If a two-way communication is desired, device B could then state the port on its side.
 
 Both devices can then start sending commands to their respective ports.
@@ -371,11 +371,12 @@ The service command is split as follows:
 
 | Bits  | Description
 |------:| ------------------------------------
-|   3:0 | Wrap around packet counter
-|   5:4 | Content type
-|  15:6 | Port number
+|   4:0 | Wrap around packet counter
+|   6:5 | Content type
+|  15:7 | Port number
 
-The packet counter starts at `0x0` goes up to `0xf`, and then back to `0x0`.
+The packet counter starts at `0x0` goes up to `0x1f`, and then back to `0x0`.
+Rationale: there can be up to 30 non-empty packets in a frame.
 
 Content type is:
 * `0` for regular stream data
@@ -393,8 +394,16 @@ The sending protocol is:
 
 The wait for ACK should follow exponential back-off, starting with 1ms up to 1024ms.
 
+The receiving protocol keeps a counter for each stream. This counter starts at 0.
+* when a stream command is received, ACK it (this is usually don't generically, not only for streams)
+* if stored counter for stream doesn't match the counter in the packet, drop the packet
+* increment stored counter
+* process data in packet
+* repeat
+
 The protocol above has an effective window of 1.
-The counter allows increasing that up to 15, but this is currently out of scope.
+The counter allows increasing that up to 31, but this would require dealing with 
+multiple packets per frame and is currently out of scope.
 
 Streams should be considered closed when the device at the other end resets.
 
