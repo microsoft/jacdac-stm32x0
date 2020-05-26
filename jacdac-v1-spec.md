@@ -262,9 +262,9 @@ advertising itself.
 | Bits  | Description
 |------:| ------------------------------------
 |   3:0 | Reset detection counter
-|   7:4 | Reserved
+|   7:4 | Reserved, keep as 0
 |     8 | Device can send ACKs (see below)
-|  31:9 | Reserved
+|  31:9 | Reserved, keep as 0
 
 The reset detection counter starts at `1` (not `0`) on the first advertisement packet
 sent after reset. 
@@ -341,22 +341,49 @@ in a service design.
 
 ### Streams
 
-Streams are application-level mechanism for establishing reliable one-way data links.
+Streams are application-level mechanism for establishing reliable one- and two-way 
+point-to-point data links.
+
+Typical packet loss in JACDAC networks is well under 1%.
+Anything that can withstand such packet loss should not be done over a stream,
+as streams have quite big overhead.
+
+Typical applications where streams should be used:
+* a WiFi service, where the stream represents TCP connection
+* when a response to a command doesn't fit in one packet (eg. WiFi scan results)
+* when events need to be delivered reliably (eg., RFID reader)
+
+Streams should generally not be used for:
+* sensor data
+* video data
+* audio data
 
 The way to initially establish a stream depends on service, but typically
 device A would send a command to device B to establish a stream.
-Device A would include its device identifier and a requested _port_
-(a 12 bit number of A's choosing) in the command.
-Device B would then state the acceptance of the connection with a report,
-and then start sending commands carrying the stream data to B address.
+Device A would include its device identifier and _port_
+(a 10 bit number of A's choosing; there would normally be one port per stream) in the command.
+If a two-way communication is desired, device B could then state the port on its side.
 
+Both devices can then start sending commands to their respective ports.
 The stream commands use a fixed service number of `0x3e` and set the require-ACK
 flag on frames.
-The low four bits of the service command field are used for a counter,
-which starts at `0x0` goes up to `0xf`, and then back to `0x0`.
-The high bits are used for the port.
+The service command is split as follows:
 
-The protocol for device B is:
+| Bits  | Description
+|------:| ------------------------------------
+|   3:0 | Wrap around packet counter
+|   5:4 | Content type
+|  15:6 | Port number
+
+The packet counter starts at `0x0` goes up to `0xf`, and then back to `0x0`.
+
+Content type is:
+* `0` for regular stream data
+* `1` for regular stream data after which the stream is to be closed
+* `2` for service-specific out-of-band meta-data
+* `3` is reserved
+
+The sending protocol is:
 * wait for any data that needs to be sent over the stream
 * send it as a command; wait for ACK
 * if we timeout waiting for ACK, repeat previous step
@@ -374,6 +401,13 @@ Streams should be considered closed when the device at the other end resets.
 TODO: Zero-length stream commands can be sent as keep-alive packets.
 Is this needed? 
 
-If a bi-directional stream needs to be established, the acceptance report from device B
-should include the port to use for the other stream direction.
+### Event subscriptions
 
+A device like accelerometer can send events eg. when a 2g shock is detected,
+when it's moved face-down, etc.
+These events a normally just broadcast on the bus, using standard command `0x001`.
+
+For reliable event delivery, a stream can be established, and events delivered
+over that stream.
+Only one event per packet should be sent (though multiple packets can
+be grouped in a frame).
