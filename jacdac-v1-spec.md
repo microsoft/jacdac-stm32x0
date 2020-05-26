@@ -29,12 +29,16 @@ MCUs implementing JACDAC typically need the following:
 * DMA for said UART (if device does nothing but JACDAC, it may be fine to skip this)
 * some source of randomness; can be ADC of a floating input or internal temperature sensor
 
+It is possible not to use DMA, if the MCU isn't doing anything else (eg., our bootloader
+implementations doesn't use DMA nor interrupts).
+
 It's important that devices don't come up with the same "random" numbers every time
 they power on, and critical that two instances of the same device don't that.
 Typically, you can take temperature readings a couple thousand times (they will fluctuate slightly),
 hash the results and use that as a random seed.
 Other option is a floating ADC.
 Yet another is timing pin capacitance.
+Initial contents of RAM can be also used in some circumstances.
 
 ## Frames and Packets
 
@@ -199,11 +203,15 @@ Make sure to machine-generate the number, do not just bang on the keyboard.
 You can use the line at the bottom of [CF2 patcher](https://microsoft.github.io/uf2/patcher/)
 to generate random numbers.
 
+If the device already has a 48 bit MAC address, the 64 bit device identifier is formed by prepending
+`0xff` and appending `0xfe`. For example, if the MAC address is `11:22:33:44:55:66`, the device
+identifier should be `0xFF112233445566FE`.
+
 It's theoretically possible for a device ID collision to occur in a small network of say 200 devices.
 With evenly distributed (ie., random) device IDs and 1 trillion such networks 
 the probability of collision in any of them is 0.1%.
 OTOH, were we to use 32 bit IDs, with 2000 networks the collision probability in any of them
-is already 1%, and with 200k networks it's more 60%.
+is already 1%, and with 200k networks it's more than 60%.
 
 ### Direction of packets
 
@@ -305,7 +313,7 @@ Commands are partitioned as follows:
 
 ### Virtual registers
 
-Devices can exposed virtual registers.
+Devices can expose virtual registers.
 Each register is logically between 1 bit and 236 bytes in size.
 If register is written with a value shorter than register size, the
 value is zero-extended or sign-extended depending on register.
