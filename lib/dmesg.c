@@ -126,4 +126,12 @@ int codal_vsprintf(char *dst, unsigned dstsize, const char *format, va_list ap) 
     return ptr;
 }
 
+int codal_sprintf(char *dst, unsigned dstsize, const char *format, ...) {
+    va_list arg;
+    va_start(arg, format);
+    int r = codal_vsprintf(dst, dstsize, format, arg);
+    va_end(arg);
+    return r;
+}
+
 #endif
