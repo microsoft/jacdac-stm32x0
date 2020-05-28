@@ -46,7 +46,9 @@ struct srv_state {
     uint8_t prev_pressed;
     uint8_t num_zero;
     uint8_t num_pins;
+    uint8_t active;
     const uint8_t *button_pins;
+    const uint8_t *led_pins;
     uint32_t press_time;
     uint32_t nextSample;
 };
@@ -55,14 +57,16 @@ static uint32_t buttons_state(srv_t *state) {
     if (!state->inited) {
         state->inited = true;
         for (int i = 0; i < state->num_pins; ++i) {
-            pin_setup_input(state->button_pins[i], 1);
+            pin_setup_input(state->button_pins[i], state->active ? -1 : 1);
         }
     }
 
     uint32_t r = 0;
 
     for (int i = 0; i < state->num_pins; ++i) {
-        if (pin_get(state->button_pins[i]) == 0) {
+        if (state->button_pins[i] == 0xff)
+            continue;
+        if (pin_get(state->button_pins[i]) == state->active) {
             r |= (1 << i);
         }
     }
@@ -136,9 +140,11 @@ void gamepad_handle_packet(srv_t *state, jd_packet_t *pkt) {
 
 SRV_DEF(gamepad, JD_SERVICE_CLASS_ARCADE_CONTROLS);
 
-void gamepad_init(uint8_t num_pins, const uint8_t *pins) {
+void gamepad_init(uint8_t num_pins, const uint8_t *pins, const uint8_t *ledPins) {
     SRV_ALLOC(gamepad);
-    update(state);
     state->num_pins = num_pins;
     state->button_pins = pins;
+    state->led_pins = ledPins;
+    state->active = ledPins ? 1 : 0;
+    update(state);
 }

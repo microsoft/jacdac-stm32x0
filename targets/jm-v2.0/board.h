@@ -6,9 +6,9 @@
 #define PIN_LOG2 -1 // sig error
 #define PIN_LOG3 -1
 
-#define PIN_PWR PA_10
-#define PIN_P0 PF_0
-#define PIN_P1 PF_1
+#define PIN_PWR -1
+#define PIN_P0 -1
+#define PIN_P1 -1
 
 #define PIN_SERVO PA_7
 #define PIN_AMOSI PA_7

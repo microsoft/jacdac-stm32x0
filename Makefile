@@ -1,5 +1,5 @@
 TARGET ?= jm-v2.0
-PROF ?= dpad
+PROF ?= arcade
 FORCE ?=
 
 .SECONDARY: # this prevents object files from being removed
