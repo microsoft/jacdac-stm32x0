@@ -58,6 +58,8 @@ static uint32_t buttons_state(srv_t *state) {
         state->inited = true;
         for (int i = 0; i < state->num_pins; ++i) {
             pin_setup_input(state->button_pins[i], state->active ? -1 : 1);
+            if (state->led_pins)
+                pin_setup_output(state->led_pins[i]);
         }
     }
 
@@ -81,6 +83,8 @@ static void update(srv_t *state) {
             uint32_t isPressed = (newstate & (1 << i));
             uint32_t wasPressed = (state->btn_state & (1 << i));
             if (isPressed != wasPressed) {
+                if (state->led_pins && state->led_pins[i] != 0xff)
+                    pin_set(state->led_pins[i], isPressed);
                 txq_push_event_ex(state, isPressed ? EVT_DOWN : EVT_UP, i + 1);
             }
         }
