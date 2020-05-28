@@ -27,19 +27,14 @@ typedef struct {
     jd_arcade_controls_report_entry_t pressedButtons[0];
 } jd_arcade_controls_report_t;
 
-
-static const uint8_t buttonPins[] = {GAMEPAD_BUTTONS};
-
 #define EVT_DOWN 1
 #define EVT_UP 2
 // these two below not implemented yet
 #define EVT_CLICK 3
-#define EVT_LONG_CLICK 4 
+#define EVT_LONG_CLICK 4
 
 #define BUTTON_FLAGS 0
 #define NUM_PLAYERS 1
-
-#define NUM_PINS (int)sizeof(buttonPins)
 
 struct srv_state {
     SENSOR_COMMON;
@@ -50,6 +45,8 @@ struct srv_state {
     uint8_t pressed;
     uint8_t prev_pressed;
     uint8_t num_zero;
+    uint8_t num_pins;
+    const uint8_t *button_pins;
     uint32_t press_time;
     uint32_t nextSample;
 };
@@ -57,15 +54,15 @@ struct srv_state {
 static uint32_t buttons_state(srv_t *state) {
     if (!state->inited) {
         state->inited = true;
-        for (int i = 0; i < NUM_PINS; ++i) {
-            pin_setup_input(buttonPins[i], 1);
+        for (int i = 0; i < state->num_pins; ++i) {
+            pin_setup_input(state->button_pins[i], 1);
         }
     }
 
     uint32_t r = 0;
 
-    for (int i = 0; i < NUM_PINS; ++i) {
-        if (pin_get(buttonPins[i]) == 0) {
+    for (int i = 0; i < state->num_pins; ++i) {
+        if (pin_get(state->button_pins[i]) == 0) {
             r |= (1 << i);
         }
     }
@@ -76,7 +73,7 @@ static uint32_t buttons_state(srv_t *state) {
 static void update(srv_t *state) {
     uint32_t newstate = buttons_state(state);
     if (newstate != state->btn_state) {
-        for (int i = 0; i < NUM_PINS; ++i) {
+        for (int i = 0; i < state->num_pins; ++i) {
             uint32_t isPressed = (newstate & (1 << i));
             uint32_t wasPressed = (state->btn_state & (1 << i));
             if (isPressed != wasPressed) {
@@ -88,10 +85,10 @@ static void update(srv_t *state) {
 }
 
 static void send_report(srv_t *state) {
-    jd_arcade_controls_report_entry_t reports[NUM_PINS], *report;
+    jd_arcade_controls_report_entry_t reports[state->num_pins], *report;
     report = reports;
 
-    for (int i = 0; i < NUM_PINS; ++i) {
+    for (int i = 0; i < state->num_pins; ++i) {
         if (state->btn_state & (1 << i)) {
             report->button = i + 1;
             report->player_index = 0;
@@ -105,11 +102,11 @@ static void send_report(srv_t *state) {
 }
 
 static void ad_data(srv_t *state) {
-    uint16_t addata[NUM_PINS + 1];
+    uint16_t addata[state->num_pins + 1];
     uint16_t *dst = addata;
     *dst++ = BUTTON_FLAGS | (NUM_PLAYERS << 8);
-    for (int i = 0; i < NUM_PINS; ++i) {
-        if (buttonPins[i] != 0xff) {
+    for (int i = 0; i < state->num_pins; ++i) {
+        if (state->button_pins[i] != 0xff) {
             *dst++ = i + 1;
         }
     }
@@ -139,7 +136,9 @@ void gamepad_handle_packet(srv_t *state, jd_packet_t *pkt) {
 
 SRV_DEF(gamepad, JD_SERVICE_CLASS_ARCADE_CONTROLS);
 
-void gamepad_init(void) {
+void gamepad_init(uint8_t num_pins, const uint8_t *pins) {
     SRV_ALLOC(gamepad);
     update(state);
+    state->num_pins = num_pins;
+    state->button_pins = pins;
 }

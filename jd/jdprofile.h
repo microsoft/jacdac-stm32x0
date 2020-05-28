@@ -48,7 +48,7 @@ void touch_init(uint8_t pin);
 void oled_init(void);
 void temp_init(void);
 void humidity_init(void);
-void gamepad_init(void);
+void gamepad_init(uint8_t num_pins, const uint8_t *pins);
 void power_init(void);
 
 extern const char app_dev_class_name[];

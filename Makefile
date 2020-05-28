@@ -1,5 +1,5 @@
-TARGET ?= jm-v1.0
-PROF ?= power
+TARGET ?= jm-v2.0
+PROF ?= dpad
 FORCE ?=
 
 .SECONDARY: # this prevents object files from being removed
