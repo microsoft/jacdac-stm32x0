@@ -418,6 +418,14 @@ Streams should be considered closed when the device at the other end resets.
 TODO: Zero-length stream commands can be sent as keep-alive packets.
 Is this needed? 
 
+Note that streams are actually streams of JACDAC packets, not streams of bytes.
+They should not be recombined at any layer in the implementation.
+For example, a command that returns a list of things can send each thing in a separate
+stream packet, without any additional info about how to chunk the data
+(provided each thing fits in a packet).
+Multiple packets can be grouped in a frame, but are still handled separately at the
+destination.
+
 ### Event subscriptions
 
 A device like accelerometer can send events eg. when a 2g shock is detected,
@@ -426,5 +434,3 @@ These events a normally just broadcast on the bus, using standard command `0x001
 
 For reliable event delivery, a stream can be established, and events delivered
 over that stream.
-Only one event per packet should be sent (though multiple packets can
-be grouped in a frame).
