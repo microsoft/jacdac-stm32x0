@@ -9,7 +9,17 @@ Another is connecting peripherals to a host device (joystick anyone?!).
 
 * [Preliminary notes on JACDAC v1](jacdac-v1-spec.md)
 
-# Contributing
+## TODO
+
+* [ ] implement reset counter and ACK flag in `AD[0]`
+* [ ] consider thermal shutdown at 50C or so (assuming it's because of heat of some other component)
+* [ ] use SI values for sensors with 16 bit scaling?
+* [ ] add CTRL cmds for time and software version (different than hw!)
+* [ ] the "combined" flashing doesn't work - figure out why
+* [ ] UF2 flashing fails ("misaligned" error)
+
+
+## Contributing
 
 This project welcomes contributions and suggestions.  Most contributions require you to agree to a
 Contributor License Agreement (CLA) declaring that you have the right to, and actually do, grant us
