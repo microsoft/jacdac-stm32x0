@@ -73,6 +73,8 @@ uint8_t pwm_init(uint8_t pin, uint32_t period, uint32_t duty, uint8_t prescaler)
         jd_panic();
     }
 
+    LL_TIM_DisableCounter(TIMx);
+
     pin_setup_output_af(pin, pwm->af);
 
     LL_TIM_OC_InitTypeDef tim_oc_initstruct;
