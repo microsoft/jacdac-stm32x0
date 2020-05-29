@@ -37,7 +37,10 @@ void led_init(void) {
         pin_setup_output(output_pins[i]);
 
     // all power pins are reverse polarity
+#ifndef PWR_PIN_PULLUP
     pwr_pin_enable(0);
+#endif
+
 #ifdef PIN_GLO0
     pin_set(PIN_GLO0, 1);
     pin_set(PIN_GLO1, 1);

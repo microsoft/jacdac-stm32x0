@@ -8,17 +8,20 @@
 struct srv_state {
     SENSOR_COMMON;
     uint8_t pin;
+    uint8_t blpin;
     uint8_t pressed;
     uint8_t prev_pressed;
     uint8_t num_zero;
+    uint8_t active;
     uint32_t press_time;
     uint32_t nextSample;
 };
 
 static void update(srv_t *state) {
-    state->pressed = !pin_get(state->pin);
+    state->pressed = pin_get(state->pin) == state->active;
     if (state->pressed != state->prev_pressed) {
         state->prev_pressed = state->pressed;
+        pin_set(state->blpin, state->pressed);
         if (state->pressed) {
             txq_push_event(state, EVT_DOWN);
             state->press_time = now;
@@ -52,9 +55,16 @@ void btn_handle_packet(srv_t *state, jd_packet_t *pkt) {
 
 SRV_DEF(btn, JD_SERVICE_CLASS_BUTTON);
 
-void btn_init(uint8_t pin) {
+void btn_init(uint8_t pin, uint8_t blpin) {
     SRV_ALLOC(btn);
     state->pin = pin;
-    pin_setup_input(state->pin, 1);
+    state->blpin = blpin;
+    if (blpin == 0xff) {
+        state->active = 0;
+    } else {
+        state->active = 1;
+        pin_setup_output(blpin);
+    }
+    pin_setup_input(state->pin, state->active == 0 ? 1 : -1);
     update(state);
 }

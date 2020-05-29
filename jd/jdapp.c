@@ -63,15 +63,6 @@ void app_queue_annouce() {
     }
 #endif
 
-#ifdef JDM_V2
-    pin_setup_output(PIN_P0);
-    pin_setup_output(PIN_SERVO);
-    pin_set(PIN_P0, 1);
-    pin_pulse(PIN_SERVO, 1);
-    pin_pulse(PIN_PWR, 1);
-    pin_pulse(PIN_SERVO, 1);
-    pin_set(PIN_P0, 0);
-#endif
 }
 
 static void handle_ctrl_tick(jd_packet_t *pkt) {

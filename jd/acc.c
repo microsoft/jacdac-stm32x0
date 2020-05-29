@@ -10,13 +10,17 @@ Standing on left edge: -1000,0,0
 Standing on bottom edge: 0,1000,0
 */
 
-void acc_hw_get(int16_t sample[3]);
-void acc_hw_init(void);
-
 // values for QMA7981
 #define SAMPLING_PERIOD (7695 * 2) // 64.98Hz
 #define MAX_RANGE 32
 #define DEFAULT_RANGE 8
+
+#ifdef PIN_ACC_INT
+static uint8_t got_acc_int;
+static void acc_int(void) {
+    got_acc_int = 1;
+}
+#endif
 
 #define ACCELEROMETER_EVT_NONE 0
 #define ACCELEROMETER_EVT_TILT_UP 1
@@ -213,10 +217,22 @@ static void process_events(srv_t *state) {
 }
 
 void acc_process(srv_t *state) {
+#ifdef PIN_ACC_INT
+    if (!got_acc_int)
+        return;
+    got_acc_int = 0;
+#else
     if (!should_sample(&state->nextSample, SAMPLING_PERIOD))
         return;
+#endif
 
     acc_hw_get(&sample.x);
+
+    static int cnt;
+    if(cnt++>50){
+        cnt=0;
+        DMESG("%d %d %d", sample.x, sample.y, sample.z);
+    }
 
     process_events(state);
 
@@ -231,4 +247,8 @@ SRV_DEF(acc, JD_SERVICE_CLASS_ACCELEROMETER);
 void acc_init() {
     SRV_ALLOC(acc);
     acc_hw_init();
+#ifdef PIN_ACC_INT
+    pin_setup_input(PIN_ACC_INT, -1);
+    exti_set_callback(PIN_ACC_INT, acc_int, EXTI_RISING);
+#endif
 }

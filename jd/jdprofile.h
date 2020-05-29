@@ -43,7 +43,7 @@ void light_init(void);
 void snd_init(uint8_t pin);
 void pwm_light_init(uint8_t pin);
 void servo_init(uint8_t pin);
-void btn_init(uint8_t pin);
+void btn_init(uint8_t pin, uint8_t blpin);
 void touch_init(uint8_t pin);
 void oled_init(void);
 void temp_init(void);

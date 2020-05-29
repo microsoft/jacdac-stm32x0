@@ -49,6 +49,7 @@ void crank_handle_packet(srv_t *state, jd_packet_t *pkt) {
 
 SRV_DEF(crank, JD_SERVICE_CLASS_ROTARY_ENCODER);
 
+// specify pin0/1 so that clockwise rotations gives higher readings
 void crank_init(uint8_t pin0, uint8_t pin1) {
     SRV_ALLOC(crank);
     state->pin0 = pin0;
