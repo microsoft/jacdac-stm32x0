@@ -34,6 +34,7 @@
 #define JD_SERVICE_CLASS_MONO_DISPLAY 0x1f43e195
 #define JD_SERVICE_CLASS_ARCADE_CONTROLS 0x1deaa06e
 #define JD_SERVICE_CLASS_POWER 0x1fa4c95a
+#define JD_SERVICE_CLASS_SLIDER 0x1f274746
 
 // to generate a new class number, head to https://microsoft.github.io/uf2/patcher/
 // click link at the bottom and replace first digit with '1'
