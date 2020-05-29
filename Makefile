@@ -1,5 +1,9 @@
-TARGET ?= jm-v2.0
-PROF ?= arcade
+-include Makefile.user
+
+ifeq ($(TARGET),)
+$(error Define TARGET and PROF variables, best in Makefile.user)
+endif
+
 FORCE ?=
 
 .SECONDARY: # this prevents object files from being removed
