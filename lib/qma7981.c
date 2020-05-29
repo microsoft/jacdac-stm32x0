@@ -1,6 +1,6 @@
 #include "lib.h"
 
-#ifdef PIN_ACC_VCC
+#ifdef ACC_QMA7981
 
 #ifndef ACC_I2C_ADDR
 #define ACC_I2C_ADDR 0x12
