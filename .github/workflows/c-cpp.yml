@@ -1,0 +1,26 @@
+name: GCC for ARM build
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: arm-none-eabi-gcc
+      uses: fiam/arm-none-eabi-gcc@v1
+      with:
+        release: '9-2019-q4'
+    - name: Use Node.js
+      uses: actions/setup-node@v1
+      with:
+          node-version: 8.x
+    - name: make
+      run: make drop
+  
