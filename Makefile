@@ -30,8 +30,7 @@ CONFIG_DEPS = \
 	$(wildcard $(PLATFORM)/*.h) \
 	$(wildcard $(JD_CORE)/*.h) \
 	$(wildcard targets/$(TARGET)/*.h) \
-	targets/$(TARGET)/config.mk \
-	Makefile
+	targets/$(TARGET)/config.mk
 
 ifeq ($(BL),)
 PREF = app
@@ -215,3 +214,12 @@ run-combined:
 
 force:
 	@echo forcing...
+
+DROP_TARGETS = jm-v2.0 jm-v2.0i
+
+targ-%:
+	$(MAKE) TARGET=$(subst targ-,,$@)
+	cd built; cat $(addsuffix /*.uf2,$(DROP_TARGETS)) > drop.uf2
+	@ls -l built/drop.uf2
+
+drop: $(addprefix targ-,$(DROP_TARGETS))
