@@ -22,5 +22,6 @@ jobs:
       with:
           node-version: 8.x
     - name: make
-      run: make drop
+      run: make TARGET=jm-v2.0 drop
+
   
