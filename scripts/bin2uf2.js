@@ -27,7 +27,8 @@ const familyID = dev_class
 const bootBlockSize = 1024
 
 const flags = 0x00002000 // familyID present
-const numBlocks = (bootBlockSize + buf.length + 255) >> 8
+const len = (buf.length + bootBlockSize) & ~(bootBlockSize - 1)
+const numBlocks = (bootBlockSize + len) >> 8
 const outp = []
 
 function addBlock(pos, buf) {
@@ -41,13 +42,13 @@ function addBlock(pos, buf) {
     bl.writeUInt32LE(numBlocks, 24)
     bl.writeUInt32LE(familyID, 28) // reserved
     for (let i = 0; i < 256; ++i)
-        bl[i + 32] = buf ? buf[pos + i] : 0xff
+        bl[i + 32] = buf ? (buf[pos + i] || 0x00) : 0xff
     bl.writeUInt32LE(UF2_MAGIC_END, 512 - 4)
     outp.push(bl)
 
 }
 
-for (let pos = 0; pos < buf.length; pos += 256) {
+for (let pos = 0; pos < len; pos += 256) {
     addBlock(pos, pos < bootBlockSize ? null : buf)
 }
 for (let pos = 0; pos < bootBlockSize; pos += 256) {
