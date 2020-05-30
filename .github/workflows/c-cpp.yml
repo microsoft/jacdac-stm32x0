@@ -36,5 +36,8 @@ jobs:
     - name: set PATH
       run: echo "::add-path::arm-gcc"
 
+    - name: info
+      run: ls .; ls arm-gcc; echo $PATH
+
     - name: make
       run: make TARGET=jm-v2.0 drop
