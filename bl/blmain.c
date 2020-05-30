@@ -1,7 +1,10 @@
 #include "bl.h"
 
 static void start_app(void) {
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Warray-bounds"
     BL_MAGIC_FLAG = BL_MAGIC_FLAG_APP;
+#pragma GCC diagnostic pop
     target_reset();
 }
 
@@ -108,7 +111,7 @@ int main(void) {
     while (1) {
         uint32_t now = ctx->now = tim_get_micros();
 
-        //pin_pulse(PIN_LOG0, 1);
+        // pin_pulse(PIN_LOG0, 1);
 
         jd_process(ctx);
 

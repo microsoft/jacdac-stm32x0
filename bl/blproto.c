@@ -18,13 +18,14 @@ static const uint32_t bl_ad_data[] = {
     JD_SERVICE_CLASS_BOOTLOADER,
     BL_PAGE_SIZE,
     FLASH_SIZE - BL_SIZE,
+    0
 };
 
 void bl_process(ctx_t *ctx) {
     if (ctx->subpageno == 0xff && setup_tx(ctx, BL_CMD_PAGE_DATA, &ctx->session_id, 12) == 0)
         ctx->subpageno = 0;
     if (ctx->bl_ad_queued &&
-        setup_tx(ctx, JD_CMD_ADVERTISEMENT_DATA, bl_ad_data, sizeof(bl_ad_data) + 4) == 0) {
+        setup_tx(ctx, JD_CMD_ADVERTISEMENT_DATA, bl_ad_data, sizeof(bl_ad_data)) == 0) {
         // append our device class
         ((uint32_t *)ctx->txBuffer.data)[4] = bl_dev_info.device_class;
         jd_prep_send(ctx);
