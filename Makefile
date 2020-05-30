@@ -1,3 +1,6 @@
+.SECONDARY: # this prevents object files from being removed
+.DEFAULT_GOAL := all
+
 -include Makefile.user
 
 ifeq ($(TARGET),)
@@ -5,9 +8,6 @@ $(error Define TARGET and PROF variables, best in Makefile.user)
 endif
 
 FORCE ?=
-
-.SECONDARY: # this prevents object files from being removed
-.DEFAULT_GOAL := all
 
 JD_CORE = jacdac-core
 
@@ -219,7 +219,7 @@ DROP_TARGETS = jm-v2.0 jm-v2.0i
 
 targ-%:
 	$(MAKE) TARGET=$(subst targ-,,$@)
-	cd built; cat $(addsuffix /*.uf2,$(DROP_TARGETS)) > drop.uf2
-	@ls -l built/drop.uf2
 
 drop: $(addprefix targ-,$(DROP_TARGETS))
+	cd built; cat $(addsuffix /*.uf2,$(DROP_TARGETS)) > drop.uf2
+	@ls -l built/drop.uf2
