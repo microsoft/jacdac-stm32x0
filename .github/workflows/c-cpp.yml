@@ -36,8 +36,11 @@ jobs:
     - name: set PATH
       run: echo "::add-path::${{ github.workspace }}/arm-gcc/bin"
 
-    - name: info
-      run: ls .; echo "IN ARM"; ls arm-gcc; echo "PATH"; echo $PATH
-
     - name: make
       run: make TARGET=jm-v2.0 drop
+
+    - name: Upload results
+      uses: actions/upload-artifact@v1
+      with:
+        name: drop.uf2
+        path: built/drop.uf2
