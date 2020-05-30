@@ -33,12 +33,6 @@ jobs:
       with:
         release: ${{ env.GCC_VERSION }}
         directory: arm-gcc
-    - name: Save ARM GCC cache
-      if: steps.arm-gcc-cache.outputs.cache-hit != 'true'
-      uses: actions/cache@v2
-      with:
-        path: arm-gcc
-        key:  ${{ runner.os }}-arm-gcc-${{ env.GCC_VERSION }}
     - name: set PATH
       run: echo "::add-path::arm-gcc"
 
