@@ -13,14 +13,14 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
-    - name: arm-none-eabi-gcc
-      uses: fiam/arm-none-eabi-gcc@v1
+      with:
+        submodules: 'recursive'
+    - uses: actions/setup-node@v2-beta
+      with:
+          node-version: 'v12'
+    - uses: fiam/arm-none-eabi-gcc@v1
       with:
         release: '9-2019-q4'
-    - name: Use Node.js
-      uses: actions/setup-node@v1
-      with:
-          node-version: 8.x
     - name: make
       run: make TARGET=jm-v2.0 drop
 
