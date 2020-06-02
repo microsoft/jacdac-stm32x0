@@ -37,6 +37,7 @@ static const struct PinPWM pins[] = {
     {PB_1, 1, LL_GPIO_AF_0, TIM14}, // GLO1 on jdm-v3; also TIM3:4, TIM1:3N
     {PA_10, 3, LL_GPIO_AF_2, TIM1}, // SND
     {PA_4, 1, LL_GPIO_AF_4, TIM14}, // SND
+    {PA_7, 1, LL_GPIO_AF_4, TIM14}, // servo
 };
 
 static const struct PinPWM *lookup_pwm(uint8_t pin) {

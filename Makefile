@@ -223,3 +223,9 @@ targ-%:
 drop: $(addprefix targ-,$(DROP_TARGETS))
 	cd built; cat $(addsuffix /*.uf2,$(DROP_TARGETS)) > drop.uf2
 	@ls -l built/drop.uf2
+
+ff: full-flash
+
+full-flash:
+	$(MAKE) BL=1 r
+	$(MAKE) r
