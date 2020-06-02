@@ -4,7 +4,7 @@
 #define OVERLOAD_MS 1000  // how long to shut down the power for after overload, in ms
 
 // calibrate readings
-#define MA_SCALE 1973
+#define MA_SCALE 1890
 #define MV_SCALE 419
 
 #define PIN_PRE_SENSE PA_4
@@ -73,6 +73,7 @@ static int overload_detect(srv_t *state, uint16_t readings[READING_WINDOW]) {
     int med_gnd = readings[READING_WINDOW / 2];
     int ma = (med_gnd * MA_SCALE) >> 7;
     if (ma > state->max_power) {
+        DMESG("current %dmA", ma);
         overload(state);
         return 1;
     }
@@ -83,18 +84,21 @@ static void turn_on_power(srv_t *state) {
     DMESG("power on");
     uint16_t readings[READING_WINDOW] = {0};
     unsigned rp = 0;
+    adc_prep_read_pin(PIN_GND_SENSE);
     uint32_t t0 = tim_get_micros();
     pwr_pin_enable(1);
-    for (int i = 0; i < 10000; ++i) {
-        int gnd = adc_read_pin(PIN_GND_SENSE);
+    for (int i = 0; i < 1000; ++i) {
+        int gnd = adc_convert();
         readings[rp++] = gnd;
         if (rp == READING_WINDOW)
             rp = 0;
         if (overload_detect(state, readings)) {
             DMESG("overload after %d readings %d us", i + 1, (uint32_t)tim_get_micros() - t0);
+            adc_disable();
             return;
         }
     }
+    adc_disable();
     state->pwr_on = 1;
 }
 
@@ -186,6 +190,7 @@ void power_init(void) {
     // Only 1 out of 14 batteries tested wouldn't work with these settings.
     // 0.6/20s is 7mA (at 22R), so ~6 weeks on 10000mAh battery (mAh are quoted for 3.7V not 5V).
     // These can be tuned by the user for better battery life.
+    // Note that the power_process() above at 1kHz takes about 1mA on its own.
     state->pulse_duration = 600;
     state->pulse_period = 20000;
     state->last_pulse = now - state->pulse_duration * 1000;

@@ -32,9 +32,12 @@ int i2c_read_reg(uint8_t addr, uint8_t reg);
 
 // adc.c
 void adc_init_random(void);
-uint16_t adc_read_pin(uint8_t pin);
 uint16_t adc_read_temp(void);
 bool adc_can_read_pin(uint8_t pin);
+void adc_prep_read_pin(uint8_t pin);
+uint16_t adc_convert(void);
+void adc_disable(void);
+uint16_t adc_read_pin(uint8_t pin); // equivalent to the three steps above
 
 // rtc.c
 void rtc_init(void);

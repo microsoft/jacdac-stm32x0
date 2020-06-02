@@ -10,7 +10,7 @@ static void set_sampling_time(uint32_t time) {
 #endif
 }
 
-static uint16_t adc_convert(void) {
+uint16_t adc_convert(void) {
     if ((LL_ADC_IsEnabled(ADC1) == 1) && (LL_ADC_IsDisableOngoing(ADC1) == 0) &&
         (LL_ADC_REG_IsConversionOngoing(ADC1) == 0))
         LL_ADC_REG_StartConversion(ADC1);
@@ -162,7 +162,7 @@ bool adc_can_read_pin(uint8_t pin) {
     return pin_channel(pin) != NO_CHANNEL;
 }
 
-uint16_t adc_read_pin(uint8_t pin) {
+void adc_prep_read_pin(uint8_t pin) {
     uint32_t chan = pin_channel(pin);
 
     if (chan == NO_CHANNEL)
@@ -173,9 +173,15 @@ uint16_t adc_read_pin(uint8_t pin) {
     set_sampling_time(LL_ADC_SAMPLINGTIME_41CYCLES_5);
 
     set_channel(chan);
-    uint16_t r = adc_convert();
+}
 
+void adc_disable() {
     LL_ADC_Disable(ADC1);
+}
 
+uint16_t adc_read_pin(uint8_t pin) {
+    adc_prep_read_pin(pin);
+    uint16_t r = adc_convert();
+    adc_disable();
     return r;
 }
