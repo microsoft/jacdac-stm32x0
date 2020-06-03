@@ -68,6 +68,54 @@ static void set_temp_ref(int t) {
         target_wait_us(LL_ADC_DELAY_TEMPSENSOR_STAB_US);
 }
 
+// 116 bytes
+uint32_t bl_adc_random_seed(void) {
+    LL_ADC_SetCommonPathInternalCh(__LL_ADC_COMMON_INSTANCE(ADC1),
+                                   LL_ADC_PATH_INTERNAL_VREFINT | LL_ADC_PATH_INTERNAL_TEMPSENSOR);
+    target_wait_us(LL_ADC_DELAY_TEMPSENSOR_STAB_US);
+
+    ADC1->CFGR1 = LL_ADC_REG_OVR_DATA_OVERWRITTEN;
+
+#ifdef STM32G0
+    LL_ADC_REG_SetSequencerLength(ADC1, LL_ADC_REG_SEQ_SCAN_DISABLE);
+    target_wait_us(5);
+
+    LL_ADC_REG_SetSequencerConfigurable(ADC1, LL_ADC_REG_SEQ_CONFIGURABLE);
+#endif
+
+    // set_sampling_time(LL_ADC_SAMPLINGTIME_1CYCLE_5); // get maximum noise
+
+    ADC1->CFGR2 = LL_ADC_CLOCK_SYNC_PCLK_DIV2;
+
+#ifdef STM32G0
+    LL_ADC_REG_SetSequencerRanks(ADC1, LL_ADC_REG_RANK_1, LL_ADC_CHANNEL_TEMPSENSOR);
+    LL_ADC_SetChannelSamplingTime(ADC1, LL_ADC_CHANNEL_TEMPSENSOR, LL_ADC_SAMPLINGTIME_COMMON_1);
+
+    LL_ADC_EnableInternalRegulator(ADC1);
+    target_wait_us(LL_ADC_DELAY_INTERNAL_REGUL_STAB_US);
+#else
+    LL_ADC_REG_SetSequencerChannels(ADC1, LL_ADC_CHANNEL_TEMPSENSOR);
+#endif
+
+    // LL_ADC_SetLowPowerMode(ADC1, LL_ADC_LP_AUTOWAIT_AUTOPOWEROFF);
+
+    LL_ADC_Enable(ADC1);
+    while (LL_ADC_IsActiveFlag_ADRDY(ADC1) == 0)
+        ;
+
+    uint32_t h = 231;
+    for (int i = 0; i < 1000; ++i) {
+        LL_ADC_REG_StartConversion(ADC1);
+        while (LL_ADC_IsActiveFlag_EOC(ADC1) == 0)
+            ;
+        LL_ADC_ClearFlag_EOC(ADC1);
+        int v = LL_ADC_REG_ReadConversionData12(ADC1);
+        h = (h * 0x1000193) ^ (v & 0xff);
+    }
+
+    return h;
+}
+
 // initializes RNG from TEMP sensor
 // alternative would be build an RNG, eg http://robseward.com/misc/RNG2/
 void adc_init_random(void) {

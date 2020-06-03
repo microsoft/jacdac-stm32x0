@@ -60,6 +60,7 @@ C_SRC += $(wildcard bl/*.c)
 C_SRC += $(PLATFORM)/pins.c
 C_SRC += $(PLATFORM)/init.c
 C_SRC += $(PLATFORM)/flash.c
+C_SRC += $(PLATFORM)/adc.c
 C_SRC += lib/dmesg.c
 C_SRC += $(JD_CORE)/jdutil.c
 AS_SRC += bl/boothandler.s

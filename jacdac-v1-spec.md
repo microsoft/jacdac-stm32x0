@@ -38,7 +38,7 @@ Typically, you can take temperature readings a couple thousand times (they will 
 hash the results and use that as a random seed.
 Other option is a floating ADC.
 Yet another is timing pin capacitance.
-Initial contents of RAM can be also used in some circumstances.
+Initial contents of RAM does not appear to be random, despite the fact that it may look like it is.
 
 ## Frames and Packets
 

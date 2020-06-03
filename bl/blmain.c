@@ -30,14 +30,6 @@ void led_blink(int us) {
     led_set(1);
 }
 
-uint32_t hash(const void *data, unsigned len) {
-    const uint8_t *d = (const uint8_t *)data;
-    uint32_t h = 0x13;
-    while (len--)
-        h = (h ^ *d++) * 0x1000193;
-    return h;
-}
-
 uint32_t random(ctx_t *ctx) {
     // xorshift algorithm
     uint32_t x = ctx->randomseed;
@@ -54,10 +46,12 @@ static const uint32_t announce_data[] = {
     JD_SERVICE_CLASS_BOOTLOADER                                            //
 };
 
+uint32_t bl_adc_random_seed(void);
+
 int main(void) {
     __disable_irq();
     clk_setup_pll();
-    LL_APB1_GRP2_EnableClock(LL_APB1_GRP2_PERIPH_TIM17 | LL_APB1_GRP2_PERIPH_USART1);
+    LL_APB1_GRP2_EnableClock(LL_APB1_GRP2_PERIPH_TIM17 | LL_APB1_GRP2_PERIPH_USART1 | LL_APB1_GRP2_PERIPH_ADC1);
 
     ctx_t *ctx = &ctx_;
 
@@ -68,12 +62,8 @@ int main(void) {
 
     led_blink(256 * 1024); // initial (on reset) blink
 
-    uint8_t *membase = (uint8_t)0x20000000;
-
-    uint32_t r0 = hash(membase + 0, 4096) ^ bl_dev_info.device_class ^ bl_info.random_seed0;
-
+    uint32_t r0 = bl_adc_random_seed();
     ctx->randomseed = r0;
-    random(ctx); // rotate
 
     bool app_valid = app_dev_info.magic == DEV_INFO_MAGIC;
 
@@ -81,8 +71,7 @@ int main(void) {
         if (app_valid && app_dev_info.device_id && (app_dev_info.device_id + 1)) {
             BL_DEVICE_ID = app_dev_info.device_id;
         } else {
-            uint32_t r1 =
-                hash(membase + 2048, 2048) ^ bl_dev_info.device_class ^ bl_info.random_seed1;
+            uint32_t r1 = bl_adc_random_seed();
             r0 &= ~0x02000000; // clear "universal" bit
             BL_DEVICE_ID = ((uint64_t)r0 << 32) | r1;
         }
