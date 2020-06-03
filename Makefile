@@ -130,7 +130,7 @@ endif
 endif
 
 flash-loop: all
-	while : ; do make flash && break ; sleep 1 ; done
+	while : ; do make ff && say done ; sleep 1 ; done
 
 prep-built-gdb:
 	echo "file $(ELF)" > built/debug.gdb
