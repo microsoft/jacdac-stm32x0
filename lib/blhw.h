@@ -40,7 +40,7 @@ void jd_panic(void);
 void target_reset(void);
 void target_wait_us(uint32_t n);
 
-#define DEV_INFO_MAGIC 0x9fddf13b
+#define DEV_INFO_MAGIC 0xf6a0e4b6
 
 struct device_info_block {
     uint32_t magic;

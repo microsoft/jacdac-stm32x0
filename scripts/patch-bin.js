@@ -12,6 +12,8 @@ const flash_size = parseInt(process.argv[3])
 const bl_size = parseInt(process.argv[4])
 const profiles_path = process.argv[5]
 
+const DEV_INFO_MAGIC = 0xf6a0e4b6
+
 if (isNaN(bl_size) || !profiles_path) {
     throw "USAGE: node patch-bin.js file.elf flash_size_in_k bootloader_size_in_k profiles_path"
 }
@@ -87,7 +89,7 @@ if ((w0 & 0xff00_0000) == 0x2000_0000) {
     buf.writeUInt32LE(dev_class, pos + 8 * 4)
     log("clearing devinfo area")
 
-} else if (w0 == 0x9fddf13b) {
+} else if (w0 == DEV_INFO_MAGIC) {
     log("setting random seed")
     require("crypto").randomFillSync(buf, pos + 16, 8)
 } else {
