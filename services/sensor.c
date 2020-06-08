@@ -1,4 +1,4 @@
-#include "jdsimple.h"
+#include "lib.h"
 
 REG_DEFINITION(                         //
     sensor_regs,                        //
@@ -13,7 +13,7 @@ struct srv_state {
 };
 
 int sensor_handle_packet(srv_t *state, jd_packet_t *pkt) {
-    int r = srv_handle_reg(state, pkt, sensor_regs);
+    int r = service_handle_register(state, pkt, sensor_regs);
     switch (r) {
     case JD_REG_IS_STREAMING:
         if (state->is_streaming) {
@@ -54,5 +54,5 @@ int sensor_handle_packet_simple(srv_t *state, jd_packet_t *pkt, const void *samp
 int sensor_should_stream(srv_t *state) {
     if (!state->is_streaming)
         return false;
-    return should_sample(&state->next_streaming, state->streaming_interval * 1000);
+    return jd_should_sample(&state->next_streaming, state->streaming_interval * 1000);
 }

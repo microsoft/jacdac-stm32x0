@@ -1,4 +1,4 @@
-#include "jdsimple.h"
+#include "lib.h"
 
 // shake/gesture detection based on
 // https://github.com/lancaster-university/codal-core/blob/master/source/driver-models/Accelerometer.cpp
@@ -222,7 +222,7 @@ void acc_process(srv_t *state) {
         return;
     got_acc_int = 0;
 #else
-    if (!should_sample(&state->nextSample, SAMPLING_PERIOD))
+    if (!jd_should_sample(&state->nextSample, SAMPLING_PERIOD))
         return;
 #endif
 
@@ -244,7 +244,7 @@ void acc_handle_packet(srv_t *state, jd_packet_t *pkt) {
 }
 
 SRV_DEF(acc, JD_SERVICE_CLASS_ACCELEROMETER);
-void acc_init() {
+void acc_init(void) {
     SRV_ALLOC(acc);
     acc_hw_init();
 #ifdef PIN_ACC_INT

@@ -1,4 +1,4 @@
-#include "jdsimple.h"
+#include "lib.h"
 
 #define JD_ARCADE_CONTROLS_BUTTON_LEFT 0x0001
 #define JD_ARCADE_CONTROLS_BUTTON_UP 0x0002
@@ -123,7 +123,7 @@ static void ad_data(srv_t *state) {
 }
 
 void gamepad_process(srv_t *state) {
-    if (should_sample(&state->nextSample, 9000)) {
+    if (jd_should_sample(&state->nextSample, 9000)) {
         update(state);
 
         if (sensor_should_stream(state) && (state->btn_state || state->num_zero < 20)) {

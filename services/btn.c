@@ -1,4 +1,4 @@
-#include "jdsimple.h"
+#include "lib.h"
 
 #define EVT_DOWN 1
 #define EVT_UP 2
@@ -38,7 +38,7 @@ static void update(srv_t *state) {
 }
 
 void btn_process(srv_t *state) {
-    if (should_sample(&state->nextSample, 9000)) {
+    if (jd_should_sample(&state->nextSample, 9000)) {
         update(state);
 
         if (sensor_should_stream(state) && (state->pressed || state->num_zero < 20)) {

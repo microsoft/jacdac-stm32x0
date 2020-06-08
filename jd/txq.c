@@ -12,7 +12,7 @@ void txq_init(void) {
         sendFrame = alloc(sizeof(jd_frame_t) * 2);
 }
 
-void *txq_push(unsigned service_num, unsigned service_cmd, const void *data,
+void *jd_send(unsigned service_num, unsigned service_cmd, const void *data,
                unsigned service_size) {
     void *trg = jd_push_in_frame(&sendFrame[bufferPtr], service_num, service_cmd, service_size);
     if (!trg) {
@@ -24,12 +24,12 @@ void *txq_push(unsigned service_num, unsigned service_cmd, const void *data,
     return trg;
 }
 
-void txq_push_event_ex(srv_t *srv, uint32_t eventid, uint32_t arg) {
+void jd_send_event_ext(srv_t *srv, uint32_t eventid, uint32_t arg) {
     srv_common_t *state = (srv_common_t *)srv;
     if (eventid >> 16)
         jd_panic();
     uint32_t data[] = {eventid, arg};
-    txq_push(state->service_number, JD_CMD_EVENT, data, 8);
+    jd_send(state->service_number, JD_CMD_EVENT, data, 8);
 }
 
 jd_frame_t *app_pull_frame(void) {

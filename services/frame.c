@@ -1,4 +1,5 @@
-#include "jdsimple.h"
+#include "jd_protocol.h"
+#include "interfaces/jd_app.h"
 
 static jd_frame_t *frameToHandle;
 
@@ -13,8 +14,8 @@ void app_process_frame() {
     if (frameToHandle) {
         if (frameToHandle->flags & JD_FRAME_FLAG_ACK_REQUESTED &&
             frameToHandle->flags & JD_FRAME_FLAG_COMMAND &&
-            frameToHandle->device_identifier == device_id())
-            txq_push(JD_SERVICE_NUMBER_CRC_ACK, frameToHandle->crc, NULL, 0);
+            frameToHandle->device_identifier == jd_device_id())
+            jd_send(JD_SERVICE_NUMBER_CRC_ACK, frameToHandle->crc, NULL, 0);
 
         for (;;) {
             app_handle_packet((jd_packet_t *)frameToHandle);

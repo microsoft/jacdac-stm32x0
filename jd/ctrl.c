@@ -24,7 +24,7 @@ void ctrl_process(srv_t *_state) {
 }
 
 static void send_value(jd_packet_t *pkt, uint32_t v) {
-    txq_push(JD_SERVICE_NUMBER_CTRL, pkt->service_command, &v, sizeof(v));
+    jd_send(JD_SERVICE_NUMBER_CTRL, pkt->service_command, &v, sizeof(v));
 }
 
 void ctrl_handle_packet(srv_t *_state, jd_packet_t *pkt) {
@@ -46,18 +46,18 @@ void ctrl_handle_packet(srv_t *_state, jd_packet_t *pkt) {
         break;
 
     case (JD_CMD_GET_REG | JD_REG_CTRL_DEVICE_DESCRIPTION):
-        txq_push(JD_SERVICE_NUMBER_CTRL, pkt->service_command, app_dev_class_name,
+        jd_send(JD_SERVICE_NUMBER_CTRL, pkt->service_command, app_dev_class_name,
                  strlen(app_dev_class_name));
         break;
 
     case (JD_CMD_GET_REG | JD_REG_CTRL_DEVICE_CLASS):
         send_value(pkt, app_dev_info.device_class);
         break;
-    
+
     case (JD_CMD_GET_REG | JD_REG_CTRL_BL_DEVICE_CLASS):
         send_value(pkt, bl_dev_info.device_class);
         break;
-    
+
     case (JD_CMD_GET_REG | JD_REG_CTRL_TEMPERATURE):
         send_value(pkt, adc_read_temp());
         break;

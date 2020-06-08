@@ -56,9 +56,9 @@ int srv_handle_reg(srv_t *state, jd_packet_t *pkt, const uint16_t sdesc[]) {
             if (is_get) {
                 if (tp == _REG_BIT) {
                     uint8_t v = *sptr & (1 << bitoffset) ? 1 : 0;
-                    txq_push(pkt->service_number, pkt->service_command, &v, 1);
+                    jd_send(pkt->service_number, pkt->service_command, &v, 1);
                 } else {
-                    txq_push(pkt->service_number, pkt->service_command, sptr, regSize[tp]);
+                    jd_send(pkt->service_number, pkt->service_command, sptr, regSize[tp]);
                 }
                 return -reg;
             } else {

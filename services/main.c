@@ -1,4 +1,4 @@
-#include "jdsimple.h"
+#include "lib.h"
 
 uint32_t now;
 
@@ -107,10 +107,8 @@ int main(void) {
     led_init();
     led_set(1);
 
-    if ((device_id() + 1) == 0)
+    if ((jd_device_id() + 1) == 0)
         target_reset();
-
-    alloc_init();
 
     tim_init();
 
@@ -119,10 +117,8 @@ int main(void) {
 
     // sleep_forever();
 
-    txq_init();
+    // txq_init();
     jd_init();
-
-    app_init_services();
 
 #if 0
     while(1) {

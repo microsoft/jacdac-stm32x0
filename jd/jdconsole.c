@@ -29,7 +29,7 @@ void jdcon_logv(int level, const char *format, va_list ap) {
         return;
     char buf[100];
     codal_vsprintf(buf, sizeof(buf), format, ap);
-    txq_push(ctx->service_number, CMD_MSG_START + level, buf, strlen(buf));
+    jd_send(ctx->service_number, CMD_MSG_START + level, buf, strlen(buf));
 }
 
 void jdcon_log(const char *format, ...) {
