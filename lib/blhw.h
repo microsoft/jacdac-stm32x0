@@ -1,5 +1,7 @@
 #pragma once
 
+#include <stdint.h>
+#include <stdbool.h>
 #include "hwconfig.h"
 
 #define CONCAT_1(a, b) a##b

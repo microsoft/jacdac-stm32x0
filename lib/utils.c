@@ -1,9 +1,5 @@
 #include "lib.h"
 
-uint64_t hw_device_id(void) {
-    return app_dev_info.device_id;
-}
-
 /**
  * Performs an in buffer reverse of a given char array.
  *
@@ -125,3 +121,5 @@ uint32_t random_int(uint32_t max) {
             return v;
     }
 }
+
+
