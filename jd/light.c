@@ -7,8 +7,6 @@
 #define DEFAULT_NUMPIXELS 15
 #define DEFAULT_MAXPOWER 200
 
-#define FRAME_TIME 50000
-
 #define LOG DMESG
 
 #define LIGHT_REG_LIGHTTYPE 0x80
@@ -16,7 +14,24 @@
 #define LIGHT_REG_DURATION 0x82
 #define LIGHT_REG_COLOR 0x83
 
-#define LIGHT_CMD_START_ANIMATION 0x80
+#define LIGHT_CMD_RUN 0x81
+
+#define LIGHT_PROG_SET 0xD0         // P, R, C+
+#define LIGHT_PROG_FADE 0xD1        // P, N, C+
+#define LIGHT_PROG_FADE_HSV 0xD2    // P, N, C+
+#define LIGHT_PROG_ROTATE_FWD 0xD3  // P, N, K
+#define LIGHT_PROG_ROTATE_BACK 0xD4 // P, N, K
+#define LIGHT_PROG_WAIT 0xD5        // K
+
+#define LIGHT_PROG_COLN 0xC0
+#define LIGHT_PROG_COL1 0xC1
+#define LIGHT_PROG_COL2 0xC2
+#define LIGHT_PROG_COL3 0xC3
+
+#define PROG_EOF 0
+#define PROG_CMD 1
+#define PROG_NUMBER 3
+#define PROG_COLOR_BLOCK 4
 
 REG_DEFINITION(                   //
     light_regs,                   //
@@ -41,10 +56,14 @@ struct srv_state {
 
     uint32_t *pxbuffer;
     uint16_t pxbuffer_allocated;
-    uint32_t nextFrame;
     volatile uint8_t in_tx;
     volatile uint8_t dirty;
     uint8_t inited;
+
+    uint8_t prog_ptr;
+    uint8_t prog_size;
+    uint32_t prog_next_step;
+    uint8_t prog_data[JD_SERIAL_PAYLOAD_SIZE + 1];
 
     uint8_t anim_flag;
     uint32_t anim_step, anim_value;
@@ -101,37 +120,7 @@ static uint32_t hsv(uint8_t hue, uint8_t sat, uint8_t val) {
     return rgb(r, g, b);
 }
 
-static const uint8_t b_m16[] = {0, 49, 49, 41, 90, 27, 117, 10};
-static int isin(uint8_t theta) {
-    // reference: based on FASTLed's sin approximation method:
-    // [https://github.com/FastLED/FastLED](MIT)
-    int offset = theta;
-    if (theta & 0x40) {
-        offset = 255 - offset;
-    }
-    offset &= 0x3F; // 0..63
-
-    int secoffset = offset & 0x0F; // 0..15
-    if (theta & 0x40)
-        secoffset++;
-
-    int section = offset >> 4; // 0..3
-    int s2 = section * 2;
-
-    int b = b_m16[s2];
-    int m16 = b_m16[s2 + 1];
-    int mx = (m16 * secoffset) >> 4;
-
-    int y = mx + b;
-    if (theta & 0x80)
-        y = -y;
-
-    y += 128;
-
-    return y;
-}
-
-static bool is_empty(const uint8_t *data, uint32_t size) {
+static bool is_empty(const uint32_t *data, uint32_t size) {
     for (unsigned i = 0; i < size; ++i) {
         if (data[i])
             return false;
@@ -148,190 +137,18 @@ static void set(srv_t *state, uint32_t index, uint32_t color) {
     px_set(state->pxbuffer, index, color);
 }
 
+static void set_safe(srv_t *state, uint32_t index, uint32_t color) {
+    if (index < state->numpixels)
+        px_set(state->pxbuffer, index, color);
+}
+
 static void show(srv_t *state) {
     state->dirty = 1;
 }
 
-static void set_all(srv_t *state, uint32_t color) {
-    for (int i = 0; i < state->numpixels; ++i)
-        set(state, i, color);
-}
-
-static void anim_set_all(srv_t *state) {
-    state->anim_fn = NULL;
-    set_all(state, state->color);
-    show(state);
-}
-
-static void anim_start(srv_t *state, srv_cb_t fn, uint32_t duration) {
-    state->anim_fn = fn;
-    if (duration == 0)
-        state->anim_end = 0;
-    else
-        state->anim_end = now + duration * 1000;
-}
-static void anim_finished(srv_t *state) {
-    if (state->anim_end == 0)
-        state->anim_fn = NULL;
-}
-
-static void anim_frame(srv_t *state) {
-    if (state->anim_fn) {
-        state->anim_fn(state);
-        show(state);
-        if (state->anim_end && in_past(state->anim_end)) {
-            state->anim_fn = NULL;
-        }
-    }
-}
-
-// ---------------------------------------------------------------------------------------
-// rainbow
-// ---------------------------------------------------------------------------------------
-
-static void rainbow_step(srv_t *state) {
-    for (int i = 0; i < state->numpixels; ++i)
-        set(state, i,
-            hsv(((unsigned)(i * 256) / (state->numpixels - 1) + state->anim_value) & 0xff, 0xff,
-                0xff));
-    state->anim_value += state->anim_step;
-    if (state->anim_value >= 0xff) {
-        state->anim_value = 0;
-        anim_finished(state);
-    }
-}
-static void anim_rainbow(srv_t *state) {
-    state->anim_value = 0;
-    state->anim_step = 128U / state->numpixels + 1;
-    anim_start(state, rainbow_step, state->duration);
-}
-
-// ---------------------------------------------------------------------------------------
-// running lights
-// ---------------------------------------------------------------------------------------
-
 #define SCALE0(c, i) ((((c)&0xff) * (1 + (i & 0xff))) >> 8)
 #define SCALE(c, i)                                                                                \
     (SCALE0((c) >> 0, i) << 0) | (SCALE0((c) >> 8, i) << 8) | (SCALE0((c) >> 16, i) << 16)
-
-static void running_lights_step(srv_t *state) {
-    if (state->anim_value >= state->numpixels * 2) {
-        state->anim_value = 0;
-        anim_finished(state);
-        return;
-    }
-
-    state->anim_value++;
-    for (int i = 0; i < state->numpixels; ++i) {
-        int level = (isin(i + state->anim_value) * 127) + 128;
-        px_set(state->pxbuffer, i, SCALE(state->color, level));
-    }
-}
-
-static void anim_running_lights(srv_t *state) {
-    state->anim_value = 0;
-    if (!state->color)
-        state->color = 0xff0000;
-    anim_start(state, running_lights_step, state->duration);
-}
-
-// ---------------------------------------------------------------------------------------
-// sparkle
-// ---------------------------------------------------------------------------------------
-
-static void sparkle_step(srv_t *state) {
-    if (state->anim_value == 0)
-        set_all(state, 0);
-    state->anim_value++;
-
-    if ((int)state->anim_step < 0) {
-        state->anim_step = random_int(state->numpixels - 1);
-        set(state, state->anim_step, state->color);
-    } else {
-        set(state, state->anim_step, 0);
-        state->anim_step = -1;
-    }
-
-    if (state->anim_value > 50) {
-        anim_finished(state);
-        state->anim_value = 0;
-    }
-}
-
-static void anim_sparkle(srv_t *state) {
-    state->anim_value = 0;
-    state->anim_step = -1;
-    if (!state->color)
-        state->color = 0xffffff;
-    anim_start(state, sparkle_step, state->duration);
-}
-
-// ---------------------------------------------------------------------------------------
-// color wipe
-// ---------------------------------------------------------------------------------------
-
-static void color_wipe_step(srv_t *state) {
-    if (state->anim_value < state->numpixels) {
-        set(state, state->anim_value, state->anim_flag ? state->color : 0);
-        state->anim_value++;
-    } else {
-        state->anim_flag = !state->anim_flag;
-        state->anim_value = 0;
-        if (state->anim_flag)
-            anim_finished(state);
-    }
-}
-
-static void anim_color_wipe(srv_t *state) {
-    state->anim_value = 0;
-    state->anim_flag = 1;
-    if (!state->color)
-        state->color = 0x0000ff;
-    anim_start(state, color_wipe_step, state->duration);
-}
-
-// ---------------------------------------------------------------------------------------
-// theatre chase
-// ---------------------------------------------------------------------------------------
-static void theatre_chase_step(srv_t *state) {
-    if (state->anim_value < 10) {
-        if (state->anim_step < 3) {
-            for (int i = 0; i < state->numpixels; i += 3)
-                set(state, i + state->anim_step, state->anim_flag ? state->color : 0);
-            state->anim_flag = !state->anim_flag;
-            state->anim_step++;
-        } else {
-            state->anim_step = 0;
-        }
-        state->anim_value++;
-    } else {
-        state->anim_value = 0;
-        anim_finished(state);
-    }
-}
-
-static void anim_theatre_chase(srv_t *state) {
-    state->anim_value = 0;
-    state->anim_step = 0;
-    state->anim_flag = 0;
-    if (!state->color)
-        state->color = 0xff0000;
-    anim_start(state, theatre_chase_step, state->duration);
-}
-
-// ---------------------------------------------------------------------------------------
-// ---------------------------------------------------------------------------------------
-
-static srv_cb_t animations[] = {
-    NULL,
-    anim_set_all,
-    anim_rainbow,
-    anim_running_lights,
-    anim_color_wipe,
-    NULL, // comet
-    anim_theatre_chase,
-    anim_sparkle,
-};
 
 static void tx_done(void) {
     pwr_leave_pll();
@@ -367,19 +184,228 @@ static void limit_intensity(srv_t *state) {
     state->intensity = inten;
 }
 
+static uint32_t prog_fetch_color(srv_t *state) {
+    uint32_t ptr = state->prog_ptr;
+    if (ptr + 3 > state->prog_size)
+        return 0;
+    uint8_t *d = state->prog_data + ptr;
+    state->prog_ptr = ptr + 3;
+    return (d[0] << 0) | (d[1] << 8) | (d[2] << 16);
+}
+
+static int prog_fetch(srv_t *state, uint32_t *dst) {
+    if (state->prog_ptr >= state->prog_size)
+        return PROG_EOF;
+    uint8_t *d = state->prog_data;
+    uint8_t c = d[state->prog_ptr++];
+    if (!(c & 0x80)) {
+        *dst = c;
+        return PROG_NUMBER;
+    } else if ((c & 0xc0) == 0x80) {
+        *dst = ((c & 0x3f) << 8) | d[state->prog_ptr++];
+        return PROG_NUMBER;
+    } else if ((c & 0xf0) == 0xd0) {
+        *dst = c;
+        return PROG_CMD;
+    } else
+        switch (c) {
+        case LIGHT_PROG_COL1:
+            *dst = 1;
+            return PROG_COLOR_BLOCK;
+        case LIGHT_PROG_COL2:
+            *dst = 2;
+            return PROG_COLOR_BLOCK;
+        case LIGHT_PROG_COL3:
+            *dst = 3;
+            return PROG_COLOR_BLOCK;
+        case LIGHT_PROG_COLN:
+            *dst = d[state->prog_ptr++];
+            return PROG_COLOR_BLOCK;
+        default:
+            *dst = c;
+            return PROG_CMD;
+        }
+}
+
+static int prog_fetch_num(srv_t *state, int defl) {
+    uint8_t prev = state->prog_ptr;
+    uint32_t res;
+    int r = prog_fetch(state, &res);
+    if (r == PROG_NUMBER)
+        return res;
+    else {
+        state->prog_ptr = prev; // rollback
+        return defl;
+    }
+}
+
+static int prog_fetch_cmd(srv_t *state) {
+    uint32_t cmd;
+    for (;;) {
+        switch (prog_fetch(state, &cmd)) {
+        case PROG_CMD:
+            return cmd;
+        case PROG_COLOR_BLOCK:
+            while (cmd--)
+                prog_fetch_color(state);
+            break;
+        case PROG_EOF:
+            return 0;
+        }
+    }
+}
+
+static void prog_set(srv_t *state, uint32_t idx, uint32_t rep, uint32_t len) {
+    uint8_t start = state->prog_ptr;
+    while (rep--) {
+        state->prog_ptr = start;
+        for (uint32_t i = 0; i < len; ++i) {
+            set_safe(state, idx++, prog_fetch_color(state));
+        }
+    }
+}
+
+static void prog_fade(srv_t *state, uint32_t idx, uint32_t rep, uint32_t len, bool usehsv) {
+    if (len < 2) {
+        prog_set(state, idx, rep, len);
+        return;
+    }
+    unsigned colidx = 0;
+    uint32_t col0 = prog_fetch_color(state);
+    uint32_t col1 = prog_fetch_color(state);
+
+    uint32_t colstep = ((len - 1) << 16) / rep;
+    uint32_t colpos = 0;
+    uint32_t end = idx + rep;
+    if (end >= state->numpixels)
+        end = state->numpixels;
+    while (idx < end) {
+        while (colidx < (colpos >> 16)) {
+            colidx++;
+            col0 = col1;
+            col1 = prog_fetch_color(state);
+        }
+        uint32_t fade1 = colpos & 0xffff;
+        uint32_t fade0 = 0xffff - fade1;
+
+#define MIX(sh)                                                                                    \
+    (((((col0 >> sh) & 0xff) * fade0 + ((col1 >> sh) & 0xff) * fade1 + 0x8000) >> 16) << sh)
+
+        uint32_t col = MIX(0) | MIX(8) | MIX(16);
+        set(state, idx++, usehsv ? hsv(col >> 16, (col >> 8) & 0xff, col & 0xff) : col);
+        colpos += colstep;
+    }
+}
+
+#define AT(idx) ((uint8_t *)state->pxbuffer)[(idx)*3]
+
+static void prog_rot(srv_t *state, uint32_t idx, uint32_t len, uint32_t shift) {
+    uint32_t end = idx + len;
+    if (end > state->numpixels)
+        end = state->numpixels;
+    if (shift == 0 || end <= idx)
+        return;
+
+    uint8_t *first = &AT(idx);
+    uint8_t *middle = &AT(idx + shift);
+    uint8_t *last = &AT(end);
+    uint8_t *next = middle;
+
+    while (first != next) {
+        uint8_t tmp = *first;
+        *first++ = *next;
+        *next++ = tmp;
+
+        if (next == last)
+            next = middle;
+        else if (first == middle)
+            middle = next;
+    }
+}
+
+static void prog_process(srv_t *state) {
+    if (state->prog_ptr >= state->prog_size)
+        return;
+    if (in_future(state->prog_next_step))
+        return;
+
+    for (;;) {
+        int cmd = prog_fetch_cmd(state);
+        DMESG("cmd:%x", cmd);
+        if (!cmd)
+            break;
+
+        if (cmd == LIGHT_PROG_WAIT) {
+            uint32_t k = prog_fetch_num(state, 50);
+            state->prog_next_step = now + k * 1000;
+            break;
+        }
+
+        switch (cmd) {
+        case LIGHT_PROG_FADE:
+        case LIGHT_PROG_FADE_HSV:
+        case LIGHT_PROG_SET: {
+            int idx = prog_fetch_num(state, 0);
+            int rep = prog_fetch_num(state, cmd == LIGHT_PROG_SET ? 1 : state->numpixels - idx);
+            uint32_t len;
+            if (rep <= 0 || prog_fetch(state, &len) != PROG_COLOR_BLOCK || len == 0)
+                continue; // bailout
+            DMESG("%x %d %d l=%d", cmd, idx, rep, len);
+            if (cmd == LIGHT_PROG_SET)
+                prog_set(state, idx, rep, len);
+            else
+                prog_fade(state, idx, rep, len, cmd == LIGHT_PROG_FADE_HSV);
+            break;
+        }
+
+        case LIGHT_PROG_ROTATE_BACK:
+        case LIGHT_PROG_ROTATE_FWD: {
+            int idx = prog_fetch_num(state, -1);
+            int len = prog_fetch_num(state, -1);
+            int k = prog_fetch_num(state, -1);
+            if (k == -1) {
+                k = len;
+                len = -1;
+                if (k == -1) {
+                    k = idx;
+                    idx = -1;
+                    if (k == -1)
+                        k = 1;
+                }
+            }
+            if (idx < 0)
+                idx = 0;
+            if (len < 0)
+                len = state->numpixels;
+            if (idx >= state->numpixels)
+                continue;
+            if (idx + len > state->numpixels)
+                len = state->numpixels - idx;
+            if (len == 0)
+                continue;
+            while (k >= len)
+                k -= len;
+            if (cmd == LIGHT_PROG_ROTATE_BACK)
+                k = len - k;
+            DMESG("%x %d %d l=%d", cmd, idx, k, len);
+            prog_rot(state, idx, len, k);
+            break;
+        }
+        }
+    }
+
+    show(state);
+}
+
 void light_process(srv_t *state) {
-    // we always check timer to avoid problem with timer overflows
-    bool should = should_sample(&state->nextFrame, FRAME_TIME);
+    prog_process(state);
 
     if (!is_enabled(state))
         return;
 
-    if (should)
-        anim_frame(state);
-
     if (state->dirty && !state->in_tx) {
         state->dirty = 0;
-        if (is_empty((uint8_t *)state->pxbuffer, PX_WORDS(state->numpixels) * 4)) {
+        if (is_empty(state->pxbuffer, PX_WORDS(state->numpixels))) {
             pwr_pin_enable(0);
             return;
         } else {
@@ -412,25 +438,18 @@ static void sync_config(srv_t *state) {
     pwr_pin_enable(1);
 }
 
-static void start_animation(srv_t *state, unsigned anim) {
-    if (anim < sizeof(animations) / sizeof(animations[0])) {
-        srv_cb_t f = animations[anim];
-        if (f) {
-            state->anim_step = 0;
-            state->anim_flag = 0;
-            state->anim_value = 0;
-            LOG("start anim %d", anim);
-            f(state);
-        }
-    }
+static void handle_run_cmd(srv_t *state, jd_packet_t *pkt) {
+    state->prog_size = pkt->service_size;
+    state->prog_ptr = 0;
+    memcpy(state->prog_data, pkt->data, state->prog_size);
+    state->prog_next_step = now;
+    sync_config(state);
 }
 
 void light_handle_packet(srv_t *state, jd_packet_t *pkt) {
     switch (pkt->service_command) {
-    case LIGHT_CMD_START_ANIMATION:
-        sync_config(state);
-        if (pkt->service_size > 0)
-            start_animation(state, pkt->data[0]);
+    case LIGHT_CMD_RUN:
+        handle_run_cmd(state, pkt);
         break;
     default:
         srv_handle_reg(state, pkt, light_regs);
