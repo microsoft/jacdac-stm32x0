@@ -51,11 +51,9 @@ DEFINES += -DDEVICE_DMESG_BUFFER_SIZE=1024
 C_SRC += $(wildcard jacdac-c/source/*.c)
 C_SRC += $(wildcard services/*.c)
 C_SRC += $(wildcard jacdac-c/implementation/simple_alloc.c)
-C_SRC += $(wildcard jacdac-c/implementation/dummy/hw_dummy.c)
 C_SRC += $(wildcard jacdac-c/implementation/tx_queue.c)
 C_SRC += $(wildcard lib/*.c)
 C_SRC += $(wildcard $(PLATFORM)/*.c)
-# C_SRC += $(JD_CORE)/jdlow.c
 C_SRC += $(HALSRC)
 else
 DEFINES += -DDEVICE_DMESG_BUFFER_SIZE=0 -DBL
