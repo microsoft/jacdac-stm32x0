@@ -3,7 +3,7 @@
 
 void app_process_frame() {
 
-    jd_packet_t* frameToHandle = jd_rx_get_frame()
+    jd_frame_t* frameToHandle = jd_rx_get_frame();
 
     if (frameToHandle) {
         if (frameToHandle->flags & JD_FRAME_FLAG_ACK_REQUESTED &&
