@@ -23,7 +23,7 @@ Definitions:
 Commands:
 * `0xD0: set(P, R, C+)` - set pixels to given color pattern, which is repeated `R` times
 * `0xD1: fade(P, N, C+)` - set `N` pixels to color between colors in sequence
-* `0xD2: fade_hsv(P, N, C+)` - similar to `fade()`, but convert colors to HSV first, and do fading based on that
+* `0xD2: fade_hsv(P, N, C+)` - similar to `fade()`, but colors are specified and faded in HSV
 * `0xD3: rotate_fwd(P, N, K)` - rotate (shift) pixels by `K` positions away from the connector in given range
 * `0xD4: rotate_back(P, N, K)` - same, but towards the connector
 * `0xD5: wait(M)` - wait `M` milliseconds
@@ -61,3 +61,6 @@ from the command definition.
 
 TODO:
 * subranges - stateful - drop fade etc parameters?
+* additive mode
+* dithering?
+* multiply all pixels by given intensity (hsv?)
