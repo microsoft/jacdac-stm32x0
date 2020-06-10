@@ -257,6 +257,9 @@ static int prog_fetch_cmd(srv_t *state) {
 
 static void prog_set(srv_t *state, uint32_t idx, uint32_t rep, uint32_t len) {
     uint8_t start = state->prog_ptr;
+    uint32_t maxrep = (state->numpixels / len) + 1;
+    if (rep > maxrep)
+        rep = maxrep;
     while (rep--) {
         state->prog_ptr = start;
         for (uint32_t i = 0; i < len; ++i) {
@@ -292,7 +295,7 @@ static void prog_fade(srv_t *state, uint32_t idx, uint32_t rep, uint32_t len, bo
     (((((col0 >> sh) & 0xff) * fade0 + ((col1 >> sh) & 0xff) * fade1 + 0x8000) >> 16) << sh)
 
         uint32_t col = MIX(0) | MIX(8) | MIX(16);
-        set(state, idx++, usehsv ? hsv(col >> 16, (col >> 8) & 0xff, col & 0xff) : col);
+        set(state, idx++, usehsv ? hsv(col & 0xff, (col >> 8) & 0xff, col >> 16) : col);
         colpos += colstep;
     }
 }
@@ -385,7 +388,7 @@ static void prog_process(srv_t *state) {
                 continue;
             while (k >= len)
                 k -= len;
-            if (cmd == LIGHT_PROG_ROTATE_BACK)
+            if (cmd == LIGHT_PROG_ROTATE_FWD && k != 0)
                 k = len - k;
             DMESG("%x %d %d l=%d", cmd, idx, k, len);
             prog_rot(state, idx, len, k);
