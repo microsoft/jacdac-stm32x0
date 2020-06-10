@@ -1,16 +1,10 @@
 #include "jd_protocol.h"
-#include "interfaces/jd_app.h"
-
-static jd_frame_t *frameToHandle;
-
-int app_handle_frame(jd_frame_t *frame) {
-    if (frameToHandle)
-        return -1;
-    frameToHandle = frame;
-    return 0;
-}
+#include "interfaces/jd_routing.h"
 
 void app_process_frame() {
+
+    jd_packet_t* frameToHandle = jd_rx_get_frame()
+
     if (frameToHandle) {
         if (frameToHandle->flags & JD_FRAME_FLAG_ACK_REQUESTED &&
             frameToHandle->flags & JD_FRAME_FLAG_COMMAND &&
