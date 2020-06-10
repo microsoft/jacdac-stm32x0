@@ -2,6 +2,6 @@
 
 DEVICE_CLASS(0x3479bec3, "JDM3 light");
 
-void init_services() {
+void app_init_services() {
     light_init();
 }

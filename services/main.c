@@ -143,7 +143,7 @@ int main(void) {
         uint64_t now_long = tim_get_micros();
         now = (uint32_t)now_long;
 
-        app_process();
+        jd_services_tick();
 
         if (led_off_time) {
             int timeLeft = led_off_time - now_long;
