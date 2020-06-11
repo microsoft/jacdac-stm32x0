@@ -1,7 +1,5 @@
 #include "jdsimple.h"
 
-
-
 #define DEFAULT_INTENSITY 15
 #define DEFAULT_NUMPIXELS 15
 #define DEFAULT_MAXPOWER 200
@@ -437,8 +435,12 @@ static int fetch_mode(srv_t *state) {
 }
 
 static void prog_process(srv_t *state) {
-    if (state->prog_ptr >= state->prog_size)
+    if (state->prog_ptr >= state->prog_size) {
+        tim_max_sleep = 0;
         return;
+    }
+
+    tim_max_sleep = 1000; // need this for accurate show delay
     // don't run programs while sending data
     if (state->in_tx || in_future(state->prog_next_step))
         return;
