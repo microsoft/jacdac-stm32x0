@@ -1,7 +1,6 @@
 #include "jdsimple.h"
 
-#define LIGHT_TYPE_WS2812B_GRB 0
-#define LIGHT_TYPE_SK9822 1
+
 
 #define DEFAULT_INTENSITY 15
 #define DEFAULT_NUMPIXELS 15
@@ -552,7 +551,7 @@ static void sync_config(srv_t *state) {
 
     if (!state->inited) {
         state->inited = true;
-        px_init();
+        px_init(state->lighttype);
     }
 
     int needed = PX_WORDS(state->numpixels);

@@ -87,6 +87,7 @@ typedef struct px_state {
     uint16_t pxdata_len;
     uint16_t pxdata_ptr;
     uint8_t intensity;
+    uint8_t type;
 } px_state_t;
 static px_state_t px_state;
 
@@ -170,9 +171,29 @@ void dspi_tx(const void *data, uint32_t numbytes, cb_t doneHandler) {
 
 #define SCALE(c, i) ((((c)&0xff) * (1 + (i & 0xff))) >> 8)
 
+// for APA102 end-frame can be zero or ones, doesn't matter - we use zero in case the strip is
+// longer than expected; end frame needs to be 0.5*numPixels bits long
+// https://cpldcpu.wordpress.com/2014/11/30/understanding-the-apa102-superled/
+
+// brightness setting on APA is modulated at ~500Hz which can give flicker,
+// while color settings are 32x higher - https://cpldcpu.wordpress.com/2014/08/27/apa102/
+
+// however, for SK9822 the end frame has to be zero, and 32+0.5*numPixels bits long
+// moreover, the current is moduled with the brightness settings
+// https://cpldcpu.wordpress.com/2016/12/13/sk9822-a-clone-of-the-apa102/
+
 static void px_fill_buffer(uint16_t *dst) {
     unsigned numbytes = PX_SCRATCH_LEN / 2 / 4;
     unsigned start = px_state.pxdata_ptr;
+    if (px_state.type & LIGHT_TYPE_APA_MASK) {
+        // account for start frame
+        if (start == 0) {
+            numbytes--;
+            *(uint32_t *)dst = 0;
+            dst += 2;
+        }
+        numbytes *= 3;
+    }
     unsigned end = start + numbytes;
 
     if (end >= px_state.pxdata_len) {
@@ -190,16 +211,35 @@ static void px_fill_buffer(uint16_t *dst) {
         px_state.pxdata_ptr = end;
     }
 
+    uint8_t inten = px_state.intensity;
+    uint8_t apahigh = 0;
+
+    if (px_state.type == LIGHT_TYPE_SK9822) {
+        int lev = ((inten * 7967) >> 16) + 1;
+        int ni = inten * 31 / lev;
+        if (ni > 255)
+            ni = 255;
+        inten = ni;
+        apahigh = 0xe0 | lev;
+    } else if (px_state.type & LIGHT_TYPE_APA_MASK) {
+        apahigh = 0xff;
+    }
+
     while (start < end) {
-        uint8_t r = SCALE(px_state.pxdata[start++], px_state.intensity);
-        uint8_t g = SCALE(px_state.pxdata[start++], px_state.intensity);
-        uint8_t b = SCALE(px_state.pxdata[start++], px_state.intensity);
-        *dst++ = px_state.pxlookup[g >> 4];
-        *dst++ = px_state.pxlookup[g & 0xf];
-        *dst++ = px_state.pxlookup[r >> 4];
-        *dst++ = px_state.pxlookup[r & 0xf];
-        *dst++ = px_state.pxlookup[b >> 4];
-        *dst++ = px_state.pxlookup[b & 0xf];
+        uint8_t r = SCALE(px_state.pxdata[start++], inten);
+        uint8_t g = SCALE(px_state.pxdata[start++], inten);
+        uint8_t b = SCALE(px_state.pxdata[start++], inten);
+        if (apahigh) {
+            *(uint32_t *)dst = (apahigh << 0) | (b << 8) | (g << 16) | (r << 24);
+            dst += 2;
+        } else {
+            *dst++ = px_state.pxlookup[g >> 4];
+            *dst++ = px_state.pxlookup[g & 0xf];
+            *dst++ = px_state.pxlookup[r >> 4];
+            *dst++ = px_state.pxlookup[r & 0xf];
+            *dst++ = px_state.pxlookup[b >> 4];
+            *dst++ = px_state.pxlookup[b & 0xf];
+        }
     }
 }
 
@@ -272,11 +312,15 @@ void DMA_Handler(void) {
 // 0 - 0.40us hi 0.85us low
 // 1 - 0.80us hi 0.45us low
 
-void px_init() {
+void px_init(int light_type) {
     SPI_CLK_ENABLE();
     __HAL_RCC_DMA1_CLK_ENABLE();
 
+    px_state.type = light_type;
+
     pin_setup_output_af(PIN_AMOSI, PIN_AF);
+    if (light_type & LIGHT_TYPE_APA_MASK)
+        pin_setup_output_af(PIN_ASCK, PIN_AF);
 
 #ifdef STM32G0
     LL_DMA_SetPeriphRequest(DMA1, DMA_CH, LL_DMAMUX_REQ_SPIx_TX);
