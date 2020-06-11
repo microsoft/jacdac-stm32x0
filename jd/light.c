@@ -7,21 +7,45 @@
 #define DEFAULT_NUMPIXELS 15
 #define DEFAULT_MAXPOWER 200
 
-#define LOG DMESG
-
 #define LIGHT_REG_LIGHTTYPE 0x80
 #define LIGHT_REG_NUMPIXELS 0x81
-#define LIGHT_REG_DURATION 0x82
-#define LIGHT_REG_COLOR 0x83
+//#define LIGHT_REG_DURATION 0x82
+//#define LIGHT_REG_COLOR 0x83
+#define LIGHT_REG_ACTUAL_INTENSITY 0x180
 
 #define LIGHT_CMD_RUN 0x81
 
-#define LIGHT_PROG_SET 0xD0         // P, R, C+
-#define LIGHT_PROG_FADE 0xD1        // P, N, C+
-#define LIGHT_PROG_FADE_HSV 0xD2    // P, N, C+
-#define LIGHT_PROG_ROTATE_FWD 0xD3  // P, N, K
-#define LIGHT_PROG_ROTATE_BACK 0xD4 // P, N, K
-#define LIGHT_PROG_WAIT 0xD5        // K
+#define LOG DMESG
+
+/*
+
+* `0xD0: set_all(C+)` - set all pixels in current range to given color pattern
+* `0xD1: fade(C+)` - set `N` pixels to color between colors in sequence
+* `0xD2: fade_hsv(C+)` - similar to `fade()`, but colors are specified and faded in HSV
+* `0xD3: rotate_fwd(K)` - rotate (shift) pixels by `K` positions away from the connector
+* `0xD4: rotate_back(K)` - same, but towards the connector
+* `0xD5: show(M=50)` - send buffer to strip and wait `M` milliseconds
+* `0xD6: range(P=0, N=length)` - range from pixel `P`, `N` pixels long
+* `0xD7: mode(K=0)` - set update mode
+* `0xD8: mode1(K=0)` - set update mode for next command only
+
+*/
+
+#define LIGHT_PROG_SET_ALL 0xD0
+#define LIGHT_PROG_FADE 0xD1
+#define LIGHT_PROG_FADE_HSV 0xD2
+#define LIGHT_PROG_ROTATE_FWD 0xD3
+#define LIGHT_PROG_ROTATE_BACK 0xD4
+#define LIGHT_PROG_SHOW 0xD5
+#define LIGHT_PROG_RANGE 0xD6
+#define LIGHT_PROG_MODE 0xD7
+#define LIGHT_PROG_MODE1 0xD8
+
+#define LIGHT_MODE_REPLACE 0x00
+#define LIGHT_MODE_ADD_RGB 0x01
+#define LIGHT_MODE_SUBTRACT_RGB 0x02
+#define LIGHT_MODE_MULTIPLY_RGB 0x03
+#define LIGHT_MODE_LAST 0x03
 
 #define LIGHT_PROG_COLN 0xC0
 #define LIGHT_PROG_COL1 0xC1
@@ -33,32 +57,48 @@
 #define PROG_NUMBER 3
 #define PROG_COLOR_BLOCK 4
 
-REG_DEFINITION(                   //
-    light_regs,                   //
-    REG_SRV_BASE,                 //
-    REG_U8(JD_REG_INTENSITY),     //
-    REG_U8(LIGHT_REG_LIGHTTYPE),  //
-    REG_U16(LIGHT_REG_NUMPIXELS), //
-    REG_U16(JD_REG_MAX_POWER),    //
-    REG_U16(LIGHT_REG_DURATION),  //
-    REG_U32(LIGHT_REG_COLOR),     //
+typedef union {
+    struct {
+        uint8_t b;
+        uint8_t g;
+        uint8_t r;
+        uint8_t _a; // not really used
+    };
+    uint32_t val;
+} RGB;
+
+REG_DEFINITION(                         //
+    light_regs,                         //
+    REG_SRV_BASE,                       //
+    REG_U8(JD_REG_INTENSITY),           //
+    REG_U8(LIGHT_REG_ACTUAL_INTENSITY), //
+    REG_U8(LIGHT_REG_LIGHTTYPE),        //
+    REG_U16(LIGHT_REG_NUMPIXELS),       //
+    REG_U16(JD_REG_MAX_POWER),          //
 )
 
 struct srv_state {
     SRV_COMMON;
 
+    uint8_t requested_intensity;
     uint8_t intensity;
     uint8_t lighttype;
     uint16_t numpixels;
     uint16_t maxpower;
-    uint16_t duration;
-    uint32_t color;
 
-    uint32_t *pxbuffer;
     uint16_t pxbuffer_allocated;
+    uint8_t *pxbuffer;
     volatile uint8_t in_tx;
     volatile uint8_t dirty;
     uint8_t inited;
+
+    uint8_t prog_mode;
+    uint8_t prog_tmpmode;
+
+    uint16_t range_start;
+    uint16_t range_end;
+    uint16_t range_len;
+    uint16_t range_ptr;
 
     uint8_t prog_ptr;
     uint8_t prog_size;
@@ -73,11 +113,12 @@ struct srv_state {
 
 static srv_t *state_;
 
-static inline uint32_t rgb(uint8_t r, uint8_t g, uint8_t b) {
-    return (r << 16) | (g << 8) | b;
+static inline RGB rgb(uint8_t r, uint8_t g, uint8_t b) {
+    RGB x = {.r = r, .g = g, .b = b};
+    return x;
 }
 
-static uint32_t hsv(uint8_t hue, uint8_t sat, uint8_t val) {
+static RGB hsv(uint8_t hue, uint8_t sat, uint8_t val) {
     // scale down to 0..192
     hue = (hue * 192) >> 8;
 
@@ -133,13 +174,62 @@ static bool is_enabled(srv_t *state) {
     return state->numpixels > 0 && state->intensity > 0;
 }
 
-static void set(srv_t *state, uint32_t index, uint32_t color) {
-    px_set(state->pxbuffer, index, color);
+static void reset_range(srv_t *state) {
+    state->range_ptr = state->range_start;
 }
 
-static void set_safe(srv_t *state, uint32_t index, uint32_t color) {
-    if (index < state->numpixels)
-        px_set(state->pxbuffer, index, color);
+static int mulcol(int c, int m) {
+    int c2 = (c * m) >> 7;
+    if (m < 128 && c == c2)
+        c2--;
+    else if (m > 128 && c == c2)
+        c2++;
+    return c2;
+}
+
+static int clamp(int c) {
+    if (c < 0)
+        return 0;
+    if (c > 255)
+        return 255;
+    return c;
+}
+
+static bool set_next(srv_t *state, RGB c) {
+    if (state->range_ptr >= state->range_end)
+        return false;
+    uint8_t *p = &state->pxbuffer[state->range_ptr++ * 3];
+
+    // fast path
+    if (state->prog_tmpmode == LIGHT_MODE_REPLACE) {
+        p[0] = c.r;
+        p[1] = c.g;
+        p[2] = c.b;
+        return true;
+    }
+
+    int r = p[0], g = p[1], b = p[2];
+    switch (state->prog_tmpmode) {
+    case LIGHT_MODE_ADD_RGB:
+        r += c.r;
+        g += c.g;
+        b += c.b;
+        break;
+    case LIGHT_MODE_SUBTRACT_RGB:
+        r -= c.r;
+        g -= c.g;
+        b -= c.b;
+        break;
+    case LIGHT_MODE_MULTIPLY_RGB:
+        r = mulcol(r, c.r);
+        g = mulcol(g, c.g);
+        b = mulcol(b, c.b);
+        break;
+    }
+    p[0] = clamp(r);
+    p[1] = clamp(g);
+    p[2] = clamp(b);
+    return true;
 }
 
 static void show(srv_t *state) {
@@ -158,39 +248,51 @@ static void tx_done(void) {
 static void limit_intensity(srv_t *state) {
     uint8_t *d = (uint8_t *)state->pxbuffer;
     unsigned n = state->numpixels * 3;
+    int prev_intensity = state->intensity;
+
+    if (state->requested_intensity > state->intensity)
+        state->intensity += 1 + (state->intensity >> 5);
+    if (state->intensity > state->requested_intensity)
+        state->intensity = state->requested_intensity;
 
     int current_full = 0;
     int current = 0;
     while (n--) {
         uint8_t v = *d++;
-        current += SCALE0(v, state->intensity) * 46;
-        current_full += v * 46;
+        current += SCALE0(v, state->intensity);
+        current_full += v;
     }
+
+    // 46uA per step of LED
+    current *= 46;
+    current_full *= 46;
 
     // 14mA is the chip at 48MHz, 930uA per LED is static
     int base_current = 14000 + 930 * state->numpixels;
     int current_limit = state->maxpower * 1000 - base_current;
 
     if (current <= current_limit) {
-        // DMESG("curr: %dmA; not limiting %d", (base_current + current) / 1000, state->intensity);
+        // LOG("curr: %dmA; not limiting %d", (base_current + current) / 1000, state->intensity);
         return;
     }
 
     int inten = current_limit / (current_full >> 8) - 1;
     if (inten < 0)
         inten = 0;
-    DMESG("limiting %d -> %d; %dmA", state->intensity, inten,
-          (base_current + (current_full * inten >> 8)) / 1000);
+    // only display message if the limit wasn't just a result of relaxing above
+    if (inten < prev_intensity)
+        LOG("limiting %d -> %d; %dmA", state->intensity, inten,
+            (base_current + (current_full * inten >> 8)) / 1000);
     state->intensity = inten;
 }
 
-static uint32_t prog_fetch_color(srv_t *state) {
+static RGB prog_fetch_color(srv_t *state) {
     uint32_t ptr = state->prog_ptr;
     if (ptr + 3 > state->prog_size)
-        return 0;
+        return rgb(0, 0, 0);
     uint8_t *d = state->prog_data + ptr;
     state->prog_ptr = ptr + 3;
-    return (d[0] << 0) | (d[1] << 8) | (d[2] << 16);
+    return rgb(d[0], d[1], d[2]);
 }
 
 static int prog_fetch(srv_t *state, uint32_t *dst) {
@@ -241,6 +343,7 @@ static int prog_fetch_num(srv_t *state, int defl) {
 
 static int prog_fetch_cmd(srv_t *state) {
     uint32_t cmd;
+    // skip until there's a command
     for (;;) {
         switch (prog_fetch(state, &cmd)) {
         case PROG_CMD:
@@ -255,34 +358,37 @@ static int prog_fetch_cmd(srv_t *state) {
     }
 }
 
-static void prog_set(srv_t *state, uint32_t idx, uint32_t rep, uint32_t len) {
+static void prog_set(srv_t *state, uint32_t len) {
+    reset_range(state);
     uint8_t start = state->prog_ptr;
-    uint32_t maxrep = (state->numpixels / len) + 1;
-    if (rep > maxrep)
-        rep = maxrep;
-    while (rep--) {
+    for (;;) {
         state->prog_ptr = start;
+        bool ok = false;
         for (uint32_t i = 0; i < len; ++i) {
-            set_safe(state, idx++, prog_fetch_color(state));
+            // don't break the loop immedietely if !ok - make sure the prog counter advances
+            ok = set_next(state, prog_fetch_color(state));
         }
+        if (!ok)
+            break;
     }
 }
 
-static void prog_fade(srv_t *state, uint32_t idx, uint32_t rep, uint32_t len, bool usehsv) {
+static void prog_fade(srv_t *state, uint32_t len, bool usehsv) {
     if (len < 2) {
-        prog_set(state, idx, rep, len);
+        prog_set(state, len);
         return;
     }
     unsigned colidx = 0;
-    uint32_t col0 = prog_fetch_color(state);
-    uint32_t col1 = prog_fetch_color(state);
+    uint8_t endp = state->prog_ptr + 3 * len;
+    RGB col0 = prog_fetch_color(state);
+    RGB col1 = prog_fetch_color(state);
 
-    uint32_t colstep = ((len - 1) << 16) / rep;
+    uint32_t colstep = ((len - 1) << 16) / state->range_len;
     uint32_t colpos = 0;
-    uint32_t end = idx + rep;
-    if (end >= state->numpixels)
-        end = state->numpixels;
-    while (idx < end) {
+
+    reset_range(state);
+
+    for (;;) {
         while (colidx < (colpos >> 16)) {
             colidx++;
             col0 = col1;
@@ -291,27 +397,26 @@ static void prog_fade(srv_t *state, uint32_t idx, uint32_t rep, uint32_t len, bo
         uint32_t fade1 = colpos & 0xffff;
         uint32_t fade0 = 0xffff - fade1;
 
-#define MIX(sh)                                                                                    \
-    (((((col0 >> sh) & 0xff) * fade0 + ((col1 >> sh) & 0xff) * fade1 + 0x8000) >> 16) << sh)
+#define MIX(f) (col0.f * fade0 + col1.f * fade1 + 0x8000) >> 16
 
-        uint32_t col = MIX(0) | MIX(8) | MIX(16);
-        set(state, idx++, usehsv ? hsv(col & 0xff, (col >> 8) & 0xff, col >> 16) : col);
+        RGB col = rgb(MIX(r), MIX(g), MIX(b));
+        if (!set_next(state, usehsv ? hsv(col.r, col.g, col.b) : col))
+            break;
         colpos += colstep;
     }
+
+    state->prog_ptr = endp;
 }
 
 #define AT(idx) ((uint8_t *)state->pxbuffer)[(idx)*3]
 
-static void prog_rot(srv_t *state, uint32_t idx, uint32_t len, uint32_t shift) {
-    uint32_t end = idx + len;
-    if (end > state->numpixels)
-        end = state->numpixels;
-    if (shift == 0 || end <= idx)
+static void prog_rot(srv_t *state, uint32_t shift) {
+    if (shift == 0 || shift >= state->range_len)
         return;
 
-    uint8_t *first = &AT(idx);
-    uint8_t *middle = &AT(idx + shift);
-    uint8_t *last = &AT(end);
+    uint8_t *first = &AT(state->range_start);
+    uint8_t *middle = &AT(state->range_start + shift);
+    uint8_t *last = &AT(state->range_end);
     uint8_t *next = middle;
 
     while (first != next) {
@@ -326,78 +431,93 @@ static void prog_rot(srv_t *state, uint32_t idx, uint32_t len, uint32_t shift) {
     }
 }
 
+static int fetch_mode(srv_t *state) {
+    int m = prog_fetch_num(state, 0);
+    if (m > LIGHT_MODE_LAST)
+        return 0;
+    return m;
+}
+
 static void prog_process(srv_t *state) {
     if (state->prog_ptr >= state->prog_size)
         return;
-    if (in_future(state->prog_next_step))
+    // don't run programs while sending data
+    if (state->in_tx || in_future(state->prog_next_step))
         return;
+
+    // full speed ahead! the code below can be a bit heavy and we want it done quickly
+    pwr_enter_pll();
 
     for (;;) {
         int cmd = prog_fetch_cmd(state);
-        DMESG("cmd:%x", cmd);
+        LOG("cmd:%x", cmd);
         if (!cmd)
             break;
 
-        if (cmd == LIGHT_PROG_WAIT) {
+        if (cmd == LIGHT_PROG_SHOW) {
             uint32_t k = prog_fetch_num(state, 50);
             state->prog_next_step = now + k * 1000;
+            show(state);
             break;
         }
 
         switch (cmd) {
         case LIGHT_PROG_FADE:
         case LIGHT_PROG_FADE_HSV:
-        case LIGHT_PROG_SET: {
-            int idx = prog_fetch_num(state, 0);
-            int rep = prog_fetch_num(state, cmd == LIGHT_PROG_SET ? 1 : state->numpixels - idx);
+        case LIGHT_PROG_SET_ALL: {
             uint32_t len;
-            if (rep <= 0 || prog_fetch(state, &len) != PROG_COLOR_BLOCK || len == 0)
+            if (prog_fetch(state, &len) != PROG_COLOR_BLOCK || len == 0)
                 continue; // bailout
-            DMESG("%x %d %d l=%d", cmd, idx, rep, len);
-            if (cmd == LIGHT_PROG_SET)
-                prog_set(state, idx, rep, len);
+            LOG("%x l=%d", cmd, len);
+            if (cmd == LIGHT_PROG_SET_ALL)
+                prog_set(state, len);
             else
-                prog_fade(state, idx, rep, len, cmd == LIGHT_PROG_FADE_HSV);
+                prog_fade(state, len, cmd == LIGHT_PROG_FADE_HSV);
             break;
         }
 
         case LIGHT_PROG_ROTATE_BACK:
         case LIGHT_PROG_ROTATE_FWD: {
-            int idx = prog_fetch_num(state, -1);
-            int len = prog_fetch_num(state, -1);
-            int k = prog_fetch_num(state, -1);
-            if (k == -1) {
-                k = len;
-                len = -1;
-                if (k == -1) {
-                    k = idx;
-                    idx = -1;
-                    if (k == -1)
-                        k = 1;
-                }
-            }
-            if (idx < 0)
-                idx = 0;
-            if (len < 0)
-                len = state->numpixels;
-            if (idx >= state->numpixels)
-                continue;
-            if (idx + len > state->numpixels)
-                len = state->numpixels - idx;
+            int k = prog_fetch_num(state, 1);
+            int len = state->range_len;
             if (len == 0)
                 continue;
             while (k >= len)
                 k -= len;
             if (cmd == LIGHT_PROG_ROTATE_FWD && k != 0)
                 k = len - k;
-            DMESG("%x %d %d l=%d", cmd, idx, k, len);
-            prog_rot(state, idx, len, k);
+            LOG("rot %x %d l=%d", cmd, k, len);
+            prog_rot(state, k);
+            break;
+        }
+
+        case LIGHT_PROG_MODE1:
+            state->prog_tmpmode = fetch_mode(state);
+            break;
+
+        case LIGHT_PROG_MODE:
+            state->prog_mode = fetch_mode(state);
+            break;
+
+        case LIGHT_PROG_RANGE: {
+            int start = prog_fetch_num(state, 0);
+            int len = prog_fetch_num(state, state->numpixels);
+            if (start > state->numpixels)
+                start = state->numpixels;
+            int end = start + len;
+            if (end > state->numpixels)
+                end = state->numpixels;
+            state->range_start = start;
+            state->range_end = end;
+            state->range_len = end - start;
             break;
         }
         }
-    }
 
-    show(state);
+        if (cmd != LIGHT_PROG_MODE1)
+            state->prog_tmpmode = state->prog_mode;
+    }
+    pwr_leave_pll();
 }
 
 void light_process(srv_t *state) {
@@ -408,7 +528,7 @@ void light_process(srv_t *state) {
 
     if (state->dirty && !state->in_tx) {
         state->dirty = 0;
-        if (is_empty(state->pxbuffer, PX_WORDS(state->numpixels))) {
+        if (is_empty((uint32_t *)state->pxbuffer, PX_WORDS(state->numpixels))) {
             pwr_pin_enable(0);
             return;
         } else {

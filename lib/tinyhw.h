@@ -18,7 +18,6 @@ void dspi_tx(const void *data, uint32_t numbytes, cb_t doneHandler);
 
 void px_init(void);
 void px_tx(const void *data, uint32_t numbytes, uint8_t intensity, cb_t doneHandler);
-void px_set(const void *data, uint32_t index, uint32_t color);
 #define PX_WORDS(NUM_PIXELS) (((NUM_PIXELS)*3 + 3) / 4)
 
 // i2c.c

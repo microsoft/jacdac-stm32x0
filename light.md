@@ -20,13 +20,26 @@ Definitions:
 * `C` - single color designation
 * `C+` - sequence of color designations
 
+Update modes:
+* `0` - replace
+* `1` - add RGB
+* `2` - subtract RGB
+* `3` - multiply RGB (by c/128)
+
 Commands:
-* `0xD0: set(P, R, C+)` - set pixels to given color pattern, which is repeated `R` times
-* `0xD1: fade(P, N, C+)` - set `N` pixels to color between colors in sequence
-* `0xD2: fade_hsv(P, N, C+)` - similar to `fade()`, but colors are specified and faded in HSV
-* `0xD3: rotate_fwd(P, N, K)` - rotate (shift) pixels by `K` positions away from the connector in given range
-* `0xD4: rotate_back(P, N, K)` - same, but towards the connector
-* `0xD5: wait(M)` - wait `M` milliseconds
+
+* `0xD0: set_all(C+)` - set all pixels in current range to given color pattern
+* `0xD1: fade(C+)` - set `N` pixels to color between colors in sequence
+* `0xD2: fade_hsv(C+)` - similar to `fade()`, but colors are specified and faded in HSV
+* `0xD3: rotate_fwd(K=1)` - rotate (shift) pixels by `K` positions away from the connector in given range
+* `0xD4: rotate_back(K=1)` - same, but towards the connector
+* `0xD5: show(M=50)` - send buffer to strip and wait `M` milliseconds
+* `0xD6: range(P=0, N=length, W=1, S=0)` - range from pixel `P`, `N` pixels long
+  (currently unsupported: every `W` pixels skip `S` pixels)
+* `0xD7: mode(K=0)` - set update mode
+* `0xD8: mode1(K=0)` - set update mode for next command only
+
+* `0xD9: set(P=0, C+)` - set pixels at `P` in current range to color pattern (once)
 
 The `P`, `R`, `N` and `K` can be omitted.
 If only one of the two number is omitted, the remaining one is assumed to be `P`.

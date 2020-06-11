@@ -1,6 +1,7 @@
 #include "jdstm.h"
 
-#define PX_SCRATCH_LEN 128
+#define CHUNK_LEN 3 * 4 * 2
+#define PX_SCRATCH_LEN (6 * CHUNK_LEN) // 144 bytes
 
 #ifdef PIN_ASCK
 
@@ -190,9 +191,15 @@ static void px_fill_buffer(uint16_t *dst) {
     }
 
     while (start < end) {
-        uint8_t c = SCALE(px_state.pxdata[start++], px_state.intensity);
-        *dst++ = px_state.pxlookup[c >> 4];
-        *dst++ = px_state.pxlookup[c & 0xf];
+        uint8_t r = SCALE(px_state.pxdata[start++], px_state.intensity);
+        uint8_t g = SCALE(px_state.pxdata[start++], px_state.intensity);
+        uint8_t b = SCALE(px_state.pxdata[start++], px_state.intensity);
+        *dst++ = px_state.pxlookup[b >> 4];
+        *dst++ = px_state.pxlookup[b & 0xf];
+        *dst++ = px_state.pxlookup[g >> 4];
+        *dst++ = px_state.pxlookup[g & 0xf];
+        *dst++ = px_state.pxlookup[r >> 4];
+        *dst++ = px_state.pxlookup[r & 0xf];
     }
 }
 
@@ -244,14 +251,6 @@ static void init_lookup(void) {
         }
         px_state.pxlookup[i] = (v >> 8) | (v << 8);
     }
-}
-
-void px_set(const void *data, uint32_t index, uint32_t color) {
-    uint8_t *dst = (uint8_t *)data + index * 3;
-    // assume GRB
-    dst[0] = color >> 8;
-    dst[1] = color >> 0;
-    dst[2] = color >> 16;
 }
 
 // this is only enabled for error events
