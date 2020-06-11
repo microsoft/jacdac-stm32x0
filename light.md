@@ -24,7 +24,7 @@ Update modes:
 * `0` - replace
 * `1` - add RGB
 * `2` - subtract RGB
-* `3` - multiply RGB (by c/128)
+* `3` - multiply RGB (by c/128); each pixel value will change by at least 1
 
 Commands:
 
@@ -39,19 +39,6 @@ Commands:
 * `0xD7: mode(K=0)` - set update mode
 * `0xD8: mode1(K=0)` - set update mode for next command only
 * `0xCF: set1(P, C)` - set one pixel at `P` (in current range) to given color
-
-The `P`, `R`, `N` and `K` can be omitted.
-If only one of the two number is omitted, the remaining one is assumed to be `P`.
-Default values:
-```
-R = 1
-K = 1
-N = length of strip
-P = 0
-M = 50
-```
-
-`set(P, N, C)` (with single color) is equivalent to `fade(P, N, C)` (or `fade_hsv()`).
 
 ## Command encoding
 
@@ -71,6 +58,6 @@ Formats:
 Commands are encoded as command byte, followed by parameters in the order
 from the command definition.
 
-The `set1()` command is irregular encoding to save space - it is byte `0xCF` followed by encoded
+The `set1()` command has irregular encoding to save space - it is byte `0xCF` followed by encoded
 number, and followed by 3 bytes of color.
 
