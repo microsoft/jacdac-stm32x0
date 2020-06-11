@@ -28,8 +28,6 @@ static void send_value(jd_packet_t *pkt, uint32_t v) {
 }
 
 void ctrl_handle_packet(srv_t *_state, jd_packet_t *pkt) {
-    uint32_t v;
-
     switch (pkt->service_command) {
     case JD_CMD_ADVERTISEMENT_DATA:
         app_queue_annouce();
@@ -60,19 +58,6 @@ void ctrl_handle_packet(srv_t *_state, jd_packet_t *pkt) {
     
     case (JD_CMD_GET_REG | JD_REG_CTRL_TEMPERATURE):
         send_value(pkt, adc_read_temp());
-        break;
-
-    case (JD_CMD_GET_REG | JD_REG_CTRL_LIGHT_LEVEL):
-        if (PIN_LED_GND != -1 && adc_can_read_pin(PIN_LED)) {
-            pin_set(PIN_LED_GND, 1);
-            pin_set(PIN_LED, 0);
-            pin_setup_analog_input(PIN_LED);
-            target_wait_us(2000);
-            v = adc_read_pin(PIN_LED);
-            pin_setup_output(PIN_LED);
-            pin_set(PIN_LED_GND, 0);
-            send_value(pkt, v);
-        }
         break;
     }
 }
