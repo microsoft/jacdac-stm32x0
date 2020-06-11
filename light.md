@@ -38,8 +38,7 @@ Commands:
   (currently unsupported: every `W` pixels skip `S` pixels)
 * `0xD7: mode(K=0)` - set update mode
 * `0xD8: mode1(K=0)` - set update mode for next command only
-
-* `0xD9: set(P=0, C+)` - set pixels at `P` in current range to color pattern (once)
+* `0xCF: set1(P, C)` - set one pixel at `P` (in current range) to given color
 
 The `P`, `R`, `N` and `K` can be omitted.
 If only one of the two number is omitted, the remaining one is assumed to be `P`.
@@ -72,8 +71,6 @@ Formats:
 Commands are encoded as command byte, followed by parameters in the order
 from the command definition.
 
-TODO:
-* subranges - stateful - drop fade etc parameters?
-* additive mode
-* dithering?
-* multiply all pixels by given intensity (hsv?)
+The `set1()` command is irregular encoding to save space - it is byte `0xCF` followed by encoded
+number, and followed by 3 bytes of color.
+

@@ -52,6 +52,8 @@
 #define LIGHT_PROG_COL2 0xC2
 #define LIGHT_PROG_COL3 0xC3
 
+#define LIGHT_PROG_COL1_SET 0xCF
+
 #define PROG_EOF 0
 #define PROG_CMD 1
 #define PROG_NUMBER 3
@@ -306,9 +308,6 @@ static int prog_fetch(srv_t *state, uint32_t *dst) {
     } else if ((c & 0xc0) == 0x80) {
         *dst = ((c & 0x3f) << 8) | d[state->prog_ptr++];
         return PROG_NUMBER;
-    } else if ((c & 0xf0) == 0xd0) {
-        *dst = c;
-        return PROG_CMD;
     } else
         switch (c) {
         case LIGHT_PROG_COL1:
@@ -462,6 +461,10 @@ static void prog_process(srv_t *state) {
         }
 
         switch (cmd) {
+        case LIGHT_PROG_COL1_SET:
+            state->range_ptr = state->range_start + prog_fetch_num(state, 0);
+            set_next(state, prog_fetch_color(state));
+            break;
         case LIGHT_PROG_FADE:
         case LIGHT_PROG_FADE_HSV:
         case LIGHT_PROG_SET_ALL: {
