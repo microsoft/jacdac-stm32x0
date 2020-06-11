@@ -568,6 +568,11 @@ static void handle_run_cmd(srv_t *state, jd_packet_t *pkt) {
     state->prog_size = pkt->service_size;
     state->prog_ptr = 0;
     memcpy(state->prog_data, pkt->data, state->prog_size);
+
+    state->range_start = 0;
+    state->range_end = state->range_len = state->numpixels;
+    state->prog_tmpmode = state->prog_mode = 0;
+
     state->prog_next_step = now;
     sync_config(state);
 }
