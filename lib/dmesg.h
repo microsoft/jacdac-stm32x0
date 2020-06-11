@@ -3,7 +3,7 @@
 
 #include <stdarg.h>
 
-#define NOLOG ((void)0)
+#define NOLOG(...) ((void)0)
 
 #if DEVICE_DMESG_BUFFER_SIZE > 0
 

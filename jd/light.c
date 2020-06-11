@@ -12,7 +12,8 @@
 
 #define LIGHT_CMD_RUN 0x81
 
-#define LOG DMESG
+//#define LOG DMESG
+#define LOG NOLOG
 
 /*
 
@@ -435,12 +436,9 @@ static int fetch_mode(srv_t *state) {
 }
 
 static void prog_process(srv_t *state) {
-    if (state->prog_ptr >= state->prog_size) {
-        tim_max_sleep = 0;
+    if (state->prog_ptr >= state->prog_size)
         return;
-    }
 
-    tim_max_sleep = 1000; // need this for accurate show delay
     // don't run programs while sending data
     if (state->in_tx || in_future(state->prog_next_step))
         return;
@@ -456,7 +454,9 @@ static void prog_process(srv_t *state) {
 
         if (cmd == LIGHT_PROG_SHOW) {
             uint32_t k = prog_fetch_num(state, 50);
-            state->prog_next_step = now + k * 1000;
+            // base the next step of previous expect step time, now current time
+            // to keep the clock synchronized
+            state->prog_next_step += k * 1000;
             show(state);
             break;
         }
