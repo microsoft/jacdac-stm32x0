@@ -194,12 +194,12 @@ static void px_fill_buffer(uint16_t *dst) {
         uint8_t r = SCALE(px_state.pxdata[start++], px_state.intensity);
         uint8_t g = SCALE(px_state.pxdata[start++], px_state.intensity);
         uint8_t b = SCALE(px_state.pxdata[start++], px_state.intensity);
-        *dst++ = px_state.pxlookup[b >> 4];
-        *dst++ = px_state.pxlookup[b & 0xf];
         *dst++ = px_state.pxlookup[g >> 4];
         *dst++ = px_state.pxlookup[g & 0xf];
         *dst++ = px_state.pxlookup[r >> 4];
         *dst++ = px_state.pxlookup[r & 0xf];
+        *dst++ = px_state.pxlookup[b >> 4];
+        *dst++ = px_state.pxlookup[b & 0xf];
     }
 }
 
