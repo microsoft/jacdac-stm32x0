@@ -2,6 +2,7 @@
 
 #define PWM_BITS 9
 #define SERVO_PERIOD (1 << PWM_BITS)
+#define LOG NOLOG
 
 struct srv_state {
     SRV_COMMON;
@@ -26,6 +27,7 @@ static void set_pwr(srv_t *state, int on) {
     if (state->is_on == on)
         return;
 
+    LOG("PWR %d", on);
     pin_set(state->pin1, 0);
     pin_set(state->pin2, 0);
 
@@ -40,12 +42,14 @@ static void set_pwr(srv_t *state, int on) {
         pwm_enable(state->pwm_pin2, 1);
     } else {
         pin_set(state->pin_en, 0);
+        pwm_set_duty(state->pwm_pin1, 0);
+        pwm_set_duty(state->pwm_pin2, 0);
         pwm_enable(state->pwm_pin1, 0);
         pwm_enable(state->pwm_pin2, 0);
         pwr_leave_tim();
     }
-    pwr_pin_enable(on);
     state->is_on = on;
+    LOG("PWR OK");
 }
 
 void motor_process(srv_t *state) {}
@@ -61,12 +65,15 @@ void motor_handle_packet(srv_t *state, jd_packet_t *pkt) {
     if (srv_handle_reg(state, pkt, motor_regs)) {
         set_pwr(state, !!state->intensity);
         if (state->is_on) {
+            LOG("PWM set %d", state->value);
             if (state->value < 0) {
                 pwm_set_duty(state->pwm_pin1, 0);
                 pwm_set_duty(state->pwm_pin2, pwm_value(-state->value));
+                LOG("PWM set2 %d", pwm_value(-state->value));
             } else {
-                pwm_set_duty(state->pwm_pin1, pwm_value(state->value));
                 pwm_set_duty(state->pwm_pin2, 0);
+                pwm_set_duty(state->pwm_pin1, pwm_value(state->value));
+                LOG("PWM set1 %d", pwm_value(state->value));
             }
         }
     }
