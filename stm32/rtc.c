@@ -1,6 +1,5 @@
 #include "jdstm.h"
 
-
 #define US_TICK_SCALE 16
 #define TICK_US_SCALE 10
 #define US_TO_TICKS(us) (((uint32_t)(us)*ctx->ticksPerUs) >> US_TICK_SCALE)
@@ -20,8 +19,8 @@ typedef struct rtc_state {
 static ctx_t ctx_;
 
 #if 0
-#define PIN_PWR_STATE PIN_AMOSI
-#define PIN_PWR_LOG PA_6
+#define PIN_PWR_STATE PIN_P0
+#define PIN_PWR_LOG PIN_P1
 #else
 #define PIN_PWR_STATE -1
 #define PIN_PWR_LOG -1
@@ -66,6 +65,29 @@ void rtc_sync_time() {
     tim_set_micros(ctx->microsecondBase + TICKS_TO_US(subsecond));
     ctx->needsSync = false;
     target_enable_irq();
+}
+
+static void schedule_sync(ctx_t *ctx) {
+    ctx->needsSync = true;
+    uint64_t now = tim_get_micros();
+    uint64_t delta = now - ctx->microsecondBase;
+    if (delta > RTC_SECOND_IN_US * 50) {
+        // we've been running for too long on regular timer - we lost sync with RTC
+        uint16_t subsecond;
+        uint8_t newSecond;
+        for (;;) {
+            subsecond = LL_RTC_TIME_GetSubSecond(RTC); // this locks TR/DR
+            newSecond = RTC->TR & 0x7f;
+            if (subsecond == LL_RTC_TIME_GetSubSecond(RTC) && (RTC->TR & 0x7f) == newSecond) {
+                (void)RTC->DR; // unlock DR/TR
+                break;
+            }
+        }
+        subsecond = ctx->presc - subsecond;
+        ctx->microsecondBase = tim_get_micros() - TICKS_TO_US(subsecond);
+        ctx->lastSecond = newSecond;
+        DMESG("RTC sync %d", (int)(delta));
+    }
 }
 
 static void rtc_set(ctx_t *ctx, uint32_t delta_us, cb_t f) {
@@ -270,7 +292,7 @@ void rtc_sleep(bool forceShallow) {
 void rtc_deepsleep(void) {
     LL_LPM_EnableDeepSleep();
     pin_set(PIN_PWR_STATE, 0);
-    ctx_.needsSync = true;
+    schedule_sync(&ctx_);
     __WFI();
     target_enable_irq();
     rtc_sync_time();      // likely already happened in ISR, but doesn't hurt to check again
