@@ -30,19 +30,6 @@ static void logwriten(const char *msg, int l) {
     target_enable_irq();
 }
 
-static void writeNum(char *buf, uint32_t n, bool full) {
-    int i = 0;
-    int sh = 28;
-    while (sh >= 0) {
-        int d = (n >> sh) & 0xf;
-        if (full || d || sh == 0 || i) {
-            buf[i++] = d > 9 ? 'A' + d - 10 : '0' + d;
-        }
-        sh -= 4;
-    }
-    buf[i] = 0;
-}
-
 void codal_dmesg(const char *format, ...) {
     va_list arg;
     va_start(arg, format);
@@ -65,6 +52,21 @@ void codal_vdmesg(const char *format, va_list ap) {
     tmp[len] = '\n';
     tmp[len + 1] = 0;
     logwriten(tmp, len + 1);
+}
+
+#endif
+
+static void writeNum(char *buf, uint32_t n, bool full) {
+    int i = 0;
+    int sh = 28;
+    while (sh >= 0) {
+        int d = (n >> sh) & 0xf;
+        if (full || d || sh == 0 || i) {
+            buf[i++] = d > 9 ? 'A' + d - 10 : '0' + d;
+        }
+        sh -= 4;
+    }
+    buf[i] = 0;
 }
 
 #define WRITEN(p, sz_)                                                                             \
@@ -134,4 +136,3 @@ int codal_sprintf(char *dst, unsigned dstsize, const char *format, ...) {
     return r;
 }
 
-#endif

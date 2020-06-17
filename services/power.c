@@ -94,6 +94,7 @@ static void turn_on_power(srv_t *state) {
             rp = 0;
         if (overload_detect(state, readings)) {
             DMESG("overload after %d readings %d us", i + 1, (uint32_t)tim_get_micros() - t0);
+            (void)t0;
             adc_disable();
             return;
         }

@@ -63,6 +63,8 @@ uint8_t pwm_init(uint8_t pin, uint32_t period, uint32_t duty, uint8_t prescaler)
 
     TIM_TypeDef *TIMx = pwm->tim;
 
+    if (prescaler == 0) prescaler = 1;
+
     const struct TimDesc *td = lookup_tim(TIMx);
     if (td->apb == 1) {
         SET_BIT(RCC->APB1ENR, td->clkmask);

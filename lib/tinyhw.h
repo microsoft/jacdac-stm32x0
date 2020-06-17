@@ -16,9 +16,13 @@ void exti_set_callback(uint8_t pin, cb_t callback, uint32_t flags);
 void dspi_init(void);
 void dspi_tx(const void *data, uint32_t numbytes, cb_t doneHandler);
 
-void px_init(void);
+#define LIGHT_TYPE_APA_MASK 0x10
+#define LIGHT_TYPE_WS2812B_GRB 0x00
+#define LIGHT_TYPE_APA102 0x10
+#define LIGHT_TYPE_SK9822 0x11
+
+void px_init(int light_type);
 void px_tx(const void *data, uint32_t numbytes, uint8_t intensity, cb_t doneHandler);
-void px_set(const void *data, uint32_t index, uint32_t color);
 #define PX_WORDS(NUM_PIXELS) (((NUM_PIXELS)*3 + 3) / 4)
 
 // i2c.c

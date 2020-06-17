@@ -403,7 +403,7 @@ The sending protocol is:
 The wait for ACK should follow exponential back-off, starting with 1ms up to 1024ms.
 
 The receiving protocol keeps a counter for each stream. This counter starts at 0.
-* when a stream command is received, ACK it (this is usually don't generically, not only for streams)
+* when a stream command is received, ACK it (this is usually done generically, not only for streams)
 * if stored counter for stream doesn't match the counter in the packet, drop the packet
 * increment stored counter
 * process data in packet

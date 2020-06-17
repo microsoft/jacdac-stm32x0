@@ -51,5 +51,6 @@ void humidity_init(void);
 void gamepad_init(uint8_t num_pins, const uint8_t *pins, const uint8_t *ledPins);
 void power_init(void);
 void slider_init(uint8_t pinL, uint8_t pinM, uint8_t pinH);
+void motor_init(uint8_t pin1, uint8_t pin2, uint8_t pin_nsleep);
 
 extern const char app_dev_class_name[];
