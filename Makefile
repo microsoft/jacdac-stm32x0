@@ -9,7 +9,7 @@ endif
 
 FORCE ?=
 
-JD_CORE = jacdac-core
+JD_CORE = jacdac-c
 
 PREFIX = arm-none-eabi-
 CC = $(PREFIX)gcc
@@ -94,7 +94,7 @@ CPPFLAGS += \
 LDFLAGS = -specs=nosys.specs -specs=nano.specs \
 	-T"$(LD_SCRIPT)" -Wl,--gc-sections
 
-all: $(JD_CORE)/jdlow.c
+all:
 	$(MAKE) -j1 build
 ifeq ($(BL),)
 	$(MAKE) -j8 BL=1 build

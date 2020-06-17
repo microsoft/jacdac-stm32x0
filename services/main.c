@@ -4,19 +4,6 @@ uint32_t now;
 
 static const uint8_t output_pins[] = {OUTPUT_PINS};
 
-void pwr_pin_enable(int en) {
-#ifdef PWR_PIN_PULLUP
-    if (en) {
-        pin_setup_output(PIN_PWR);
-        pin_set(PIN_PWR, 0);
-    } else {
-        pin_setup_input(PIN_PWR, 0);
-    }
-#else
-    pin_set(PIN_PWR, !en);
-#endif
-}
-
 void led_init(void) {
     // To save power, especially in STOP mode,
     // configure all pins in GPIOA,B,C as analog inputs (except for SWD)
@@ -38,7 +25,7 @@ void led_init(void) {
 
     // all power pins are reverse polarity
 #ifndef PWR_PIN_PULLUP
-    pwr_pin_enable(0);
+    jd_power_enable(0);
 #endif
 
 #ifdef PIN_GLO0
