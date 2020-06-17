@@ -12,8 +12,8 @@
 
 #define LIGHT_CMD_RUN 0x81
 
-//#define LOG DMESG
-#define LOG NOLOG
+// #define LOG DMESG
+// #define LOG NOLOG
 
 /*
 
