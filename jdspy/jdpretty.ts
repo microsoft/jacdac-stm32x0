@@ -34,6 +34,11 @@ const service_classes: U.SMap<number> = {
     PWM_LIGHT: 0x1fb57453,
     BOOTLOADER: 0x1ffa9948,
     ARCADE_CONTROLS: 0x1deaa06e,
+    POWER: 0x1fa4c95a,
+    SLIDER: 0x1f274746,
+    MOTOR: 0x17004cd8,
+    TCP: 0x1b43b70b,
+    WIFI: 0x18aae1fa,
 }
 
 const generic_commands: U.SMap<number> = {
@@ -126,10 +131,23 @@ export function printPkt(pkt: jd.Packet, opts: Options = {}) {
         devname = "[mul] " + serviceName(pkt.multicommand_class)
 
     const serv_id = serviceName(pkt?.dev?.serviceAt(pkt.service_number))
-    const service_name =
-        pkt.service_number == jd.JD_SERVICE_NUMBER_CRC_ACK ? "CRC-ACK"
-            : `${serv_id} (${pkt.service_number})`
-    let pdesc = `${devname}/${service_name}: ${commandName(pkt.service_command)}; sz=${pkt.size}`
+    let service_name = `${serv_id} (${pkt.service_number})`
+    const cmd = pkt.service_command
+    let cmdname = commandName(cmd)
+    if (pkt.service_number == jd.JD_SERVICE_NUMBER_CRC_ACK) {
+        service_name = "CRC-ACK"
+        cmdname = toHex(cmd)
+    }
+    if (pkt.service_number == jd.JD_SERVICE_NUMBER_STREAM) {
+        service_name = "STREAM"
+        cmdname = `port:${cmd >> jd.STREAM_PORT_SHIFT} cnt:${cmd & jd.STREAM_COUNTER_MASK}`
+        if (cmd & jd.STREAM_METADATA_MASK)
+            cmdname += " meta"
+        if (cmd & jd.STREAM_CLOSE_MASK)
+            cmdname += " close"
+    }
+
+    let pdesc = `${devname}/${service_name}: ${cmdname}; sz=${pkt.size}`
 
     if (frame_flags & jd.JD_FRAME_FLAG_COMMAND)
         pdesc = 'to ' + pdesc
