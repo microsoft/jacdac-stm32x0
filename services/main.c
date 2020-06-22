@@ -98,13 +98,9 @@ int main(void) {
         target_reset();
 
     tim_init();
-
     adc_init_random(); // 300b
     rtc_init();
-
-    // sleep_forever();
-
-    // txq_init();
+    uart_init();
     jd_init();
 
 #if 0
