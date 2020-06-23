@@ -1,8 +1,7 @@
-#include "jdsimple.h"
+#include "lib.h"
 
 #define PWM_BITS 9
 #define SERVO_PERIOD (1 << PWM_BITS)
-#define LOG NOLOG
 
 typedef struct channel {
     uint8_t pin;
@@ -85,7 +84,7 @@ static void duty_step(channel_t *ch) {
 }
 
 void motor_process(srv_t *state) {
-    if (!should_sample(&state->duty_step_sample, 9000))
+    if (!jd_should_sample(&state->duty_step_sample, 9000))
         return;
     duty_step(&state->ch1);
     duty_step(&state->ch2);
@@ -99,7 +98,7 @@ static int pwm_value(int v) {
 }
 
 void motor_handle_packet(srv_t *state, jd_packet_t *pkt) {
-    if (srv_handle_reg(state, pkt, motor_regs)) {
+    if (service_handle_register(state, pkt, motor_regs)) {
         set_pwr(state, !!state->intensity);
         if (state->is_on) {
             LOG("PWM set %d", state->value);
