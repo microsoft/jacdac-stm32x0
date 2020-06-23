@@ -1,4 +1,4 @@
-#include "jdsimple.h"
+#include "lib.h"
 
 // shake/gesture detection based on
 // https://github.com/lancaster-university/codal-core/blob/master/source/driver-models/Accelerometer.cpp
@@ -79,7 +79,7 @@ static void emit_g_event(srv_t *state, int ev) {
     if (state->g_events & (1 << ev))
         return;
     state->g_events |= 1 << ev;
-    txq_push_event(state, ev);
+    jd_send_event(state, ev);
 }
 
 static uint16_t instantaneousPosture(srv_t *state, uint32_t force) {
@@ -196,7 +196,7 @@ static void process_events(srv_t *state) {
     uint16_t g = instantaneousPosture(state, force);
 
     if (g == ACCELEROMETER_EVT_SHAKE) {
-        txq_push_event(state, ACCELEROMETER_EVT_SHAKE);
+        jd_send_event(state, ACCELEROMETER_EVT_SHAKE);
     } else {
         // Perform some low pass filtering to reduce jitter from any detected effects
         if (g == state->currentGesture) {
@@ -211,7 +211,7 @@ static void process_events(srv_t *state) {
         if (state->currentGesture != state->lastGesture &&
             state->sigma >= ACCELEROMETER_GESTURE_DAMPING) {
             state->lastGesture = state->currentGesture;
-            txq_push_event(state, state->lastGesture);
+            jd_send_event(state, state->lastGesture);
         }
     }
 }
@@ -222,7 +222,7 @@ void acc_process(srv_t *state) {
         return;
     got_acc_int = 0;
 #else
-    if (!should_sample(&state->nextSample, SAMPLING_PERIOD))
+    if (!jd_should_sample(&state->nextSample, SAMPLING_PERIOD))
         return;
 #endif
 
@@ -244,7 +244,7 @@ void acc_handle_packet(srv_t *state, jd_packet_t *pkt) {
 }
 
 SRV_DEF(acc, JD_SERVICE_CLASS_ACCELEROMETER);
-void acc_init() {
+void acc_init(void) {
     SRV_ALLOC(acc);
     acc_hw_init();
 #ifdef PIN_ACC_INT

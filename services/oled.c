@@ -1,4 +1,4 @@
-#include "jdsimple.h"
+#include "lib.h"
 
 struct srv_state {
     SRV_COMMON;
@@ -15,7 +15,7 @@ REG_DEFINITION(               //
 void oled_process(srv_t *state) {}
 
 void oled_handle_packet(srv_t *state, jd_packet_t *pkt) {
-    if (srv_handle_reg(state, pkt, oled_regs)) {
+    if (service_handle_register(state, pkt, oled_regs)) {
     }
 }
 

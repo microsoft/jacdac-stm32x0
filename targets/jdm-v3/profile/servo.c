@@ -4,6 +4,6 @@
 
 DEVICE_CLASS(0x3a1a3a06, "JDM3 servo");
 
-void init_services() {
+void app_init_services() {
     servo_init(PIN_SERVO);
 }

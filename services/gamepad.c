@@ -1,4 +1,4 @@
-#include "jdsimple.h"
+#include "lib.h"
 
 #define JD_ARCADE_CONTROLS_BUTTON_LEFT 0x0001
 #define JD_ARCADE_CONTROLS_BUTTON_UP 0x0002
@@ -85,7 +85,7 @@ static void update(srv_t *state) {
             if (isPressed != wasPressed) {
                 if (state->led_pins && state->led_pins[i] != 0xff)
                     pin_set(state->led_pins[i], isPressed);
-                txq_push_event_ex(state, isPressed ? EVT_DOWN : EVT_UP, i + 1);
+                jd_send_event_ext(state, isPressed ? EVT_DOWN : EVT_UP, i + 1);
             }
         }
         state->btn_state = newstate;
@@ -105,7 +105,7 @@ static void send_report(srv_t *state) {
         }
     }
 
-    txq_push(state->service_number, JD_CMD_GET_REG | JD_REG_READING, reports,
+    jd_send(state->service_number, JD_CMD_GET_REG | JD_REG_READING, reports,
              (uint8_t *)report - (uint8_t *)reports);
 }
 
@@ -118,12 +118,12 @@ static void ad_data(srv_t *state) {
             *dst++ = i + 1;
         }
     }
-    txq_push(state->service_number, JD_CMD_ADVERTISEMENT_DATA, addata,
+    jd_send(state->service_number, JD_CMD_ADVERTISEMENT_DATA, addata,
              (uint8_t *)dst - (uint8_t *)addata);
 }
 
 void gamepad_process(srv_t *state) {
-    if (should_sample(&state->nextSample, 9000)) {
+    if (jd_should_sample(&state->nextSample, 9000)) {
         update(state);
 
         if (sensor_should_stream(state) && (state->btn_state || state->num_zero < 20)) {

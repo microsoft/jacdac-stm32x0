@@ -49,7 +49,7 @@ static void weather_hw_process(void) {
     }
 
     // the 50ms here is just for readings, we actually sample at SAMPLING_MS
-    if (should_sample(&ctx->nextsample, 50000)) {
+    if (jd_should_sample(&ctx->nextsample, 50000)) {
         if (ctx->in_temp) {
             int v = read_data();
             if (v >= 0) {

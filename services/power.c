@@ -1,4 +1,4 @@
-#include "jdsimple.h"
+#include "lib.h"
 
 #define CHECK_PERIOD 1000 // how often to probe the ADC, in us
 #define OVERLOAD_MS 1000  // how long to shut down the power for after overload, in ms
@@ -62,7 +62,7 @@ static void sort_ints(uint16_t arr[], int n) {
 }
 
 static void overload(srv_t *state) {
-    pwr_pin_enable(0);
+    jd_power_enable(0);
     state->pwr_on = 0;
     state->overloadExpire = now + OVERLOAD_MS * 1000;
     state->overload = 1;
@@ -86,7 +86,7 @@ static void turn_on_power(srv_t *state) {
     unsigned rp = 0;
     adc_prep_read_pin(PIN_GND_SENSE);
     uint32_t t0 = tim_get_micros();
-    pwr_pin_enable(1);
+    jd_power_enable(1);
     for (int i = 0; i < 1000; ++i) {
         int gnd = adc_convert();
         readings[rp++] = gnd;
@@ -106,7 +106,7 @@ static void turn_on_power(srv_t *state) {
 void power_process(srv_t *state) {
     sensor_process_simple(state, &state->curr_power, sizeof(state->curr_power));
 
-    if (!should_sample(&state->nextSample, CHECK_PERIOD * 9 / 10))
+    if (!jd_should_sample(&state->nextSample, CHECK_PERIOD * 9 / 10))
         return;
 
     if (state->pulse_period && state->pulse_duration) {
@@ -129,7 +129,7 @@ void power_process(srv_t *state) {
         } else {
             DMESG("power off");
             state->pwr_on = 0;
-            pwr_pin_enable(0);
+            jd_power_enable(0);
         }
     }
 
@@ -166,7 +166,7 @@ void power_handle_packet(srv_t *state, jd_packet_t *pkt) {
     if (sensor_handle_packet_simple(state, pkt, &state->curr_power, sizeof(state->curr_power)))
         return;
 
-    switch (srv_handle_reg(state, pkt, power_regs)) {
+    switch (service_handle_register(state, pkt, power_regs)) {
     case PWR_REG_KEEP_ON_PULSE_PERIOD:
     case PWR_REG_KEEP_ON_PULSE_DURATION:
         if (state->pulse_period && state->pulse_duration) {

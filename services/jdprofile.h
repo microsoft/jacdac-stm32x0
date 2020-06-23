@@ -7,7 +7,7 @@
 #include "board.h"
 #include "dmesg.h"
 #include "pinnames.h"
-#include "services.h"
+#include "jd_services.h"
 #include "blhw.h"
 
 #ifdef BL
@@ -28,7 +28,7 @@
 #define DEVICE_CLASS(dev_class, dev_class_name) const char app_dev_class_name[] = dev_class_name;
 #endif
 
-void init_services(void);
+void app_init_services(void);
 
 void ctrl_init(void);
 

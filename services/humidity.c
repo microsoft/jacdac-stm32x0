@@ -1,4 +1,4 @@
-#include "jdsimple.h"
+#include "lib.h"
 
 struct srv_state {
     SENSOR_COMMON;
@@ -16,7 +16,7 @@ void humidity_handle_packet(srv_t *state, jd_packet_t *pkt) {
 
 SRV_DEF(humidity, JD_SERVICE_CLASS_HUMIDITY);
 
-void humidity_init() {
+void humidity_init(void) {
     SRV_ALLOC(humidity);
     state->streaming_interval = 1000;
 }

@@ -1,5 +1,7 @@
 #pragma once
 
+#include <stdint.h>
+#include <stdbool.h>
 #include "hwconfig.h"
 
 #define CONCAT_1(a, b) a##b
@@ -86,10 +88,6 @@ struct app_top_handlers {
 
 #define app_handlers ((struct app_top_handlers *)0x8000000)
 #define app_dev_info app_handlers->devinfo
-
-static inline uint64_t device_id(void) {
-    return app_dev_info.device_id;
-}
 
 #ifndef BL
 #define bl_info (*((struct bl_info_block*)(0x8000000 + FLASH_SIZE - BL_SIZE)))

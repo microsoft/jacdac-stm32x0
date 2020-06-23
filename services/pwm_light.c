@@ -1,8 +1,6 @@
-#include "jdsimple.h"
+#include "lib.h"
 
 #define DEFAULT_MAXPOWER 100
-
-#define LOG DMESG
 
 #define PWM_REG_CURR_ITERATION 0x80
 #define PWM_REG_MAX_ITERATIONS 0x81
@@ -68,7 +66,7 @@ static void set_pwr(srv_t *state, int on) {
 }
 
 void pwm_light_process(srv_t *state) {
-    if (!should_sample(&state->nextFrame, UPDATE_US))
+    if (!jd_should_sample(&state->nextFrame, UPDATE_US))
         return;
 
     int step_intensity = -1;
@@ -116,7 +114,7 @@ void pwm_light_process(srv_t *state) {
 }
 
 void pwm_light_handle_packet(srv_t *state, jd_packet_t *pkt) {
-    switch (srv_handle_reg(state, pkt, pwm_light_regs)) {
+    switch (service_handle_register(state, pkt, pwm_light_regs)) {
     case PWM_REG_STEPS:
         state->curr_iteration = 0;
         state->step_start_time = tim_get_micros() >> 10;

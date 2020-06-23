@@ -1,4 +1,4 @@
-#include "jdsimple.h"
+#include "lib.h"
 
 #define EVT_DOWN 1
 #define EVT_UP 2
@@ -23,27 +23,27 @@ static void update(srv_t *state) {
         state->prev_pressed = state->pressed;
         pin_set(state->blpin, state->pressed);
         if (state->pressed) {
-            txq_push_event(state, EVT_DOWN);
+            jd_send_event(state, EVT_DOWN);
             state->press_time = now;
         } else {
-            txq_push_event(state, EVT_UP);
+            jd_send_event(state, EVT_UP);
             uint32_t presslen = now - state->press_time;
             if (presslen > 500000)
-                txq_push_event(state, EVT_LONG_CLICK);
+                jd_send_event(state, EVT_LONG_CLICK);
             else
-                txq_push_event(state, EVT_CLICK);
+                jd_send_event(state, EVT_CLICK);
             state->num_zero = 0;
         }
     }
 }
 
 void btn_process(srv_t *state) {
-    if (should_sample(&state->nextSample, 9000)) {
+    if (jd_should_sample(&state->nextSample, 9000)) {
         update(state);
 
         if (sensor_should_stream(state) && (state->pressed || state->num_zero < 20)) {
             state->num_zero++;
-            txq_push(state->service_number, JD_CMD_GET_REG | JD_REG_READING, &state->pressed,
+            jd_send(state->service_number, JD_CMD_GET_REG | JD_REG_READING, &state->pressed,
                      sizeof(state->pressed));
         }
     }

@@ -1,4 +1,4 @@
-#include "jdsimple.h"
+#include "lib.h"
 
 #define EVT_DOWN 1
 #define EVT_UP 2
@@ -22,7 +22,7 @@ static void update(srv_t *state) {
 }
 
 void touch_process(srv_t *state) {
-    if (should_sample(&state->nextSample, 50000)) {
+    if (jd_should_sample(&state->nextSample, 50000)) {
         update(state);
         sensor_process_simple(state, &state->reading, sizeof(state->reading));
     }

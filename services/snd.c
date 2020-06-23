@@ -1,4 +1,4 @@
-#include "jdsimple.h"
+#include "lib.h"
 
 #define CMD_PLAY_TONE 0x80
 
@@ -55,7 +55,7 @@ void snd_process(srv_t *state) {
 }
 
 void snd_handle_packet(srv_t *state, jd_packet_t *pkt) {
-    srv_handle_reg(state, pkt, snd_regs);
+    service_handle_register(state, pkt, snd_regs);
     switch (pkt->service_command) {
     case CMD_PLAY_TONE:
         if (pkt->service_size >= 6) {

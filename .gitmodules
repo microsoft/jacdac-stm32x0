@@ -4,3 +4,6 @@
 [submodule "pxt-common-packages"]
 	path = pxt-common-packages
 	url = https://github.com/microsoft/pxt-common-packages
+[submodule "jacdac-c"]
+	path = jacdac-c
+	url = https://github.com/microsoft/jacdac-c

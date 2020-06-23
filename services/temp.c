@@ -1,4 +1,4 @@
-#include "jdsimple.h"
+#include "lib.h"
 
 struct srv_state {
     SENSOR_COMMON;
@@ -16,7 +16,7 @@ void temp_handle_packet(srv_t *state, jd_packet_t *pkt) {
 
 SRV_DEF(temp, JD_SERVICE_CLASS_THERMOMETER);
 
-void temp_init() {
+void temp_init(void) {
     SRV_ALLOC(temp);
     state->streaming_interval = 1000;
 }

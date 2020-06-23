@@ -13,7 +13,7 @@
 #error "invalid CPU"
 #endif
 
-#include "jdsimple.h"
+#include "lib.h"
 
 extern uint8_t cpu_mhz;
 

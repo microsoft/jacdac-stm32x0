@@ -1,4 +1,5 @@
 #include "jdstm.h"
+#include "dmesg.h"
 
 static bool adc_calibrated;
 

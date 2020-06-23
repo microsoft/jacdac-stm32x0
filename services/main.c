@@ -1,21 +1,8 @@
-#include "jdsimple.h"
+#include "lib.h"
 
 uint32_t now;
 
 static const uint8_t output_pins[] = {OUTPUT_PINS};
-
-void pwr_pin_enable(int en) {
-#ifdef PWR_PIN_PULLUP
-    if (en) {
-        pin_setup_output(PIN_PWR);
-        pin_set(PIN_PWR, 0);
-    } else {
-        pin_setup_input(PIN_PWR, 0);
-    }
-#else
-    pin_set(PIN_PWR, !en);
-#endif
-}
 
 void led_init(void) {
     // To save power, especially in STOP mode,
@@ -38,7 +25,7 @@ void led_init(void) {
 
     // all power pins are reverse polarity
 #ifndef PWR_PIN_PULLUP
-    pwr_pin_enable(0);
+    jd_power_enable(0);
 #endif
 
 #ifdef PIN_GLO0
@@ -107,22 +94,14 @@ int main(void) {
     led_init();
     led_set(1);
 
-    if ((device_id() + 1) == 0)
+    if ((jd_device_id() + 1) == 0)
         target_reset();
 
-    alloc_init();
-
     tim_init();
-
     adc_init_random(); // 300b
     rtc_init();
-
-    // sleep_forever();
-
-    txq_init();
+    uart_init();
     jd_init();
-
-    app_init_services();
 
 #if 0
     while(1) {
@@ -147,7 +126,7 @@ int main(void) {
         uint64_t now_long = tim_get_micros();
         now = (uint32_t)now_long;
 
-        app_process();
+        jd_services_tick();
 
         if (led_off_time) {
             int timeLeft = led_off_time - now_long;

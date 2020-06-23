@@ -260,7 +260,7 @@ static void px_dma(void) {
 
 void px_tx(const void *data, uint32_t numbytes, uint8_t intensity, cb_t doneHandler) {
     if (px_state.pxscratch == NULL) {
-        px_state.pxscratch = alloc(PX_SCRATCH_LEN);
+        px_state.pxscratch = jd_alloc(PX_SCRATCH_LEN);
         dma_handler = px_dma;
     }
 

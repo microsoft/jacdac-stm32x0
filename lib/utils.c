@@ -122,15 +122,4 @@ uint32_t random_int(uint32_t max) {
     }
 }
 
-bool should_sample(uint32_t *sample, uint32_t period) {
-    if (in_future(*sample))
-        return false;
 
-    *sample += period;
-
-    if (!in_future(*sample))
-        // we lost some samples
-        *sample = now + period;
-
-    return true;
-}

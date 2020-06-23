@@ -1,4 +1,4 @@
-#include "jdsimple.h"
+#include "lib.h"
 
 #define SERVO_PERIOD 20000
 
@@ -32,14 +32,14 @@ static void set_pwr(srv_t *state, int on) {
         pwm_enable(state->pwm_pin, 0);
         pwr_leave_pll();
     }
-    pwr_pin_enable(on);
+    jd_power_enable(on);
     state->is_on = on;
 }
 
 void servo_process(srv_t *state) {}
 
 void servo_handle_packet(srv_t *state, jd_packet_t *pkt) {
-    if (srv_handle_reg(state, pkt, servo_regs)) {
+    if (service_handle_register(state, pkt, servo_regs)) {
         set_pwr(state, !!state->intensity);
         if (state->is_on)
             pwm_set_duty(state->pwm_pin, state->pulse);

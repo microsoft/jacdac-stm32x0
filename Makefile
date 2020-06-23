@@ -9,7 +9,7 @@ endif
 
 FORCE ?=
 
-JD_CORE = jacdac-core
+JD_CORE = jacdac-c
 
 PREFIX = arm-none-eabi-
 CC = $(PREFIX)gcc
@@ -24,7 +24,8 @@ CFLAGS = $(DEFINES) \
 	-ffunction-sections -fdata-sections -nostartfiles \
 	$(WARNFLAGS)
 CONFIG_DEPS = \
-	$(wildcard jd/*.h) \
+	$(wildcard jacdac-c/inc/*.h) \
+	$(wildcard jacdac-c/inc/interfaces/*.h) \
 	$(wildcard lib/*.h) \
 	$(wildcard bl/*.h) \
 	$(wildcard $(PLATFORM)/*.h) \
@@ -47,11 +48,14 @@ PROFILES = $(patsubst targets/$(TARGET)/profile/%.c,%,$(wildcard targets/$(TARGE
 
 ifeq ($(BL),)
 DEFINES += -DDEVICE_DMESG_BUFFER_SIZE=1024
-C_SRC += $(wildcard jd/*.c)
+C_SRC += $(wildcard jacdac-c/source/*.c)
+C_SRC += $(wildcard services/*.c)
+C_SRC += $(wildcard jacdac-c/implementation/simple_alloc.c)
+C_SRC += $(wildcard jacdac-c/implementation/sensor.c)
+C_SRC += $(wildcard jacdac-c/implementation/simple_rx.c)
+C_SRC += $(wildcard jacdac-c/implementation/tx_queue.c)
 C_SRC += $(wildcard lib/*.c)
 C_SRC += $(wildcard $(PLATFORM)/*.c)
-C_SRC += $(JD_CORE)/jdlow.c
-C_SRC += $(JD_CORE)/jdutil.c
 C_SRC += $(HALSRC)
 else
 DEFINES += -DDEVICE_DMESG_BUFFER_SIZE=0 -DBL
@@ -62,7 +66,7 @@ C_SRC += $(PLATFORM)/init.c
 C_SRC += $(PLATFORM)/flash.c
 C_SRC += $(PLATFORM)/adc.c
 C_SRC += lib/dmesg.c
-C_SRC += $(JD_CORE)/jdutil.c
+C_SRC += $(JD_CORE)/source/jd_util.c
 AS_SRC += bl/boothandler.s
 endif
 
@@ -81,7 +85,8 @@ CPPFLAGS += \
 	-Itargets/$(TARGET) \
 	-Itargets/$(BASE_TARGET) \
 	-I$(PLATFORM) \
-	-Ijd \
+	-Ijacdac-c/inc \
+	-Iservices \
 	-Ilib \
 	-I$(JD_CORE) \
 	-I$(BUILT)
@@ -89,8 +94,8 @@ CPPFLAGS += \
 LDFLAGS = -specs=nosys.specs -specs=nano.specs \
 	-T"$(LD_SCRIPT)" -Wl,--gc-sections
 
-all: $(JD_CORE)/jdlow.c
-	$(MAKE) -j8 build
+all:
+	$(MAKE) -j1 build
 ifeq ($(BL),)
 	$(MAKE) -j8 BL=1 build
 endif
@@ -99,12 +104,12 @@ ifeq ($(BL),)
 endif
 	$(V)$(PREFIX)size $(BUILT_BIN)/*.elf
 
-$(JD_CORE)/jdlow.c:
-	if test -f ../pxt-common-packages/libs/jacdac/jdlow.c ; then \
-		ln -s ../pxt-common-packages/libs/jacdac jacdac-core; \
-	else \
-		ln -s pxt-common-packages/libs/jacdac jacdac-core; \
-	fi
+# $(JD_CORE)/jdlow.c:
+# 	if test -f ../pxt-common-packages/libs/jacdac/jdlow.c ; then \
+# 		ln -s ../pxt-common-packages/libs/jacdac jacdac-core; \
+# 	else \
+# 		ln -s pxt-common-packages/libs/jacdac jacdac-core; \
+# 	fi
 
 r: run
 l: flash-loop
@@ -195,7 +200,7 @@ $(BUILT_BIN)/$(PREF)-%.elf: $(BUILT)/jd/prof-%.o $(OBJ) Makefile $(LD_SCRIPT) sc
 	@echo LD $@
 	$(V)$(CC) $(CFLAGS) $(LDFLAGS) -Wl,-Map=$@.map  -o $@ $(OBJ) $< -lm
 	@echo BIN-PATCH $@
-	$(V)node scripts/patch-bin.js -q $@ $(FLASH_SIZE) $(BL_SIZE) targets/$(TARGET)/profile	
+	$(V)node scripts/patch-bin.js -q $@ $(FLASH_SIZE) $(BL_SIZE) targets/$(TARGET)/profile
 
 build: $(addsuffix .hex,$(addprefix $(BUILT_BIN)/$(PREF)-,$(PROFILES)))
 

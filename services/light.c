@@ -1,4 +1,4 @@
-#include "jdsimple.h"
+#include "lib.h"
 
 #define DEFAULT_INTENSITY 15
 #define DEFAULT_NUMPIXELS 15
@@ -12,8 +12,8 @@
 
 #define LIGHT_CMD_RUN 0x81
 
-//#define LOG DMESG
-#define LOG NOLOG
+// #define LOG DMESG
+// #define LOG NOLOG
 
 /*
 
@@ -533,10 +533,10 @@ void light_process(srv_t *state) {
     if (state->dirty && !state->in_tx) {
         state->dirty = 0;
         if (is_empty((uint32_t *)state->pxbuffer, PX_WORDS(state->numpixels))) {
-            pwr_pin_enable(0);
+            jd_power_enable(0);
             return;
         } else {
-            pwr_pin_enable(1);
+            jd_power_enable(1);
         }
         state->in_tx = 1;
         pwr_enter_pll();
@@ -547,7 +547,7 @@ void light_process(srv_t *state) {
 
 static void sync_config(srv_t *state) {
     if (!is_enabled(state)) {
-        pwr_pin_enable(0);
+        jd_power_enable(0);
         return;
     }
 
@@ -559,10 +559,10 @@ static void sync_config(srv_t *state) {
     int needed = PX_WORDS(state->numpixels);
     if (needed > state->pxbuffer_allocated) {
         state->pxbuffer_allocated = needed;
-        state->pxbuffer = alloc(needed * 4);
+        state->pxbuffer = jd_alloc(needed * 4);
     }
 
-    pwr_pin_enable(1);
+    jd_power_enable(1);
 }
 
 static void handle_run_cmd(srv_t *state, jd_packet_t *pkt) {
@@ -584,13 +584,13 @@ void light_handle_packet(srv_t *state, jd_packet_t *pkt) {
         handle_run_cmd(state, pkt);
         break;
     default:
-        srv_handle_reg(state, pkt, light_regs);
+        service_handle_register(state, pkt, light_regs);
         break;
     }
 }
 
 SRV_DEF(light, JD_SERVICE_CLASS_LIGHT);
-void light_init() {
+void light_init(void) {
     SRV_ALLOC(light);
     state_ = state; // there is global singleton state
     state->intensity = DEFAULT_INTENSITY;

@@ -1,4 +1,4 @@
-#include "jdsimple.h"
+#include "lib.h"
 
 struct srv_state {
     SENSOR_COMMON;
@@ -31,7 +31,7 @@ static void maybe_init(srv_t *state) {
 void slider_process(srv_t *state) {
     maybe_init(state);
 
-    if (should_sample(&state->nextSample, 9000) && state->inited)
+    if (jd_should_sample(&state->nextSample, 9000) && state->inited)
         update(state);
 
     sensor_process_simple(state, &state->sample, sizeof(state->sample));
