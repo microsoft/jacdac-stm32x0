@@ -236,3 +236,4 @@ full-flash:
 	$(MAKE) BL=1 r
 	$(MAKE) r
 	sleep 2
+
