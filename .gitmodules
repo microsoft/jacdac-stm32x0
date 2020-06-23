@@ -1,9 +1,6 @@
 [submodule "STM32CubeF0"]
 	path = stm32/STM32CubeF0
 	url = https://github.com/mmoskal/STM32CubeF0
-[submodule "pxt-common-packages"]
-	path = pxt-common-packages
-	url = https://github.com/microsoft/pxt-common-packages
 [submodule "jacdac-c"]
 	path = jacdac-c
 	url = https://github.com/microsoft/jacdac-c
