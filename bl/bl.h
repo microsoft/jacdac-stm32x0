@@ -11,7 +11,8 @@
 #error "invalid CPU"
 #endif
 
-#include "jdprotocol.h"
+#include "jd_physical.h"
+#include "jd_control.h"
 
 #define CPU_MHZ PLL_MHZ
 
