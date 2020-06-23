@@ -66,7 +66,7 @@ C_SRC += $(PLATFORM)/init.c
 C_SRC += $(PLATFORM)/flash.c
 C_SRC += $(PLATFORM)/adc.c
 C_SRC += lib/dmesg.c
-C_SRC += $(JD_CORE)/jdutil.c
+C_SRC += $(JD_CORE)/source/jd_util.c
 AS_SRC += bl/boothandler.s
 endif
 
