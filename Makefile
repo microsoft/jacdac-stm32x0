@@ -95,7 +95,7 @@ LDFLAGS = -specs=nosys.specs -specs=nano.specs \
 	-T"$(LD_SCRIPT)" -Wl,--gc-sections
 
 all:
-	$(MAKE) -j1 build
+	$(MAKE) -j8 build
 ifeq ($(BL),)
 	$(MAKE) -j8 BL=1 build
 endif
