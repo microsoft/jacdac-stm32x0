@@ -80,6 +80,7 @@ endif
 V = @
 
 OBJ = $(addprefix $(BUILT)/,$(C_SRC:.c=.o) $(AS_SRC:.s=.o))
+OBJ += $(BUILT_BIN)/version.o
 
 CPPFLAGS += \
 	-Itargets/$(TARGET) \
@@ -94,7 +95,7 @@ CPPFLAGS += \
 LDFLAGS = -specs=nosys.specs -specs=nano.specs \
 	-T"$(LD_SCRIPT)" -Wl,--gc-sections
 
-all:
+all: refresh-version
 	$(MAKE) -j8 build
 ifeq ($(BL),)
 	$(MAKE) -j8 BL=1 build
@@ -195,6 +196,15 @@ $(BUILT)/jd/prof-%.o: targets/$(TARGET)/profile/%.c
 	@echo CC $<
 	@mkdir -p $(BUILT)/jd
 	$(V)$(CC) $(CFLAGS) $(CPPFLAGS) -o $@ -c $<
+
+FW_VERSION = $(shell git describe --always --dirty --tags | sed -e 's/-[0-9]\{1,\}-g[0-9a-f]\{6,16\}.*/-dirty/; s/-dirty$$/'-`date +%Y%m%d-%H%M`'/')
+refresh-version:
+	@mkdir -p $(BUILT_BIN)
+	echo 'const char app_fw_version[] = "$(FW_VERSION)";' > $(BUILT_BIN)/version.c
+	
+$(BUILT_BIN)/version.o: $(BUILT_BIN)/version.c
+	$(V)$(CC) $(CFLAGS) $(CPPFLAGS) -o $@ -c $<
+
 
 $(BUILT_BIN)/$(PREF)-%.elf: $(BUILT)/jd/prof-%.o $(OBJ) Makefile $(LD_SCRIPT) scripts/patch-bin.js $(FORCE)
 	@echo LD $@
