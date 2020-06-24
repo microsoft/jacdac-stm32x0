@@ -1,4 +1,5 @@
 #include "lib.h"
+#include "services/interfaces/jd_hw_pwr.h"
 
 uint32_t now;
 

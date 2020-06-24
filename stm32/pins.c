@@ -1,5 +1,12 @@
 #include "jdstm.h"
 
+void _pin_set(int pin, int v);
+void pin_set(int pin, int v) {
+    if ((uint8_t)pin == 0xff)
+        return;
+    _pin_set(pin, v);
+}
+
 void pin_setup_output(int pin) {
     if ((uint8_t)pin == 0xff)
         return;

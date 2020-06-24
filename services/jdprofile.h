@@ -8,6 +8,7 @@
 #include "dmesg.h"
 #include "pinnames.h"
 #include "jd_services.h"
+#include "interfaces/jd_app.h"
 #include "blhw.h"
 
 #ifdef BL
@@ -27,23 +28,3 @@
 #else
 #define DEVICE_CLASS(dev_class, dev_class_name) const char app_dev_class_name[] = dev_class_name;
 #endif
-
-void app_init_services(void);
-void ctrl_init(void);
-void acc_init(void);
-void crank_init(uint8_t pin0, uint8_t pin1);
-void light_init(void);
-void snd_init(uint8_t pin);
-void pwm_light_init(uint8_t pin);
-void servo_init(uint8_t pin);
-void btn_init(uint8_t pin, uint8_t blpin);
-void touch_init(uint8_t pin);
-void oled_init(void);
-void temp_init(void);
-void humidity_init(void);
-void gamepad_init(uint8_t num_pins, const uint8_t *pins, const uint8_t *ledPins);
-void power_init(void);
-void slider_init(uint8_t pinL, uint8_t pinM, uint8_t pinH);
-void motor_init(uint8_t pin1, uint8_t pin2, uint8_t pin_nsleep);
-
-extern const char app_dev_class_name[];
