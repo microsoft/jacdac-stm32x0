@@ -1,10 +1,12 @@
 #include "jdstm.h"
 
-void _pin_set(int pin, int v);
 void pin_set(int pin, int v) {
     if ((uint8_t)pin == 0xff)
         return;
-    _pin_set(pin, v);
+    if (v)
+        LL_GPIO_SetOutputPin(PIN_PORT(pin), PIN_MASK(pin));
+    else
+        LL_GPIO_ResetOutputPin(PIN_PORT(pin), PIN_MASK(pin));
 }
 
 void pin_setup_output(int pin) {
@@ -69,13 +71,6 @@ void pin_pulse(int pin, int times) {
         LL_GPIO_SetOutputPin(PIN_PORT(pin), PIN_MASK(pin));
         LL_GPIO_ResetOutputPin(PIN_PORT(pin), PIN_MASK(pin));
     }
-}
-
-void _pin_set(int pin, int v) {
-    if (v)
-        LL_GPIO_SetOutputPin(PIN_PORT(pin), PIN_MASK(pin));
-    else
-        LL_GPIO_ResetOutputPin(PIN_PORT(pin), PIN_MASK(pin));
 }
 
 void pin_toggle(int pin) {
