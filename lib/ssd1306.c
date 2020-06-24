@@ -81,7 +81,7 @@ void oled_flush(oled_state_t *ctx) {
   commands(setaddr, sizeof(setaddr));
 #endif
     for (unsigned i = 0; i < sizeof(ctx->databuf); i += OLED_WIDTH) {
-        command(0xb0 | (i / OLED_WIDTH)); // pageaddr        
+        command(0xb0 | (i / OLED_WIDTH)); // pageaddr
         command(0x12);
         command(0x00);
         data(ctx->databuf + i, OLED_WIDTH);

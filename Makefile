@@ -26,6 +26,7 @@ CFLAGS = $(DEFINES) \
 CONFIG_DEPS = \
 	$(wildcard jacdac-c/inc/*.h) \
 	$(wildcard jacdac-c/inc/interfaces/*.h) \
+	$(wildcard jacdac-c/services/interfaces/*.h) \
 	$(wildcard lib/*.h) \
 	$(wildcard bl/*.h) \
 	$(wildcard $(PLATFORM)/*.h) \
@@ -49,11 +50,12 @@ PROFILES = $(patsubst targets/$(TARGET)/profile/%.c,%,$(wildcard targets/$(TARGE
 ifeq ($(BL),)
 DEFINES += -DDEVICE_DMESG_BUFFER_SIZE=1024
 C_SRC += $(wildcard jacdac-c/source/*.c)
-C_SRC += $(wildcard services/*.c)
-C_SRC += $(wildcard jacdac-c/implementation/simple_alloc.c)
-C_SRC += $(wildcard jacdac-c/implementation/sensor.c)
-C_SRC += $(wildcard jacdac-c/implementation/simple_rx.c)
-C_SRC += $(wildcard jacdac-c/implementation/tx_queue.c)
+C_SRC += $(wildcard jacdac-c/services/*.c)
+C_SRC += $(wildcard services/main.c)
+C_SRC += $(wildcard jacdac-c/source/interfaces/simple_alloc.c)
+C_SRC += $(wildcard jacdac-c/source/interfaces/sensor.c)
+C_SRC += $(wildcard jacdac-c/source/interfaces/simple_rx.c)
+C_SRC += $(wildcard jacdac-c/source/interfaces/tx_queue.c)
 C_SRC += $(wildcard lib/*.c)
 C_SRC += $(wildcard $(PLATFORM)/*.c)
 C_SRC += $(HALSRC)
@@ -201,7 +203,7 @@ FW_VERSION = $(shell git describe --always --dirty --tags | sed -e 's/-[0-9]\{1,
 refresh-version:
 	@mkdir -p $(BUILT_BIN)
 	echo 'const char app_fw_version[] = "$(FW_VERSION)";' > $(BUILT_BIN)/version.c
-	
+
 $(BUILT_BIN)/version.o: $(BUILT_BIN)/version.c
 	$(V)$(CC) $(CFLAGS) $(CPPFLAGS) -o $@ -c $<
 

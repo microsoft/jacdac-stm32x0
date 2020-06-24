@@ -3,6 +3,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include "hwconfig.h"
+#include "services/interfaces/jd_pins.h"
 
 #define CONCAT_1(a, b) a##b
 #define CONCAT_0(a, b) CONCAT_1(a, b)
@@ -11,23 +12,6 @@
 #endif
 
 #define RAM_FUNC __attribute__((noinline, long_call, section(".data")))
-
-// pins.c
-void _pin_set(int pin, int v);
-static inline void pin_set(int pin, int v) {
-    if ((uint8_t)pin == 0xff)
-        return;
-    _pin_set(pin, v);
-}
-void pin_setup_output(int pin);
-void pin_set_opendrain(int pin);
-void pin_toggle(int pin);
-int pin_get(int pin);
-// pull: -1, 0, 1
-void pin_setup_input(int pin, int pull);
-void pin_setup_output_af(int pin, int af);
-void pin_setup_analog_input(int pin);
-void pin_pulse(int pin, int times);
 
 // init.c
 bool clk_is_pll(void);

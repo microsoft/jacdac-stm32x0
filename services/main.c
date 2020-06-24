@@ -1,4 +1,5 @@
 #include "lib.h"
+#include "services/interfaces/jd_hw_pwr.h"
 
 uint32_t now;
 
@@ -159,7 +160,7 @@ static void led_panic_blink(void) {
     target_wait_us(70000);
 }
 
-void jd_panic(void) {
+void hw_panic(void) {
     DMESG("PANIC!");
     target_disable_irq();
     while (1) {
