@@ -231,7 +231,7 @@ run-combined:
 force:
 	@echo forcing...
 
-DROP_TARGETS = jm-v2.0 jm-v2.0i
+DROP_TARGETS = jm-v2.0 jm-v2.0i jm-v2.0p jm-v2.1
 
 targ-%:
 	$(MAKE) TARGET=$(subst targ-,,$@)
