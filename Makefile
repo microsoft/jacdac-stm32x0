@@ -26,6 +26,7 @@ CFLAGS = $(DEFINES) \
 CONFIG_DEPS = \
 	$(wildcard jacdac-c/inc/*.h) \
 	$(wildcard jacdac-c/inc/interfaces/*.h) \
+	$(wildcard jacdac-c/services/interfaces/*.h) \
 	$(wildcard lib/*.h) \
 	$(wildcard bl/*.h) \
 	$(wildcard $(PLATFORM)/*.h) \
@@ -49,7 +50,10 @@ PROFILES = $(patsubst targets/$(TARGET)/profile/%.c,%,$(wildcard targets/$(TARGE
 ifeq ($(BL),)
 DEFINES += -DDEVICE_DMESG_BUFFER_SIZE=1024
 C_SRC += $(wildcard jacdac-c/source/*.c)
-C_SRC += $(wildcard services/*.c)
+C_SRC += $(wildcard jacdac-c/services/btn.c)
+C_SRC += $(wildcard jacdac-c/services/acc.c)
+C_SRC += $(wildcard jacdac-c/services/sensor.c)
+C_SRC += $(wildcard services/main.c)
 C_SRC += $(wildcard jacdac-c/implementation/simple_alloc.c)
 C_SRC += $(wildcard jacdac-c/implementation/sensor.c)
 C_SRC += $(wildcard jacdac-c/implementation/simple_rx.c)

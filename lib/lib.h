@@ -55,9 +55,3 @@ typedef struct oled_state {
 void oled_set_pixel(oled_state_t *ctx, int x, int y);
 void oled_setup(oled_state_t *ctx);
 void oled_flush(oled_state_t *ctx);
-
-// qma7981.c
-void acc_hw_init(void);
-void acc_hw_sleep(void);
-void acc_hw_get(int16_t sample[3]);
-
