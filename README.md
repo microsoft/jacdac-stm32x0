@@ -11,11 +11,11 @@ Another is connecting peripherals to a host device (joystick anyone?!).
 
 ## TODO
 
-* [ ] implement reset counter and ACK flag in `AD[0]`
+* [x] implement reset counter and ACK flag in `AD[0]`
 * [ ] consider thermal shutdown at 50C or so (assuming it's because of heat of some other component)
 * [ ] use SI values for sensors with 16 bit scaling?
-* [ ] add CTRL cmds for time and software version (different than hw!)
-* [ ] the "combined" flashing doesn't work - figure out why
+* [x] add CTRL cmds for time and software version (different than hw!)
+* [x] the "combined" flashing doesn't work - figure out why
 * [x] UF2 flashing fails ("misaligned" error)
 
 
