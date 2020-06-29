@@ -14,12 +14,8 @@ static int setup_tx(ctx_t *ctx, int cmd, const void *data, int size) {
     return 0;
 }
 
-static const uint32_t bl_ad_data[] = {
-    JD_SERVICE_CLASS_BOOTLOADER,
-    BL_PAGE_SIZE,
-    FLASH_SIZE - BL_SIZE,
-    0
-};
+static const uint32_t bl_ad_data[] = {JD_SERVICE_CLASS_BOOTLOADER, BL_PAGE_SIZE,
+                                      FLASH_SIZE - BL_SIZE, 0};
 
 void bl_process(ctx_t *ctx) {
     if (ctx->subpageno == 0xff && setup_tx(ctx, BL_CMD_PAGE_DATA, &ctx->session_id, 12) == 0)
@@ -78,7 +74,7 @@ static void page_data(ctx_t *ctx, struct bl_page_data *d, int datasize) {
     } else if (!ctx->subpageerr && d->subpageno == ctx->subpageno && d->pageaddr == ctx->pageaddr) {
         ctx->subpageno++;
     } else {
-        ctx->subpageerr = 1000 * ctx->subpageno + d->subpageno;
+        ctx->subpageerr = (ctx->subpageno << 16) + d->subpageno;
     }
 
     if (d->pageoffset >= BL_PAGE_SIZE || d->pageoffset + datasize > BL_PAGE_SIZE)
