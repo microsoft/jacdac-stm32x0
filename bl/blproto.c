@@ -74,7 +74,8 @@ static void page_data(ctx_t *ctx, struct bl_page_data *d, int datasize) {
     } else if (!ctx->subpageerr && d->subpageno == ctx->subpageno && d->pageaddr == ctx->pageaddr) {
         ctx->subpageno++;
     } else {
-        ctx->subpageerr = (ctx->subpageno << 16) + d->subpageno;
+        if (ctx->subpageerr == 0)
+            ctx->subpageerr = (ctx->subpageno << 16) + d->subpageno;
     }
 
     if (d->pageoffset >= BL_PAGE_SIZE || d->pageoffset + datasize > BL_PAGE_SIZE)
