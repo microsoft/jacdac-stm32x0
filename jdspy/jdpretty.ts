@@ -39,6 +39,7 @@ const service_classes: U.SMap<number> = {
     MOTOR: 0x17004cd8,
     TCP: 0x1b43b70b,
     WIFI: 0x18aae1fa,
+    MULTITOUCH: 0x18d55e2b,
 }
 
 const generic_commands: U.SMap<number> = {

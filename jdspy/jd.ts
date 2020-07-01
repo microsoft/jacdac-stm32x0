@@ -111,17 +111,13 @@ function hash(buf: Uint8Array, bits: number) {
         return ((h ^ (h >>> bits)) & ((1 << bits) - 1)) >>> 0
 }
 
-// 4 letter ID; 0.04%/0.01%/0.002% collision probability among 20/10/5 devices
-// 3 letter ID; 1.1%/2.6%/0.05%
-// 2 letter ID; 25%/6.4%/1.5%
 export function shortDeviceId(devid: string) {
     const h = hash(U.fromHex(devid), 30)
     return String.fromCharCode(0x41 + h % 26) +
         String.fromCharCode(0x41 + idiv(h, 26) % 26) +
-        String.fromCharCode(0x41 + idiv(h, 26 * 26) % 26) +
-        String.fromCharCode(0x41 + idiv(h, 26 * 26 * 26) % 26)
+        String.fromCharCode(0x30 + idiv(h, 26 * 26) % 10) +
+        String.fromCharCode(0x30 + idiv(h, 26 * 26 * 10) % 10)
 }
-
 const devices_: Device[] = []
 export const deviceNames: U.SMap<string> = {}
 
@@ -174,6 +170,8 @@ export class Device {
     }
 
     serviceAt(idx: number) {
+        if (idx == 0)
+            return 0
         idx <<= 2
         if (!this.services || idx + 4 > this.services.length)
             return undefined
@@ -454,7 +452,7 @@ export function process(pkt: Packet) {
 
         if (pkt.service_number == JD_SERVICE_NUMBER_CTRL) {
             if (pkt.service_command == CMD_ADVERTISEMENT_DATA) {
-                if (!U.bufferEq(pkt.data, dev.services)) {
+                if (!dev.services || !U.bufferEq(pkt.data.slice(4), dev.services.slice(4))) {
                     dev.services = pkt.data
                     dev.lastServiceUpdate = pkt.timestamp
                     // reattach(dev)
