@@ -1,8 +1,8 @@
+#include "board.h"
 #include "blhw.h"
 #include "jd_protocol.h"
 #include "tinyhw.h"
 #include "pinnames.h"
-#include "board.h"
 
 uint64_t hw_device_id(void) {
     return app_dev_info.device_id;
