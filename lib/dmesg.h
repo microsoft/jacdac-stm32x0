@@ -1,6 +1,7 @@
 #ifndef CODAL_DMESG_H
 #define CODAL_DMESG_H
 
+#include <stdint.h>
 #include <stdarg.h>
 
 #define NOLOG(...) ((void)0)
