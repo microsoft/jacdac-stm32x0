@@ -22,7 +22,7 @@ CFLAGS = $(DEFINES) \
 	-Wall -Wextra -Wno-unused-parameter -Wstrict-prototypes -Werror \
 	-Wno-error=unused-function \
 	-ffunction-sections -fdata-sections -nostartfiles \
-	$(WARNFLAGS)
+	$(WARNFLAGS) $(USERFLAGS)
 CONFIG_DEPS = \
 	$(wildcard jacdac-c/inc/*.h) \
 	$(wildcard jacdac-c/inc/interfaces/*.h) \
