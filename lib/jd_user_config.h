@@ -4,5 +4,7 @@
 #define JD_CONFIG_TEMPERATURE 1
 
 #include "dmesg.h"
-#define LOG DMESG
+
+#define JD_LOG DMESG
+
 #endif
