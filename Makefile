@@ -3,8 +3,13 @@
 
 -include Makefile.user
 
+ifneq ($(TRG),)
+TARGET := $(word 1,$(TRG))
+PROF := $(word 2,$(TRG))
+endif
+
 ifeq ($(TARGET),)
-$(error Define TARGET and PROF variables, best in Makefile.user)
+$(error Define 'TRG = jm-v2.0 npx' or similar, best in Makefile.user)
 endif
 
 FORCE ?=
