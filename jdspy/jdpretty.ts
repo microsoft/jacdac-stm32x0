@@ -190,11 +190,23 @@ export function printPkt(pkt: jd.Packet, opts: Options = {}) {
             if (v0 != v1)
                 pdesc += "; signed: " + num2str(v1)
         } else if (d.length) {
-            pdesc += "; " + U.toHex(d)
+            pdesc += "; " + U.toHex(d) + " " + toAscii(d)
         }
     }
 
     return Math.round(pkt.timestamp) + "ms: " + pdesc
+}
+
+function toAscii(d: ArrayLike<number>) {
+    let r = ""
+    for (let i = 0; i < d.length; ++i) {
+        const c = d[i]
+        if (c < 32 || c >= 128)
+            r += "."
+        else
+            r += String.fromCharCode(c)
+    }
+    return r
 }
 
 export interface ParsedFrame {
@@ -207,6 +219,8 @@ export function parseLog(logcontents: string) {
     const res: ParsedFrame[] = []
     let frameBytes = []
     let lastTime = 0
+    let lastFrame = 0
+    let info = ""
     for (let ln of logcontents.split(/\r?\n/)) {
         let m = /^JD (\d+) ([0-9a-f]+)/i.exec(ln)
         if (m) {
@@ -237,10 +251,17 @@ export function parseLog(logcontents: string) {
                 res.push({
                     timestamp: lastTime * 1000,
                     data: new Uint8Array(frameBytes),
+                    info
                 })
             frameBytes = []
             lastTime = 0
+            lastFrame = tm
+            info = ""
         } else {
+            const delay = tm * 1000000 - lastFrame * 1000000
+            if (lastFrame && delay > 120)
+                info = "long delay: " + Math.round(delay) + "us"
+            lastFrame = 0
             frameBytes.push(parseInt(m[2]))
         }
     }
