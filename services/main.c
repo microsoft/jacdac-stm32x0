@@ -24,7 +24,7 @@ void led_init(void) {
     for (unsigned i = 0; i < sizeof(output_pins); ++i)
         pin_setup_output(output_pins[i]);
 
-    // all power pins are reverse polarity
+        // all power pins are reverse polarity
 #ifndef PWR_PIN_PULLUP
     jd_power_enable(0);
 #endif
@@ -126,6 +126,10 @@ int main(void) {
     while (1) {
         uint64_t now_long = tim_get_micros();
         now = (uint32_t)now_long;
+
+        jd_frame_t *fr = jd_rx_get_frame();
+        if (fr)
+            jd_services_process_frame(fr);
 
         jd_services_tick();
 

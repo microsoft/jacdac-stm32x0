@@ -183,7 +183,7 @@ static void USART_UART_Init(void) {
     USARTx->BRR = HSI_MHZ * 2; // ->1MHz
 
 #ifndef STM32F0
-    #error "maybe can use 16 oversampling if HSI_MHZ is 16"
+#error "maybe can use 16 oversampling if HSI_MHZ is 16"
     USARTx->CR1 = LL_USART_DATAWIDTH_8B | LL_USART_PARITY_NONE | LL_USART_OVERSAMPLING_16 |
                   LL_USART_DIRECTION_TX;
     USARTx->BRR = HSI_MHZ; // ->1MHz
@@ -251,7 +251,8 @@ int uart_start_tx(const void *data, uint32_t numbytes) {
     }
 
     LL_GPIO_ResetOutputPin(PIN_PORT(UART_PIN), PIN_MASK(UART_PIN));
-    gpio_probe_and_set(PIN_PORT(UART_PIN), PIN_MASK(UART_PIN), PIN_MODER | PIN_PORT(UART_PIN)->MODER);
+    gpio_probe_and_set(PIN_PORT(UART_PIN), PIN_MASK(UART_PIN),
+                       PIN_MODER | PIN_PORT(UART_PIN)->MODER);
     if (!(PIN_PORT(UART_PIN)->MODER & PIN_MODER)) {
         // this is equivalent to irq priority when running from EXTI
         target_disable_irq();
@@ -324,4 +325,5 @@ void IRQHandler(void) {
     jd_rx_completed(dataLeft);
 }
 
+void uart_flush_rx() {}
 #endif
