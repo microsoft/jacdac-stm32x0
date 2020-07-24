@@ -80,7 +80,7 @@ int main(void) {
         BL_DEVICE_ID = bl_dev_info.device_id;
     }
 
-    BL_DEVICE_ID++; // use different dev-id for application and bootloader
+    BL_DEVICE_ID ^= 1; // use different dev-id for application and bootloader
 
     if (!app_valid)
         app_valid = bl_fixup_app_handlers(ctx);
