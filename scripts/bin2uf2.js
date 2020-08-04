@@ -26,7 +26,9 @@ const familyID = dev_class
 // boot damaged application.
 const bootBlockSize = 1024
 
-const flags = 0x00002000 // familyID present
+const flags =
+    0x00002000 | // familyID present
+    0x00008000  // ext-tags present
 const len = (buf.length + bootBlockSize) & ~(bootBlockSize - 1)
 const numBlocks = (bootBlockSize + len) >> 8
 const outp = []
