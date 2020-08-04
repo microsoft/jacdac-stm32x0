@@ -31,6 +31,39 @@ const len = (buf.length + bootBlockSize) & ~(bootBlockSize - 1)
 const numBlocks = (bootBlockSize + len) >> 8
 const outp = []
 
+function fetchExtensionTags() {
+    let tags = {}
+    try {
+        tags = JSON.parse(fs.readFileSync(fn.replace(".bin", ".elf.json"), "utf8"))
+    } catch {
+        return Buffer.alloc(0)
+    }
+    const tagBuffers = []
+    for (const ks of Object.keys(tags)) {
+        const k = parseInt(ks)
+        const v = tags[ks]
+        let dat = null
+        if (!k) throw "invalid tag"
+        if (typeof v == "number") {
+            dat = Buffer.alloc(4)
+            dat.writeUInt32LE(v)
+        } else if (typeof v == "string") {
+            dat = Buffer.from(v, "utf8")
+        } else {
+            throw "invalid tag value"
+        }
+        const desig = Buffer.alloc(4)
+        desig.writeUInt32LE(((k << 8) | (4 + dat.length)) >>> 0)
+        tagBuffers.push(desig, dat)
+        const tail = dat.length & 3
+        if (tail)
+            tagBuffers.push(Buffer.alloc(4 - tail))
+    }
+    return Buffer.concat(tagBuffers)
+}
+
+const extTags = fetchExtensionTags()
+
 function addBlock(pos, buf) {
     const bl = Buffer.alloc(512)
     bl.writeUInt32LE(UF2_MAGIC_START0, 0)
@@ -43,6 +76,7 @@ function addBlock(pos, buf) {
     bl.writeUInt32LE(familyID, 28) // reserved
     for (let i = 0; i < 256; ++i)
         bl[i + 32] = buf ? (buf[pos + i] || 0x00) : 0xff
+    bl.set(extTags, 32 + 256)
     bl.writeUInt32LE(UF2_MAGIC_END, 512 - 4)
     outp.push(bl)
 

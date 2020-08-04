@@ -1,4 +1,5 @@
 const fs = require("fs")
+const path = require("path")
 const child_process = require("child_process")
 let verbose = 1
 if (process.argv[2] == "-q") {
@@ -88,6 +89,16 @@ if ((w0 & 0xff00_0000) == 0x2000_0000) {
     buf.fill(0xff, pos + 7 * 4, pos + (7 + 4) * 4)
     buf.writeUInt32LE(dev_class, pos + 8 * 4)
     log("clearing devinfo area")
+
+    const vm = /"([^"]+)"/.exec(fs.readFileSync(path.join(path.dirname(fn), "version.c"), "utf8"))
+    const fw_version = vm[1]
+
+    fs.writeFileSync(fn + ".json", JSON.stringify({
+        "0xc8a729": computed_class,
+        "0x0be9f7": 1024,
+        "0x650d9d": dev_class_name,
+        "0x9fc7bc": fw_version
+    }))
 
 } else if (w0 == DEV_INFO_MAGIC) {
     log("setting random seed")
