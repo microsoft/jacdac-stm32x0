@@ -31,9 +31,14 @@ void target_wait_us(uint32_t n);
 struct device_info_block {
     uint32_t magic;
     uint32_t device_class;
-    uint64_t device_id;
+    union {
+        uint64_t device_id;
+        struct {
+            uint32_t device_id0;
+            uint32_t device_id1;
+        };
+    };
 } __attribute__((packed, aligned(4)));
-
 
 struct bl_info_block {
     struct device_info_block devinfo;
@@ -74,5 +79,5 @@ struct app_top_handlers {
 #define app_dev_info app_handlers->devinfo
 
 #ifndef BL
-#define bl_info (*((struct bl_info_block*)(0x8000000 + FLASH_SIZE - BL_SIZE)))
+#define bl_info (*((struct bl_info_block *)(0x8000000 + FLASH_SIZE - BL_SIZE)))
 #endif

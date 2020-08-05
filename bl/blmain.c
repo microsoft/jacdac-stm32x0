@@ -51,7 +51,8 @@ uint32_t bl_adc_random_seed(void);
 int main(void) {
     __disable_irq();
     clk_setup_pll();
-    LL_APB1_GRP2_EnableClock(LL_APB1_GRP2_PERIPH_TIM17 | LL_APB1_GRP2_PERIPH_USART1 | LL_APB1_GRP2_PERIPH_ADC1);
+    LL_APB1_GRP2_EnableClock(LL_APB1_GRP2_PERIPH_TIM17 | LL_APB1_GRP2_PERIPH_USART1 |
+                             LL_APB1_GRP2_PERIPH_ADC1);
 
     ctx_t *ctx = &ctx_;
 
@@ -65,10 +66,8 @@ int main(void) {
     uint32_t r0 = bl_adc_random_seed();
     ctx->randomseed = r0;
 
-    bool app_valid = app_dev_info.magic == DEV_INFO_MAGIC;
-
-    if ((bl_dev_info.device_id + 1) == 0) {
-        if (app_valid && app_dev_info.device_id && (app_dev_info.device_id + 1)) {
+    if ((bl_dev_info.device_id0 + 1) == 0) {
+        if (app_dev_info.magic == DEV_INFO_MAGIC && app_dev_info.device_id0 && (app_dev_info.device_id0 + 1)) {
             BL_DEVICE_ID = app_dev_info.device_id;
         } else {
             uint32_t r1 = bl_adc_random_seed();
@@ -82,18 +81,19 @@ int main(void) {
 
     BL_DEVICE_ID ^= 1; // use different dev-id for application and bootloader
 
-    if (!app_valid)
-        app_valid = bl_fixup_app_handlers(ctx);
-
     DMESG("ID: %x %x", (uint32_t)BL_DEVICE_ID, (uint32_t)(BL_DEVICE_ID >> 32));
 
     ctx->service_class_bl = announce_data[2];
     ctx->next_announce = 1024 * 1024;
 
+    bool app_valid = bl_fixup_app_handlers(ctx);
+
 #if 1
     if (app_valid)
         ctx->app_start_time = 512 * 1024;
     else
+#else
+    (void)app_valid;
 #endif
         ctx->app_start_time = 0x80000000;
 

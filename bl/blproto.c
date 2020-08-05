@@ -33,8 +33,6 @@ static void bl_write_page(ctx_t *ctx) {
     if (ctx->pageaddr == 0x8000000) {
         struct app_top_handlers *a = (struct app_top_handlers *)ctx->pagedata;
         memcpy(&a->devinfo, &bl_dev_info, sizeof(bl_dev_info));
-        if (a->app_reset_handler == 0 || a->app_reset_handler + 1 == 0)
-            a->app_reset_handler = a->boot_reset_handler;
         a->boot_reset_handler = (uint32_t)&bl_dev_info + 32 + 1; // +1 for thumb state
     }
     flash_erase((void *)ctx->pageaddr);
@@ -42,13 +40,14 @@ static void bl_write_page(ctx_t *ctx) {
 }
 
 bool bl_fixup_app_handlers(ctx_t *ctx) {
-    if (app_dev_info.magic + 1 == 0 && (app_handlers->app_reset_handler >> 24) == 0x08) {
+    bool can_start = (app_handlers->app_reset_handler >> 24) == 0x08;
+    if (can_start && app_dev_info.magic + 1 == 0) {
         ctx->pageaddr = 0x8000000;
         memcpy(ctx->pagedata, (void *)ctx->pageaddr, BL_PAGE_SIZE);
         bl_write_page(ctx);
         return true;
     } else {
-        return false;
+        return can_start;
     }
 }
 

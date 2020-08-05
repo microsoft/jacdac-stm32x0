@@ -20,11 +20,12 @@ if (dev_class >> 28 != 3)
     throw "invalid dev_class: " + dev_class.toString(16)
 const familyID = dev_class
 
-// We first flash the bootBlock with 0xff, then at the end of the file
-// we flash it with the correct values.
+// We first flash the bootBlock with app_reset_handler set to 0, then at the end of the file
+// we flash it with the correct value.
 // This is so that bootloader will detect failed flash and don't try to
 // boot damaged application.
 const bootBlockSize = 1024
+const app_reset_offset = 13 * 4
 
 const flags =
     0x00002000 | // familyID present
@@ -84,9 +85,13 @@ function addBlock(pos, buf) {
 
 }
 
+
+const app_reset = buf.readUInt32LE(app_reset_offset)
+buf.writeUInt32LE(0, app_reset_offset)
 for (let pos = 0; pos < len; pos += 256) {
-    addBlock(pos, pos < bootBlockSize ? null : buf)
+    addBlock(pos, buf)
 }
+buf.writeUInt32LE(app_reset, app_reset_offset)
 for (let pos = 0; pos < bootBlockSize; pos += 256) {
     addBlock(pos, buf)
 }
