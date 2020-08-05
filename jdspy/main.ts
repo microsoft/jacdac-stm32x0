@@ -45,7 +45,7 @@ async function main() {
 
     function processFrame(frame: jdpretty.ParsedFrame) {
         if (frame.info)
-            console.warn("FRM: " + frame.info)
+            console.log("FRM: " + frame.info)
         for (let p of jd.Packet.fromFrame(frame.data, frame.timestamp)) {
             if (opts.log)
                 fs.appendFileSync(opts.log, `JD ${frame.timestamp} ${U.toHex(frame.data)}\n`)
