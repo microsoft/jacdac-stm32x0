@@ -30,3 +30,11 @@ uint32_t random_int(uint32_t max);
     if (!(cond))                                                                                   \
         jd_panic()
 
+
+typedef struct _queue *queue_t;
+
+queue_t queue_alloc(unsigned size);
+int queue_push(queue_t q, jd_frame_t *pkt);
+jd_frame_t *queue_front(queue_t q);
+void queue_shift(queue_t q);
+void queue_test(void);
