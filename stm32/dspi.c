@@ -31,8 +31,12 @@
 #define PIN_AF LL_GPIO_AF_0
 STATIC_ASSERT(PIN_ASCK == PA_5);
 STATIC_ASSERT(PIN_AMOSI == PA_7);
+#if SPI_RX
+STATIC_ASSERT(PIN_AMISO == PA_6);
+#endif
 #define SPI_CLK_ENABLE __HAL_RCC_SPI1_CLK_ENABLE
 #elif SPI_IDX == 2
+#error "not supported"
 #define SPI_CLK_ENABLE __HAL_RCC_SPI2_CLK_ENABLE
 #ifdef STM32G0
 #define PIN_SCK LL_GPIO_PIN_8
@@ -54,6 +58,7 @@ STATIC_ASSERT(PIN_AMOSI == PA_7);
 #else
 
 #if SPI_IDX == 1
+#define DMA_CH_RX LL_DMA_CHANNEL_2
 #define DMA_CH LL_DMA_CHANNEL_3
 #define DMA_IRQn DMA1_Channel2_3_IRQn
 #define DMA_Handler DMA1_Channel2_3_IRQHandler
@@ -99,6 +104,9 @@ void dspi_init() {
 
     pin_setup_output_af(PIN_ASCK, PIN_AF);
     pin_setup_output_af(PIN_AMOSI, PIN_AF);
+#if SPI_RX
+    pin_setup_output_af(PIN_AMISO, PIN_AF);
+#endif
 
     SPIx->CR1 = LL_SPI_HALF_DUPLEX_TX | LL_SPI_MODE_MASTER | LL_SPI_NSS_SOFT |
                 LL_SPI_BAUDRATEPRESCALER_DIV2;
@@ -120,6 +128,20 @@ void dspi_init() {
                               LL_DMA_PDATAALIGN_BYTE |        //
                               LL_DMA_MDATAALIGN_BYTE);
 
+#if SPI_RX
+#ifdef STM32G0
+    LL_DMA_SetPeriphRequest(DMA1, DMA_CH_RX, LL_DMAMUX_REQ_SPIx_RX);
+#endif
+    LL_DMA_ConfigTransfer(DMA1, DMA_CH_RX,
+                          LL_DMA_DIRECTION_PERIPH_TO_MEMORY | //
+                              LL_DMA_PRIORITY_HIGH |          //
+                              LL_DMA_MODE_NORMAL |            //
+                              LL_DMA_PERIPH_NOINCREMENT |     //
+                              LL_DMA_MEMORY_INCREMENT |       //
+                              LL_DMA_PDATAALIGN_BYTE |        //
+                              LL_DMA_MDATAALIGN_BYTE);
+#endif
+
     /* Enable DMA transfer complete/error interrupts  */
     LL_DMA_EnableIT_TC(DMA1, DMA_CH);
     LL_DMA_EnableIT_TE(DMA1, DMA_CH);
@@ -138,6 +160,10 @@ static void stop_dma(void) {
         ;
     while (LL_SPI_IsActiveFlag_BSY(SPIx))
         ;
+
+#if SPI_RX
+    LL_DMA_DisableChannel(DMA1, DMA_CH_RX);
+#endif
 
     cb_t f = doneH;
     if (f) {
@@ -168,6 +194,21 @@ void dspi_tx(const void *data, uint32_t numbytes, cb_t doneHandler) {
     LL_SPI_Enable(SPIx);
     LL_DMA_EnableChannel(DMA1, DMA_CH);
 }
+
+#if SPI_RX
+void dspi_xfer(const void *data, void *rx, uint32_t numbytes, cb_t doneHandler) {
+    tx_core(data, numbytes, doneHandler);
+
+    LL_DMA_ConfigAddresses(DMA1, DMA_CH_RX, (uint32_t) & (SPIx->DR), (uint32_t)rx,
+                           LL_DMA_DIRECTION_PERIPH_TO_MEMORY);
+    LL_DMA_SetDataLength(DMA1, DMA_CH_RX, numbytes);
+    LL_SPI_EnableDMAReq_RX(SPIx);
+
+    LL_DMA_EnableChannel(DMA1, DMA_CH_RX);
+    LL_DMA_EnableChannel(DMA1, DMA_CH);
+    LL_SPI_Enable(SPIx);
+}
+#endif
 
 #define SCALE(c, i) ((((c)&0xff) * (1 + (i & 0xff))) >> 8)
 

@@ -16,6 +16,7 @@ void exti_set_callback(uint8_t pin, cb_t callback, uint32_t flags);
 // dspi.c
 void dspi_init(void);
 void dspi_tx(const void *data, uint32_t numbytes, cb_t doneHandler);
+void dspi_xfer(const void *txdata, void *rxdata, uint32_t numbytes, cb_t doneHandler);
 
 #define LIGHT_TYPE_APA_MASK 0x10
 #define LIGHT_TYPE_WS2812B_GRB 0x00

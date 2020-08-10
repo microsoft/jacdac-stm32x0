@@ -34,4 +34,8 @@ void rtc_cancel_cb(void);
 #define RTC_MIN_TIME_US 500
 #endif
 
+#ifndef SPI_RX
+#define SPI_RX 0
+#endif
+
 #endif
