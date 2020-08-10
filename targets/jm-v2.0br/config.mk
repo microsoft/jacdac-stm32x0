@@ -1,3 +1,4 @@
-DEFINES += -DJD_V0
+DEFINES += -DJD_V0 -DBRIDGEQ
 MCU = STM32F030x4
+BRIDGEQ = 1
 include stm32/mk/stm32f0.mk
