@@ -195,6 +195,7 @@ export function printPkt(pkt: jd.Packet, opts: Options = {}) {
     }
 
     return Math.round(pkt.timestamp) + "ms: " + pdesc
+    //  + " / " + U.toHex(pkt._header) + ":"+ U.toHex(d)
 }
 
 function toAscii(d: ArrayLike<number>) {
@@ -263,7 +264,7 @@ export function parseLog(logcontents: string) {
             })
         }
 
-        if (lastSPITime && tm - lastSPITime > 0.001) {
+        if (lastSPITime && tm - lastSPITime > 0.0001) {
             pushSPIBytes(spiMISOBytes, "miso")
             pushSPIBytes(spiMOSIBytes, "mosi")
             spiMISOBytes = []
