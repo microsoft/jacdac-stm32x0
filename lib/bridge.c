@@ -139,11 +139,11 @@ void jd_send(unsigned service_num, unsigned service_cmd, const void *data, unsig
     memcpy(trg, data, service_size);
 
     f->device_identifier = jd_device_id();
+    jd_send_low(f);
     if (_state) {
         queue_push(_state->rx_q, f); // also forward packets we generate ourselves
         _state->skip_one = 1;
     }
-    jd_send_low(f);
 }
 
 void jd_send_event_ext(srv_t *srv, uint32_t eventid, uint32_t arg) {
