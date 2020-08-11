@@ -7,7 +7,7 @@ struct srv_state {
     uint8_t enabled;
 
     uint8_t pin_cs, pin_txrq;
-    uint8_t rx_size;
+    uint8_t rx_size, shift, skip_one;
     queue_t rx_q;
     uint32_t next_send;
     jd_frame_t spi_rx;
@@ -35,8 +35,12 @@ static void spi_done_handler(void) {
     } else {
         state->rx_size = 0;
         pin_set(state->pin_cs, 1);
+        pwr_leave_tim();
 
-        if (state->spi_rx.size) {
+        if (state->shift)
+            queue_shift(state->rx_q);
+
+        if (4 <= state->spi_rx.size && state->spi_rx.size <= 240) {
             jd_send_low(&state->spi_rx);
             // also process packets ourselves - m:b might be talking to us
             jd_services_process_frame(&state->spi_rx);
@@ -61,13 +65,20 @@ static void xchg(srv_t *state) {
         return;
     }
 
+    if (state->skip_one) {
+        state->skip_one = 0;
+        return;
+    }
+
     tim_max_sleep = 0;
     jd_frame_t *fwd = queue_front(state->rx_q);
     int size = 32;
     if (fwd && JD_FRAME_SIZE(fwd) > size)
         size = JD_FRAME_SIZE(fwd);
     state->rx_size = size;
+    state->shift = !!fwd;
     pin_set(state->pin_cs, 0);
+    pwr_enter_tim();
     dspi_xfer(fwd, &state->spi_rx, size, spi_done_handler);
 }
 
@@ -95,6 +106,7 @@ void bridge_init(uint8_t pin_cs, uint8_t pin_txrq) {
     state->pin_txrq = pin_txrq;
     pin_setup_input(pin_txrq, 1);
     state->rx_q = queue_alloc(512);
+    _state = state;
 }
 
 // alternative tx_Q impl.
@@ -127,8 +139,10 @@ void jd_send(unsigned service_num, unsigned service_cmd, const void *data, unsig
     memcpy(trg, data, service_size);
 
     f->device_identifier = jd_device_id();
-    if (_state)
+    if (_state) {
         queue_push(_state->rx_q, f); // also forward packets we generate ourselves
+        _state->skip_one = 1;
+    }
     jd_send_low(f);
 }
 

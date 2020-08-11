@@ -25,9 +25,11 @@
 #define OUTPUT_PINS                                                                                \
     PIN_LOG0, PIN_LOG1, PIN_LOG2, PIN_LOG3, PIN_LED, PIN_LED2, PIN_P0, PIN_P1, PIN_LED_GND
 
-#define PIN_ASCK PA_5
-#define PIN_AMOSI PA_7
-#define PIN_AMISO PA_6
+#define PIN_ASCK PA_5 // yellow
+#define PIN_AMOSI PA_7 // red
+#define PIN_AMISO PA_6 // orng
+// CS PA_3  // blue
+// TXRQ PA_4 // grn 
 #define SPI_RX 1
 
 struct _jd_frame_t;

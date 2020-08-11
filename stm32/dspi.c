@@ -109,7 +109,12 @@ void dspi_init() {
 #endif
 
     SPIx->CR1 = LL_SPI_HALF_DUPLEX_TX | LL_SPI_MODE_MASTER | LL_SPI_NSS_SOFT |
-                LL_SPI_BAUDRATEPRESCALER_DIV2;
+#if SPI_RX
+                LL_SPI_BAUDRATEPRESCALER_DIV4
+#else
+                LL_SPI_BAUDRATEPRESCALER_DIV2
+#endif
+        ;
     SPIx->CR2 = LL_SPI_DATAWIDTH_8BIT | LL_SPI_RX_FIFO_TH_QUARTER;
 
     // LL_SPI_EnableIT_TXE(SPIx);
