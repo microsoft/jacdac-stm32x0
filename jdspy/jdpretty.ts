@@ -213,12 +213,16 @@ export interface ParsedFrame {
     timestamp: number
     data: Uint8Array
     info?: string
+    source?: string
 }
 
 export function parseLog(logcontents: string) {
     const res: ParsedFrame[] = []
     let frameBytes = []
+    let spiMISOBytes = []
+    let spiMOSIBytes = []
     let lastTime = 0
+    let lastSPITime = 0
     let lastFrame = 0
     let info = ""
     for (let ln of logcontents.split(/\r?\n/)) {
@@ -231,11 +235,12 @@ export function parseLog(logcontents: string) {
             continue
         }
 
-        m = /^([\d\.]+),Async Serial,.*(0x[A-F0-9][A-F0-9])/.exec(ln)
+        m = /^([\d\.]+),/.exec(ln)
         if (!m)
             continue
         const tm = parseFloat(m[1])
-        if (lastTime && tm - lastTime > 0.1) {
+
+        if (lastTime && tm - lastTime > 0.001) {
             res.push({
                 timestamp: lastTime * 1000,
                 data: new Uint8Array(frameBytes),
@@ -245,24 +250,56 @@ export function parseLog(logcontents: string) {
             lastTime = 0
         }
 
-        lastTime = tm
-        if (ln.indexOf("framing error") > 0) {
-            if (frameBytes.length > 0)
-                res.push({
-                    timestamp: lastTime * 1000,
-                    data: new Uint8Array(frameBytes),
-                    info
-                })
-            frameBytes = []
-            lastTime = 0
-            lastFrame = tm
-            info = ""
-        } else {
-            const delay = tm * 1000000 - lastFrame * 1000000
-            if (lastFrame && delay > 120)
-                info = "long delay: " + Math.round(delay) + "us"
-            lastFrame = 0
-            frameBytes.push(parseInt(m[2]))
+        function pushSPIBytes(arr: number[], source: string) {
+            if (!arr[2])
+                return
+            const len = arr[2] + 12
+            if (len < 32 && arr.length == 32)
+                arr = arr.slice(0, len)
+            res.push({
+                timestamp: lastSPITime * 1000,
+                data: new Uint8Array(arr),
+                source
+            })
+        }
+
+        if (lastSPITime && tm - lastSPITime > 0.001) {
+            pushSPIBytes(spiMISOBytes, "miso")
+            pushSPIBytes(spiMOSIBytes, "mosi")
+            spiMISOBytes = []
+            spiMOSIBytes = []
+            lastSPITime = 0
+        }
+
+
+        m = /^([\d\.]+),SPI,.*(0x[A-F0-9][A-F0-9]).*(0x[A-F0-9][A-F0-9])/.exec(ln)
+        if (m) {
+            lastSPITime = tm
+            spiMOSIBytes.push(parseInt(m[2]))
+            spiMISOBytes.push(parseInt(m[3]))
+        }
+
+        m = /^([\d\.]+),Async Serial,.*(0x[A-F0-9][A-F0-9])/.exec(ln)
+        if (m) {
+            lastTime = tm
+            if (ln.indexOf("framing error") > 0) {
+                if (frameBytes.length > 0)
+                    res.push({
+                        timestamp: lastTime * 1000,
+                        data: new Uint8Array(frameBytes),
+                        info
+                    })
+                frameBytes = []
+                lastTime = 0
+                lastFrame = tm
+                info = ""
+            } else {
+                const delay = tm * 1000000 - lastFrame * 1000000
+                if (lastFrame && delay > 120)
+                    info = "long delay: " + Math.round(delay) + "us"
+                lastFrame = 0
+                frameBytes.push(parseInt(m[2]))
+            }
         }
     }
 

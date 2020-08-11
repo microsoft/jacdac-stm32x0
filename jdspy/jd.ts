@@ -422,7 +422,7 @@ function frameToPackets(frame: Uint8Array, timestamp: number) {
 
         const res: Packet[] = []
         if (frame.length != 12 + frame[2])
-            warn(`${timestamp}ms: unexpected packet len: ${frame.length}`)
+            warn(`${timestamp}ms: unexpected packet len: ${frame.length} (expecting ${12 + frame[2]})`)
         for (let ptr = 12; ptr < 12 + frame[2];) {
             const psz = frame[ptr] + 4
             const sz = ALIGN(psz)

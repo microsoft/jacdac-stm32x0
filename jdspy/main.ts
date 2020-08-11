@@ -44,18 +44,21 @@ async function main() {
     const opts = commander as CmdOptions
 
     function processFrame(frame: jdpretty.ParsedFrame) {
-        if (frame.info)
-            console.log("FRM: " + frame.info)
         for (let p of jd.Packet.fromFrame(frame.data, frame.timestamp)) {
             if (opts.log)
                 fs.appendFileSync(opts.log, `JD ${frame.timestamp} ${U.toHex(frame.data)}\n`)
             jd.process(p)
-            const pp = jdpretty.printPkt(p, {
+            let pp = jdpretty.printPkt(p, {
                 skipRepeatedAnnounce: !opts.all,
                 skipRepeatedReading: !opts.all
             })
-            if (pp)
+            if (pp) {
+                if (frame.info)
+                    pp += ` [${frame.info}]`
+                if (frame.source)
+                    pp += ` [${frame.source}]`
                 console.log(pp)
+            }
         }
     }
 
