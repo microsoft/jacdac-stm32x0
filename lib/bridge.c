@@ -26,7 +26,18 @@ static srv_t *_state;
 static void spi_done_handler(void) {
     srv_t *state = _state;
     unsigned frmsz = JD_FRAME_SIZE(&state->spi_rx);
-    if (frmsz > state->rx_size) {
+
+    if (state->spi_rx.size == 0xFE) {
+        // m:b didn't manage to read the packet; try again
+        state->rx_size = 0;
+        pin_set(state->pin_cs, 1);
+        pwr_leave_tim();
+        state->next_send = now;
+        tim_max_sleep = 100;
+        return;
+    }
+
+    if (frmsz > state->rx_size && state->spi_rx.size != 0xFF) {
         // we didn't read enough
         uint8_t *d = (uint8_t *)&state->spi_rx + state->rx_size;
         unsigned left = frmsz - state->rx_size;
@@ -47,12 +58,7 @@ static void spi_done_handler(void) {
         }
 
         state->next_send = now + 99;
-
-        // if we have something in the queue to send to m:b, don't sleep too long
-        if (queue_front(state->rx_q))
-            tim_max_sleep = 100;
-        else
-            tim_max_sleep = 0;
+        tim_max_sleep = 100;
     }
 }
 
@@ -70,7 +76,7 @@ static void xchg(srv_t *state) {
         return;
     }
 
-    tim_max_sleep = 0;
+    // tim_max_sleep = 0; // TODO work on power consumption
     jd_frame_t *fwd = queue_front(state->rx_q);
     int size = 32;
     if (fwd && JD_FRAME_SIZE(fwd) > size)
@@ -79,6 +85,7 @@ static void xchg(srv_t *state) {
     state->shift = !!fwd;
     pin_set(state->pin_cs, 0);
     pwr_enter_tim();
+    *(uint32_t *)&state->spi_rx = 0;
     dspi_xfer(fwd, &state->spi_rx, size, spi_done_handler);
 }
 
@@ -88,7 +95,7 @@ void bridge_forward_frame(jd_frame_t *frame) {
 }
 
 void bridge_process(srv_t *state) {
-    if (queue_front(state->rx_q) || pin_get(state->pin_txrq) == 0)
+    if (queue_front(state->rx_q) || (!in_future(state->next_send) && pin_get(state->pin_txrq) == 0))
         xchg(state);
 }
 
