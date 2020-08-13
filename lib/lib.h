@@ -38,3 +38,8 @@ int queue_push(queue_t q, jd_frame_t *pkt);
 jd_frame_t *queue_front(queue_t q);
 void queue_shift(queue_t q);
 void queue_test(void);
+
+void ns_init(void);
+void ns_set(uint64_t key, const char *name);
+const char *ns_get(uint64_t key);
+void ns_clear(void);

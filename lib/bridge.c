@@ -52,14 +52,27 @@ static void spi_done_handler(void) {
             queue_shift(state->rx_q);
 
         if (4 <= state->spi_rx.size && state->spi_rx.size <= 240) {
+            if (state->spi_rx.flags & JD_FRAME_FLAG_LOOPBACK) {
+                jd_packet_t *pkt = (jd_packet_t *)&state->spi_rx;
+                if (pkt->service_number == 0)
+                    switch (pkt->service_command) {
+                    case 0xf0:
+                        ns_set(pkt->device_identifier, (const char *)pkt->data);
+                        break;
+                    case 0xf1:
+                        ns_clear();
+                        break;
+                    }
+            }
+        } else {
             jd_send_low(&state->spi_rx);
             // also process packets ourselves - m:b might be talking to us
             jd_services_process_frame(&state->spi_rx);
         }
-
-        state->next_send = now + 99;
-        tim_max_sleep = 100;
     }
+
+    state->next_send = now + 99;
+    tim_max_sleep = 100;
 }
 
 static void xchg(srv_t *state) {
@@ -90,8 +103,34 @@ static void xchg(srv_t *state) {
 }
 
 void bridge_forward_frame(jd_frame_t *frame) {
-    if (frame != &_state->spi_rx)
+    if (frame != &_state->spi_rx) {
+        // for announce packets
+        jd_packet_t *pkt = (jd_packet_t *)frame;
+        if (pkt->service_command == JD_SERVICE_NUMBER_CTRL &&
+            pkt->service_number == JD_CMD_ADVERTISEMENT_DATA &&
+            !(frame->flags & JD_FRAME_FLAG_COMMAND)) {
+            // we check if we have name for the source device
+            const char *name = ns_get(pkt->device_identifier);
+            if (name) {
+                unsigned namelen = strlen(name);
+                unsigned len = (namelen + 4 + 3) & ~3;
+                // and if it will fit in frame
+                if (frame->size + len < JD_SERIAL_PAYLOAD_SIZE + 4) {
+                    // we shift everything forward
+                    uint32_t *src = (uint32_t *)(frame->data + frame->size - 4);
+                    uint32_t *dst = src + (len >> 2);
+                    while (src >= (uint32_t *)frame->data)
+                        *dst-- = *src--;
+                    // and add the name at the beginning
+                    pkt->service_command = JD_CMD_GET_REG | JD_REG_CTRL_SELF_NAME;
+                    pkt->service_size = namelen;
+                    memcpy(pkt->data, name, namelen);
+                    frame->size += len;
+                }
+            }
+        }
         queue_push(_state->rx_q, frame);
+    }
 }
 
 void bridge_process(srv_t *state) {
@@ -106,6 +145,7 @@ void bridge_handle_packet(srv_t *state, jd_packet_t *pkt) {
 SRV_DEF(bridge, JD_SERVICE_CLASS_BRIDGE);
 void bridge_init(uint8_t pin_cs, uint8_t pin_txrq) {
     SRV_ALLOC(bridge);
+    ns_init();
     dspi_init();
     state->pin_cs = pin_cs;
     pin_set(pin_cs, 1);
