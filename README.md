@@ -18,6 +18,11 @@ Another is connecting peripherals to a host device (joystick anyone?!).
 * [x] the "combined" flashing doesn't work - figure out why
 * [x] UF2 flashing fails ("misaligned" error)
 
+## Release process
+
+This repository uses [semantic release](https://github.com/semantic-release/semantic-release) to automatically create releases upon analyzing commits.
+
+The commits can be formatted using https://github.com/angular/angular.js/blob/master/DEVELOPERS.md#-git-commit-guidelines.
 
 ## Contributing
 

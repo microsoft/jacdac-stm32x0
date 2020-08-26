@@ -21,6 +21,8 @@ jobs:
       with:
           node-version: 'v12'
 
+    - run: npm install
+
     - name: Restore ARM GCC Cache
       id: arm-gcc-cache
       uses: actions/cache@v2
@@ -44,3 +46,7 @@ jobs:
       with:
         name: drop.uf2
         path: built/drop.uf2
+
+    - run: npx semantic-release
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
