@@ -1,6 +1,7 @@
 # Light service protocol
 
 Realistically, with 1 mbit JACDAC, we can transmit under 2k of data per animation frame (at 20fps).
+
 If transmitting raw data that would be around 500 pixels, which is not enough for many
 installation and it would completely clog the network.
 
