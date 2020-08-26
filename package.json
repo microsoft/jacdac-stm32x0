@@ -1,0 +1,43 @@
+{
+  "name": "jacdac-stm32x0",
+  "version": "0.2.0",
+  "description": "JACDAC firmware for STM32x0",
+  "directories": {
+    "lib": "lib"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/microsoft/jacdac-stm32x0.git"
+  },
+  "keywords": [
+    "JACDAC"
+  ],
+  "author": "Microsoft",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/microsoft/jacdac-stm32x0/issues"
+  },
+  "homepage": "https://github.com/microsoft/jacdac-stm32x0#readme",
+  "release": {
+    "branches": [
+      "master"
+    ],
+    "plugins": [
+      "@semantic-release/commit-analyzer",
+      "@semantic-release/release-notes-generator",
+      "@semantic-release/github",
+      [
+        "@semantic-release/git",
+        {
+          "assets": [
+            "package.json",
+            "package-lock.json"
+          ]
+        }
+      ]
+    ]
+  }
+}
