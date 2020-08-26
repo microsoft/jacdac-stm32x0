@@ -32,7 +32,7 @@
         "@semantic-release/github",
         {
           "assets": [
-            "dist/**"
+            "built/**"
           ]
         }
       ],
