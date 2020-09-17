@@ -41,7 +41,7 @@ jobs:
     - name: make
       run: make TARGET=jm-v2.0 drop
 
-    - name: Upload results
+    - name: Upload action artifacts
       uses: actions/upload-artifact@v1
       with:
         name: drop.uf2
