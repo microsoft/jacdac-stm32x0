@@ -46,7 +46,7 @@ jobs:
       with:
         name: drop.uf2
         path: built/drop.uf2
-
+    - run: cp buit/drop.uf2 dist/firmware.uf2
     - run: npx semantic-release
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
