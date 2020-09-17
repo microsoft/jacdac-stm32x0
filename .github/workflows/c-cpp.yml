@@ -47,7 +47,7 @@ jobs:
         name: drop.uf2
         path: built/drop.uf2
     - name: Copy dist
-      run: cp buit/drop.uf2 dist/firmware.uf2
+      run: cp built/drop.uf2 dist/firmware.uf2
     - name: Semantic release
       run: npx semantic-release
       env:
