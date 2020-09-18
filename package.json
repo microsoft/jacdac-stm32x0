@@ -3,6 +3,7 @@
   "version": "0.2.0",
   "description": "JACDAC firmware for STM32x0",
   "directories": {
+    "dist": "dist",
     "lib": "lib"
   },
   "scripts": {
