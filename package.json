@@ -8,7 +8,7 @@
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "prepublishOnly": "make TARGET=jm-v2.0 drop && cp built/drop.uf2 dist/firmware.uf2"
+    "build": "make TARGET=jm-v2.0 drop && cp built/drop.uf2 dist/firmware.uf2"
   },
   "repository": {
     "type": "git",
@@ -66,9 +66,17 @@
       ],
       "@semantic-release/release-notes-generator",
       [
+        "@semantic-release/exec",
+        {
+          "prepareCmd": "npm run build"
+        }
+      ],
+      [
         "@semantic-release/github",
         {
           "assets": [
+            "package.json",
+            "package-lock.json",
             "dist/*"
           ]
         }
@@ -78,6 +86,7 @@
         {
           "assets": [
             "package.json",
+            "package-lock.json",
             "dist/*"
           ]
         }
@@ -85,6 +94,7 @@
     ]
   },
   "devDependencies": {
+    "@semantic-release/exec": "^5.0.0",
     "@semantic-release/git": "^9.0.0"
   }
 }
