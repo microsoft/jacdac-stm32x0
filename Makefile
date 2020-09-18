@@ -206,7 +206,8 @@ $(BUILT)/jd/prof-%.o: targets/$(TARGET)/profile/%.c
 	@mkdir -p $(BUILT)/jd
 	$(V)$(CC) $(CFLAGS) $(CPPFLAGS) -o $@ -c $<
 
-FW_VERSION = $(shell git describe --always --dirty --tags | sed -e 's/-[0-9]\{1,\}-g[0-9a-f]\{6,16\}.*/-dirty/; s/-dirty$$/'-`date +%Y%m%d-%H%M`'/')
+FW_VERSION = $(shell grep '"version":' package.json | sed -e 's/.*: "//; s/".*/-'"`date +%Y%m%d-%H%M`/")
+
 refresh-version:
 	@mkdir -p $(BUILT_BIN)
 	echo 'const char app_fw_version[] = "$(FW_VERSION)";' > $(BUILT_BIN)/version.c
