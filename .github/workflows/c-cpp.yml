@@ -22,7 +22,7 @@ jobs:
       with:
           node-version: 'v12'
 
-    - run: npm install
+    - run: npm ci
 
     - name: Restore ARM GCC Cache
       id: arm-gcc-cache
