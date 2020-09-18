@@ -2,6 +2,7 @@
   "name": "jacdac-stm32x0",
   "version": "0.4.2",
   "description": "JACDAC firmware for STM32x0",
+  "private": true,
   "directories": {
     "dist": "dist",
     "lib": "lib"
@@ -65,6 +66,7 @@
         }
       ],
       "@semantic-release/release-notes-generator",
+      "@semantic-release/npm",
       [
         "@semantic-release/exec",
         {
@@ -95,6 +97,7 @@
   },
   "devDependencies": {
     "@semantic-release/exec": "^5.0.0",
-    "@semantic-release/git": "^9.0.0"
+    "@semantic-release/git": "^9.0.0",
+    "@semantic-release/npm": "^7.0.6"
   }
 }
