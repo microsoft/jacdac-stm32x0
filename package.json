@@ -7,7 +7,7 @@
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "prepublishOnly": "make TARGET=jm-v2.0 drop"
+    "prepublishOnly": "make TARGET=jm-v2.0 drop && cp built/drop.uf2 dist/firmware.uf2"
   },
   "repository": {
     "type": "git",
