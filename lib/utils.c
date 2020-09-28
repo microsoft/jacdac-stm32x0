@@ -66,6 +66,7 @@ int itoa(int n, char *s) {
 
 // faster versions of memcpy() and memset()
 void *memcpy(void *dst, const void *src, size_t sz) {
+    void *dst0 = dst;
     if (sz >= 4 && !((uintptr_t)dst & 3) && !((uintptr_t)src & 3)) {
         size_t cnt = sz >> 2;
         uint32_t *d = (uint32_t *)dst;
@@ -85,10 +86,11 @@ void *memcpy(void *dst, const void *src, size_t sz) {
         *dd++ = *ss++;
     }
 
-    return dst;
+    return dst0;
 }
 
 void *memset(void *dst, int v, size_t sz) {
+    void *dst0 = dst;
     if (sz >= 4 && !((uintptr_t)dst & 3)) {
         size_t cnt = sz >> 2;
         uint32_t vv = 0x01010101 * v;
@@ -106,7 +108,7 @@ void *memset(void *dst, int v, size_t sz) {
         *dd++ = v;
     }
 
-    return dst;
+    return dst0;
 }
 
 uint32_t random_int(uint32_t max) {
