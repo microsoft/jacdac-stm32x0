@@ -18,8 +18,8 @@ static const uint32_t bl_ad_data[] = {JD_SERVICE_CLASS_BOOTLOADER, BL_PAGE_SIZE,
                                       FLASH_SIZE - BL_SIZE, 0};
 
 void bl_process(ctx_t *ctx) {
-    if (ctx->subpageno == 0xff && setup_tx(ctx, BL_CMD_PAGE_DATA, &ctx->session_id, 12) == 0)
-        ctx->subpageno = 0;
+    if (ctx->chunk_no == 0xff && setup_tx(ctx, JD_BOOTLOADER_CMD_PAGE_DATA, &ctx->session_id, 12) == 0)
+        ctx->chunk_no = 0;
     if (ctx->bl_ad_queued &&
         setup_tx(ctx, JD_CMD_ANNOUNCE, bl_ad_data, sizeof(bl_ad_data)) == 0) {
         // append our device class
@@ -30,20 +30,20 @@ void bl_process(ctx_t *ctx) {
 }
 
 static void bl_write_page(ctx_t *ctx) {
-    if (ctx->pageaddr == 0x8000000) {
+    if (ctx->page_address == 0x8000000) {
         struct app_top_handlers *a = (struct app_top_handlers *)ctx->pagedata;
         memcpy(&a->devinfo, &bl_dev_info, sizeof(bl_dev_info));
         a->boot_reset_handler = (uint32_t)&bl_dev_info + 32 + 1; // +1 for thumb state
     }
-    flash_erase((void *)ctx->pageaddr);
-    flash_program((void *)ctx->pageaddr, ctx->pagedata, BL_PAGE_SIZE);
+    flash_erase((void *)ctx->page_address);
+    flash_program((void *)ctx->page_address, ctx->pagedata, BL_PAGE_SIZE);
 }
 
 bool bl_fixup_app_handlers(ctx_t *ctx) {
     bool can_start = (app_handlers->app_reset_handler >> 24) == 0x08;
     if (can_start && app_dev_info.magic + 1 == 0) {
-        ctx->pageaddr = 0x8000000;
-        memcpy(ctx->pagedata, (void *)ctx->pageaddr, BL_PAGE_SIZE);
+        ctx->page_address = 0x8000000;
+        memcpy(ctx->pagedata, (void *)ctx->page_address, BL_PAGE_SIZE);
         bl_write_page(ctx);
         return true;
     } else {
@@ -51,7 +51,7 @@ bool bl_fixup_app_handlers(ctx_t *ctx) {
     }
 }
 
-static void page_data(ctx_t *ctx, struct bl_page_data *d, int datasize) {
+static void page_data(ctx_t *ctx, jd_bootloader_page_data_t *d, int datasize) {
     if (ctx->session_id != d->session_id)
         return;
 
@@ -60,50 +60,50 @@ static void page_data(ctx_t *ctx, struct bl_page_data *d, int datasize) {
         return;
     }
 
-    if (d->subpageno == 0) {
+    if (d->chunk_no == 0) {
         memset(ctx->pagedata, 0, BL_PAGE_SIZE);
         ctx->subpageerr = 0;
-        ctx->subpageno = 1;
-        ctx->pageaddr = d->pageaddr;
-        if (d->pageaddr & (BL_PAGE_SIZE - 1))
+        ctx->chunk_no = 1;
+        ctx->page_address = d->page_address;
+        if (d->page_address & (BL_PAGE_SIZE - 1))
             ctx->subpageerr = 4;
-        uint32_t off = d->pageaddr - 0x8000000;
+        uint32_t off = d->page_address - 0x8000000;
         if (off > (uint32_t)&bl_dev_info - BL_PAGE_SIZE)
             ctx->subpageerr = 2;
-    } else if (!ctx->subpageerr && d->subpageno == ctx->subpageno && d->pageaddr == ctx->pageaddr) {
-        ctx->subpageno++;
+    } else if (!ctx->subpageerr && d->chunk_no == ctx->chunk_no && d->page_address == ctx->page_address) {
+        ctx->chunk_no++;
     } else {
         if (ctx->subpageerr == 0)
-            ctx->subpageerr = (ctx->subpageno << 16) + d->subpageno;
+            ctx->subpageerr = (ctx->chunk_no << 16) + d->chunk_no;
     }
 
-    if (d->pageoffset >= BL_PAGE_SIZE || d->pageoffset + datasize > BL_PAGE_SIZE)
+    if (d->page_offset >= BL_PAGE_SIZE || d->page_offset + datasize > BL_PAGE_SIZE)
         ctx->subpageerr = 3;
 
-    bool isFinal = d->subpageno == d->subpagemax;
+    bool isFinal = d->chunk_no == d->chunk_max;
 
     if (!ctx->subpageerr) {
-        memcpy(ctx->pagedata + d->pageoffset, d->data, datasize);
+        memcpy(ctx->pagedata + d->page_offset, d->page_data, datasize);
         if (isFinal)
             bl_write_page(ctx);
     }
 
     if (isFinal)
-        ctx->subpageno = 0xff; // send ack next round
+        ctx->chunk_no = 0xff; // send ack next round
 }
 
 void bl_handle_packet(ctx_t *ctx, jd_packet_t *pkt) {
     ctx->app_start_time = 0x80000000; // prevent app start
     switch (pkt->service_command) {
-    case JD_CMD_ANNOUNCE:
+    case JD_BOOTLOADER_CMD_INFO:
         ctx->bl_ad_queued = 1;
         break;
-    case BL_CMD_PAGE_DATA:
-        page_data(ctx, (struct bl_page_data *)pkt->data, pkt->service_size - 28);
+    case JD_BOOTLOADER_CMD_PAGE_DATA:
+        page_data(ctx, (jd_bootloader_page_data_t *)pkt->data, pkt->service_size - 28);
         break;
-    case BL_CMD_SET_SESSION:
+    case JD_BOOTLOADER_CMD_SET_SESSION:
         ctx->session_id = *(uint32_t *)pkt->data;
-        ctx->subpageno = 0xff;
+        ctx->chunk_no = 0xff;
         break;
     }
 }
