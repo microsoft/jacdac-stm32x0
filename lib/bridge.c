@@ -107,7 +107,7 @@ void bridge_forward_frame(jd_frame_t *frame) {
         // for announce packets
         jd_packet_t *pkt = (jd_packet_t *)frame;
         if (pkt->service_command == JD_SERVICE_NUMBER_CTRL &&
-            pkt->service_number == JD_CMD_ADVERTISEMENT_DATA &&
+            pkt->service_number == JD_CTRL_CMD_SERVICES &&
             !(frame->flags & JD_FRAME_FLAG_COMMAND)) {
             // we check if we have name for the source device
             const char *name = ns_get(pkt->device_identifier);

@@ -42,15 +42,15 @@ static void identify(ctx_t *ctx) {
 
 static void ctrl_handle_packet(ctx_t *ctx, jd_packet_t *pkt) {
     switch (pkt->service_command) {
-    case JD_CMD_ADVERTISEMENT_DATA:
+    case JD_CMD_ANNOUNCE:
         ctx->next_announce = ctx->now;
         break;
-    case JD_CMD_CTRL_IDENTIFY:
+    case JD_CTRL_CMD_IDENTIFY:
         ctx->id_counter = 7;
         ctx->next_id_blink = ctx->now;
         identify(ctx);
         break;
-    case JD_CMD_CTRL_RESET:
+    case JD_CTRL_CMD_RESET:
         target_reset();
         break;
     }

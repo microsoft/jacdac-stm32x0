@@ -21,7 +21,7 @@ void bl_process(ctx_t *ctx) {
     if (ctx->subpageno == 0xff && setup_tx(ctx, BL_CMD_PAGE_DATA, &ctx->session_id, 12) == 0)
         ctx->subpageno = 0;
     if (ctx->bl_ad_queued &&
-        setup_tx(ctx, JD_CMD_ADVERTISEMENT_DATA, bl_ad_data, sizeof(bl_ad_data)) == 0) {
+        setup_tx(ctx, JD_CMD_ANNOUNCE, bl_ad_data, sizeof(bl_ad_data)) == 0) {
         // append our device class
         ((uint32_t *)ctx->txBuffer.data)[4] = bl_dev_info.device_class;
         jd_prep_send(ctx);
@@ -95,7 +95,7 @@ static void page_data(ctx_t *ctx, struct bl_page_data *d, int datasize) {
 void bl_handle_packet(ctx_t *ctx, jd_packet_t *pkt) {
     ctx->app_start_time = 0x80000000; // prevent app start
     switch (pkt->service_command) {
-    case JD_CMD_ADVERTISEMENT_DATA:
+    case JD_CMD_ANNOUNCE:
         ctx->bl_ad_queued = 1;
         break;
     case BL_CMD_PAGE_DATA:

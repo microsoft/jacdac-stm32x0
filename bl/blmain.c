@@ -41,7 +41,7 @@ uint32_t random(ctx_t *ctx) {
 }
 
 static const uint32_t announce_data[] = {
-    8 | (JD_SERVICE_NUMBER_CTRL << 8) | (JD_CMD_ADVERTISEMENT_DATA << 16), //
+    8 | (JD_SERVICE_NUMBER_CTRL << 8) | (JD_CMD_ANNOUNCE << 16), //
     JD_SERVICE_CLASS_CTRL,                                                 //
     JD_SERVICE_CLASS_BOOTLOADER                                            //
 };
