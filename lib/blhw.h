@@ -4,12 +4,7 @@
 #include <stdbool.h>
 #include "hwconfig.h"
 #include "services/interfaces/jd_pins.h"
-
-#define CONCAT_1(a, b) a##b
-#define CONCAT_0(a, b) CONCAT_1(a, b)
-#ifndef STATIC_ASSERT
-#define STATIC_ASSERT(e) enum { CONCAT_0(_static_assert_, __LINE__) = 1 / ((e) ? 1 : 0) };
-#endif
+#include "jd_config.h"
 
 #define RAM_FUNC __attribute__((noinline, long_call, section(".data")))
 

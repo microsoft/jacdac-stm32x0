@@ -24,14 +24,14 @@ typedef struct ctx {
     uint8_t uart_mode;
 
     uint8_t tx_full, rx_full;
-    uint8_t subpageno;
+    uint8_t chunk_no;
     uint8_t bl_ad_queued;
     uint8_t id_counter;
 
     // these three fields are sent directly from here, so don't move them
     uint32_t session_id;
     uint32_t subpageerr;
-    uint32_t pageaddr;
+    uint32_t page_address;
 
     uint32_t randomseed;
     uint32_t service_class_bl;
