@@ -196,10 +196,10 @@ clean:
 	rm -rf built
 
 st:
-	$(V)node scripts/map-file-stats.js $(BUILT)/output.map
+	$(V)node scripts/map-file-stats.js $(ELF).map
 
 stf:
-	$(V)node scripts/map-file-stats.js  $(BUILT)/output.map -fun
+	$(V)node scripts/map-file-stats.js  $(ELF).map -fun
 
 $(BUILT)/jd/prof-%.o: targets/$(TARGET)/profile/%.c
 	@echo CC $<
