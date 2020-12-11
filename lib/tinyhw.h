@@ -63,4 +63,3 @@ int disp_get_dark_level(void);
 void target_reset(void);
 RAM_FUNC
 void target_wait_cycles(int n);
-int target_in_irq(void);

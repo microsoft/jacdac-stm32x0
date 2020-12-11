@@ -122,7 +122,7 @@ void bridge_forward_frame(jd_frame_t *frame) {
                     while (src >= (uint32_t *)frame->data)
                         *dst-- = *src--;
                     // and add the name at the beginning
-                    pkt->service_command = JD_CMD_GET_REG | JD_REG_CTRL_SELF_NAME;
+                    pkt->service_command = JD_GET(JD_REG_CTRL_SELF_NAME);
                     pkt->service_size = namelen;
                     memcpy(pkt->data, name, namelen);
                     frame->size += len;
@@ -174,7 +174,7 @@ void jd_send_low(jd_frame_t *f) {
     jd_packet_ready();
 }
 
-void jd_send(unsigned service_num, unsigned service_cmd, const void *data, unsigned service_size) {
+int jd_send(unsigned service_num, unsigned service_cmd, const void *data, unsigned service_size) {
     if (service_size > 32)
         jd_panic();
 
@@ -191,6 +191,8 @@ void jd_send(unsigned service_num, unsigned service_cmd, const void *data, unsig
         queue_push(_state->rx_q, f); // also forward packets we generate ourselves
         _state->skip_one = 1;
     }
+
+    return 0;
 }
 
 void jd_send_event_ext(srv_t *srv, uint32_t eventid, uint32_t arg) {

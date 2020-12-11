@@ -20,6 +20,8 @@ PREFIX = arm-none-eabi-
 CC = $(PREFIX)gcc
 AS = $(PREFIX)as
 
+MAKE_FLAGS ?= -j8
+
 WARNFLAGS = -Wall -Wno-strict-aliasing
 CFLAGS = $(DEFINES) \
 	-mthumb -mfloat-abi=soft  \
@@ -60,6 +62,7 @@ C_SRC += $(wildcard services/main.c)
 C_SRC += $(wildcard jacdac-c/source/interfaces/simple_alloc.c)
 C_SRC += $(wildcard jacdac-c/source/interfaces/sensor.c)
 C_SRC += $(wildcard jacdac-c/source/interfaces/simple_rx.c)
+C_SRC += $(wildcard jacdac-c/source/interfaces/event_queue.c)
 ifeq ($(BRIDGEQ),)
 C_SRC += $(wildcard jacdac-c/source/interfaces/tx_queue.c)
 endif
@@ -105,9 +108,9 @@ LDFLAGS = -specs=nosys.specs -specs=nano.specs \
 	-T"$(LD_SCRIPT)" -Wl,--gc-sections
 
 all: refresh-version
-	$(MAKE) -j8 build
+	$(MAKE) $(MAKE_FLAGS) build
 ifeq ($(BL),)
-	$(MAKE) -j8 BL=1 build
+	$(MAKE) $(MAKE_FLAGS) BL=1 build
 endif
 ifeq ($(BL),)
 	$(MAKE) combine
@@ -234,8 +237,8 @@ $(BUILT_BIN)/combined-%.hex: $(BUILT_BIN)/$(PREF)-%.hex
 rc: run-combined
 run-combined:
 	touch scripts/patch-bin.js
-	$(MAKE) -j8 BL=1 $(BUILT_BIN)/combined-$(PROF).hex
-	$(MAKE) -j8 $(BUILT_BIN)/combined-$(PROF).hex
+	$(MAKE) $(MAKE_FLAGS) BL=1 $(BUILT_BIN)/combined-$(PROF).hex
+	$(MAKE) $(MAKE_FLAGS) $(BUILT_BIN)/combined-$(PROF).hex
 	$(MAKE) ELF=$(BUILT_BIN)/combined-$(PROF).hex flash
 
 force:

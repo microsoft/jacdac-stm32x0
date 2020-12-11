@@ -10,7 +10,7 @@ static bool valid_frame(ctx_t *ctx, jd_frame_t *frame) {
 
     jd_packet_t *pkt = (jd_packet_t *)frame;
 
-    if (!(pkt->flags & JD_FRAME_FLAG_COMMAND))
+    if (!(pkt->flags & JD_FRAME_FLAG_COMMAND) || (pkt->flags & JD_FRAME_FLAG_VNEXT))
         return false;
 
     if (pkt->device_identifier == BL_DEVICE_ID)
