@@ -56,9 +56,10 @@ Other than the building/deployment targets, the following might be of note:
 
 * fork this repo
 * copy `targets/_example/` to `targets/acme-corp/`
-* edit `targets/acme-corp/board.h` to match your module
-* edit `targets/acme-corp/profiles/module.c` to include your module name and used services
-  (follow comments in `module.c`)
+* edit [targets/acme-corp/board.h](targets/_example/board.h) to match your module
+* you likely do not need to edit [targets/acme-corp/board.mk](targets/_example/board.mk)
+* edit [targets/acme-corp/profiles/module.c](targets/_example/profiles/module.c) 
+  to include your module name and used services (follow comments in `module.c`)
 * rename `module.c` to match the type of module (eg. `servo.c`)
 * if you have several modules with non-conflicting `board.h` definitions,
   you can create more files under `targets/acme-corp/profiles/`
