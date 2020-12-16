@@ -73,6 +73,10 @@
 #error "untested range"
 #endif
 
+#ifndef ACC_SPI
+#define ACC_I2C 1
+#endif
+
 void bspi_send(const void *src, uint32_t len);
 void bspi_recv(void *dst, uint32_t len);
 
