@@ -1,7 +1,8 @@
 .SECONDARY: # this prevents object files from being removed
 .DEFAULT_GOAL := all
 
--include Makefile.user
+$(shell test -f Makefile.user || cp sample-Makefile.user Makefile.user)
+include Makefile.user
 
 ifneq ($(TRG),)
 TARGET := $(word 1,$(TRG))
@@ -85,7 +86,7 @@ endif
 ELF = $(BUILT_BIN)/$(PREF)-$(PROF).elf
 
 ifneq ($(BMP),)
-BMP_PORT = $(shell ls -1 /dev/cu.usbmodem????????1 | head -1)
+BMP_PORT ?= $(shell ls -1 /dev/cu.usbmodem????????1 | head -1)
 endif
 
 
@@ -244,7 +245,7 @@ run-combined:
 force:
 	@echo forcing...
 
-DROP_TARGETS = jm-v2.0 jm-v2.0i jm-v2.0p jm-v2.1
+DROP_TARGETS ?= jm-v2.0 jm-v2.0i jm-v2.0p jm-v2.1
 
 targ-%:
 	$(MAKE) TARGET=$(subst targ-,,$@)
