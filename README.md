@@ -57,7 +57,8 @@ Other than the building/deployment targets, the following might be of note:
 * fork this repo
 * copy `targets/_example/` to `targets/acme-corp/`
 * edit [targets/acme-corp/board.h](targets/_example/board.h) to match your module
-* you likely do not need to edit [targets/acme-corp/config.mk](targets/_example/config.mk)
+* you likely do not need to edit [targets/acme-corp/config.mk](targets/_example/config.mk), even if using
+  a beefier MCU from the F03x family - they should be backward-compatible
 * edit [targets/acme-corp/profile/module.c](targets/_example/profile/module.c) 
   to include your module name and used services (follow comments in `module.c`)
 * rename `module.c` to match the type of module (eg. `servo.c`)
@@ -66,7 +67,6 @@ Other than the building/deployment targets, the following might be of note:
 * edit `Makefile.user` to set `TRG`, eg. `TRG = acme-corp servo`
 * run `make`; this will update the number after `FIRMWARE_IDENTIFIER` - it's a hash of your module name
 * make sure to never rename your device, as that will break future firmware updates
-
 
 ## TODO
 
