@@ -1,6 +1,12 @@
-[submodule "STM32CubeF0"]
-	path = stm32/STM32CubeF0
-	url = https://github.com/mmoskal/STM32CubeF0
 [submodule "jacdac-c"]
 	path = jacdac-c
 	url = https://github.com/microsoft/jacdac-c
+[submodule "stm32/stm32f0xx_hal_driver"]
+	path = stm32/stm32f0xx_hal_driver
+	url = https://github.com/STMicroelectronics/stm32f0xx_hal_driver
+[submodule "stm32/cmsis_core"]
+	path = stm32/cmsis_core
+	url = https://github.com/STMicroelectronics/cmsis_core
+[submodule "stm32/cmsis_device_f0"]
+	path = stm32/cmsis_device_f0
+	url = https://github.com/STMicroelectronics/cmsis_device_f0
