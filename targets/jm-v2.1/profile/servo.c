@@ -1,6 +1,6 @@
 #include "jdprofile.h"
 
-DEVICE_CLASS(0x3ac74e57, "JM PWM+SERVO v2.1");
+FIRMWARE_IDENTIFIER(0x3ac74e57, "JM PWM+SERVO v2.1");
 
 void app_init_services() {
 #if 1

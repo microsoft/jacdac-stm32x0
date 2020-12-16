@@ -11,7 +11,7 @@
 #include "blhw.h"
 
 #ifdef BL
-#define DEVICE_CLASS(dev_class, dev_class_name)                                                    \
+#define FIRMWARE_IDENTIFIER(dev_class, dev_class_name)                                             \
     struct bl_info_block __attribute__((section(".devinfo"), used)) bl_info = {                    \
         .devinfo =                                                                                 \
             {                                                                                      \
@@ -25,5 +25,6 @@
         .reserved1 = 0xffffffff,                                                                   \
     };
 #else
-#define DEVICE_CLASS(dev_class, dev_class_name) const char app_dev_class_name[] = dev_class_name;
+#define FIRMWARE_IDENTIFIER(dev_class, dev_class_name)                                             \
+    const char app_dev_class_name[] = dev_class_name;
 #endif

@@ -1,7 +1,7 @@
 #include "jdprofile.h"
 #include "jacdac/dist/c/light.h"
 
-DEVICE_CLASS(0x3c6bebe4, "JM PWM+PWR (npx) v2.1");
+FIRMWARE_IDENTIFIER(0x3c6bebe4, "JM PWM+PWR (npx) v2.1");
 
 void app_init_services() {
 #if 0
