@@ -1,22 +1,67 @@
-# JACDAC for STM32F0/STM32G0/...
+# JACDAC for STM32F0xx
 
-You might have heard of [JACDAC](https://jacdac.org).
-It's a new protocol that aims to standardize connecting microcontrollers dynamically,
-and with very little wiring (one wire for data, one for GND, and optionally one for power).
-One scenario is networking of MCU-based devices, for example to enable multiplayer
-for your awesome [MakeCode Arcade](https://arcade.makecode.com) games.
-Another is connecting peripherals to a host device (joystick anyone?!).
+This repository contains firmware for [JACDAC](https://aka.ms/jacdac) modules
+based on STM32F0xx chips and is part of [JACDAC Module Development Kit](https://github.com/microsoft/jacdac-mdk).
 
-* [Preliminary notes on JACDAC v1](jacdac-v1-spec.md)
+## Bootloader
+
+This repo contains both the firmware for running services (eg., accelerometer service) on your modules,
+and also a bootlaoder which allows for updating the firmware using JACDAC protocol.
+This update process can be performed by the user from the [JACDAC website](https://microsoft.github.io/jacdac-ts/tools/updater).
+However, while developing firmware you typically use a debugger to deploy both the bootloader and the firmware.
+
+## Building
+
+You will need a Unix-like environment to build the firmware.
+On Windows, you can use Windows Subsystem for Linux or mingw32.
+
+* install `arm-none-eabi-gcc` (we've been using `9-2019-q4-major`)
+* install `openocd` (optional when using Black Magic Probe)
+* install node.js
+* install GNU Make
+* run `make`; you should get a successful build
+
+Upon first run of `make`, a `Makefile.user` file will be created.
+You will want to adjust the settings in there - there are comments in there that should guide you through the process.
+
+To deploy the firmware to a module you will need a debugger interface.
+You have three options:
+* [Black Magic Probe](https://github.com/blacksphere/blackmagic/wiki); you can also re-program other debuggers with BMP firmware
+* a CMSIS-DAP debugger; we've been using [Particle Debugger](https://store.particle.io/products/particle-debugger)
+* an ST-LINK/V2 or one of its clones
+You will want to set the right interface in `Makefile.user`.
+
+Following commands can be used to deploy firmware:
+* `make run BL=1` - deploy bootloader
+* `make run` - deploy firmware
+* `make full-flash` - deploy both bootloader and firmware
+* `make flash-loop` - run flashing process in a loop - you can flash multiple devices in a row this way
+
+Aliases:
+* `make r` for `make run`
+* `make l` for `make flash-loop`
+* `make ff` for `make full-flash`
+
+### Notable make targets
+
+Other than the building/deployment targets, the following might be of note:
+
+* `make st` - print RAM/flash stats for the current firmware
+* `make stf` - same, but break it up by function, not only file
+* `make gdb` - run GDB debugger
+* `make clean` - clean (duh!)
+* `make drop` - build all firmware images specified in `DROP_TARGETS`
+
+## Adding new modules
+
+* fork this repo
+* create a folder under `targets/`, say `targets/acme-corp/`
+* copy `board.mk` and `board.h` from `targets/jm-v2.1/` to `targets/acme-corp/` and fix any defines that are different in your modules
+* create folder `targets/acme-corp/profiles/`
 
 ## TODO
 
-* [x] implement reset counter and ACK flag in `AD[0]`
 * [ ] consider thermal shutdown at 50C or so (assuming it's because of heat of some other component)
-* [ ] use SI values for sensors with 16 bit scaling?
-* [x] add CTRL cmds for time and software version (different than hw!)
-* [x] the "combined" flashing doesn't work - figure out why
-* [x] UF2 flashing fails ("misaligned" error)
 
 ## Release process
 
