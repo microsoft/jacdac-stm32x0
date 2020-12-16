@@ -10,6 +10,8 @@ static const uint8_t output_pins[] = {
     PIN_LED,     PIN_LED2, PIN_LED_GND,           // LED
 };
 
+static const uint8_t output_high_pins[] = {OUTPUT_PINS};
+
 void led_init(void) {
     // To save power, especially in STOP mode,
     // configure all pins in GPIOA,B,C as analog inputs (except for SWD)
@@ -28,6 +30,9 @@ void led_init(void) {
     // setup all our output pins
     for (unsigned i = 0; i < sizeof(output_pins); ++i)
         pin_setup_output(output_pins[i]);
+    // make it consistent with bootloader
+    for (unsigned i = 0; i < sizeof(output_high_pins); ++i)
+        pin_set(output_high_pins[i], 1);
 
 #ifdef PIN_GLO0
     pin_set(PIN_GLO0, 1);

@@ -15,7 +15,4 @@
 #define UART_PIN_AF LL_GPIO_AF_1
 #define USART_IDX 1
 
-#define OUTPUT_PINS                                                                                \
-    PIN_LOG0, PIN_LOG1, PIN_LOG2, PIN_LOG3, PIN_LED, PIN_LED2, PIN_P0, PIN_P1, PIN_LED_GND
-
 #define ACC_KXTJ3
