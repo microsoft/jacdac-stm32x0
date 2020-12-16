@@ -4,7 +4,6 @@
 #include <string.h>
 #include <stdbool.h>
 
-#include "board.h"
 #include "dmesg.h"
 #include "pinnames.h"
 #include "jd_services.h"

@@ -1,4 +1,3 @@
-#include "board.h"
 #include "blhw.h"
 #include "jd_protocol.h"
 #include "tinyhw.h"

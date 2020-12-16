@@ -5,7 +5,6 @@
 #include <string.h>
 #include "dmesg.h"
 #include "pinnames.h"
-#include "board.h"
 
 #include "jd_protocol.h"
 #include "services/interfaces/jd_oled.h"
