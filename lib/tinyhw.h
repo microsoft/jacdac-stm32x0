@@ -24,15 +24,6 @@ void dspi_xfer(const void *txdata, void *rxdata, uint32_t numbytes, cb_t doneHan
 #define LIGHT_TYPE_APA102 0x10
 #define LIGHT_TYPE_SK9822 0x11
 
-// i2c.c
-void i2c_init(void);
-// addr are 7bit
-int i2c_write_buf(uint8_t addr, const void *src, unsigned len);
-int i2c_write_reg_buf(uint8_t addr, uint8_t reg, const void *src, unsigned len);
-int i2c_read_buf(uint8_t addr, uint8_t reg, void *dst, unsigned len);
-int i2c_write_reg(uint8_t addr, uint8_t reg, uint8_t val);
-int i2c_read_reg(uint8_t addr, uint8_t reg);
-
 // rtc.c
 void rtc_init(void);
 void rtc_sleep(bool forceShallow);

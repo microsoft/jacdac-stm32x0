@@ -16,3 +16,4 @@
 #define USART_IDX 1
 
 #define ACC_KXTJ3
+#define TEMP_TH02
