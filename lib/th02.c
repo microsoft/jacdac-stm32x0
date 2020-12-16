@@ -1,9 +1,13 @@
 #include "lib.h"
 
+#ifdef TEMP_TH02
+
 #define SAMPLING_MS 500
 #define PRECISION 10
 
+#ifndef TH02_ADDR
 #define TH02_ADDR 0x40
+#endif
 
 #define TH02_CFG_FAST (1 << 5)
 #define TH02_CFG_TEMP (1 << 4)
@@ -82,3 +86,5 @@ uint32_t hw_humidity(void) {
     weather_hw_process();
     return state.humidity;
 }
+
+#endif // TEMP_TH02
