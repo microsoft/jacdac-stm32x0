@@ -1,23 +1,22 @@
 # JACDAC for STM32F0xx
 
-This repository contains firmware for [JACDAC](https://aka.ms/jacdac) modules
-based on STM32F0xx chips and is part of [JACDAC Module Development Kit](https://github.com/microsoft/jacdac-mdk).
+This repository contains firmware for [JACDAC](https://aka.ms/jacdac) modules based on STM32F0xx chips and is part of the [JACDAC Module Development Kit](https://github.com/microsoft/jacdac-mdk).
 
 ## Bootloader
 
-This repo contains both the firmware for running services (eg., accelerometer service) on your modules,
-and also a bootlaoder which allows for updating the firmware using JACDAC protocol.
-This update process can be performed by the user from the [JACDAC website](https://microsoft.github.io/jacdac-ts/tools/updater).
-However, while developing firmware you typically use a debugger to deploy both the bootloader and the firmware.
+This repository contains both the firmware for running services (eg., accelerometer service) on a JACDAC module,
+and a bootloader which allows for updating the firmware using the JACDAC protocol.
+This update process can be performed by the user from the [JACDAC website](https://microsoft.github.io/jacdac-ts/tools/updater)
+(while developing firmware you will typically use a debugger to deploy both the bootloader and the firmware).
 
 ## Building
 
 You will need a Unix-like environment to build the firmware.
 On Windows, you can use Windows Subsystem for Linux or mingw32.
 
-* install `arm-none-eabi-gcc` (we've been using `9-2019-q4-major`)
+* install `arm-none-eabi-gcc` (we've been using `9-2019-q4-major`) - please note that `gcc-arm-none-eabi` is **untested** 
 * install `openocd` (optional when using Black Magic Probe)
-* install node.js
+* install node.js (some linux distros have old versions of Node; get at least 14.5.2. from https://github.com/nodesource/distributions/blob/master/README.md) 
 * install GNU Make
 * run `make`; you should get a successful build
 
