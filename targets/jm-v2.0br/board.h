@@ -14,8 +14,6 @@
 #define UART_PIN_AF LL_GPIO_AF_1
 #define USART_IDX 1
 
-#define PWR_PIN_PULLUP 1
-
 #define PIN_ASCK PA_5 // yellow
 #define PIN_AMOSI PA_7 // red
 #define PIN_AMISO PA_6 // orng

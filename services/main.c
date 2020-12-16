@@ -29,10 +29,6 @@ void led_init(void) {
     for (unsigned i = 0; i < sizeof(output_pins); ++i)
         pin_setup_output(output_pins[i]);
 
-#ifndef PWR_PIN_PULLUP
-    jd_power_enable(0);
-#endif
-
 #ifdef PIN_GLO0
     pin_set(PIN_GLO0, 1);
     pin_set(PIN_GLO1, 1);

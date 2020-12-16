@@ -12,14 +12,10 @@ uint32_t app_get_device_class(void) {
 }
 
 void power_pin_enable(int en) {
-#ifdef PWR_PIN_PULLUP
     if (en) {
         pin_setup_output(PIN_PWR);
         pin_set(PIN_PWR, 0);
     } else {
         pin_setup_input(PIN_PWR, 0);
     }
-#else
-    pin_set(PIN_PWR, !en);
-#endif
 }

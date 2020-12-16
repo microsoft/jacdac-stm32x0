@@ -4,8 +4,6 @@
 #define UART_PIN_AF LL_GPIO_AF_1
 #define USART_IDX 1
 
-#define PWR_PIN_PULLUP 1
-
 // needed by light service
 #define PIN_PWR PA_10
 #define PIN_SERVO PA_7
