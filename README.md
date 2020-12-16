@@ -55,9 +55,17 @@ Other than the building/deployment targets, the following might be of note:
 ## Adding new modules
 
 * fork this repo
-* create a folder under `targets/`, say `targets/acme-corp/`
-* copy `board.mk` and `board.h` from `targets/jm-v2.1/` to `targets/acme-corp/` and fix any defines that are different in your modules
-* create folder `targets/acme-corp/profiles/`
+* copy `targets/_example/` to `targets/acme-corp/`
+* edit `targets/acme-corp/board.h` to match your module
+* edit `targets/acme-corp/profiles/module.c` to include your module name and used services
+  (follow comments in `module.c`)
+* rename `module.c` to match the type of module (eg. `servo.c`)
+* if you have several modules with non-conflicting `board.h` definitions,
+  you can create more files under `targets/acme-corp/profiles/`
+* edit `Makefile.user` to set `TRG`, eg. `TRG = acme-corp servo`
+* run `make`; this will update the number after `FIRMWARE_IDENTIFIER` - it's a hash of your module name
+* make sure to never rename your device, as that will break future firmware updates
+
 
 ## TODO
 
