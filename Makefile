@@ -1,7 +1,9 @@
 .SECONDARY: # this prevents object files from being removed
 .DEFAULT_GOAL := all
 
-$(shell test -f Makefile.user || cp sample-Makefile.user Makefile.user)
+_IGNORE0 := $(shell test -f Makefile.user || cp sample-Makefile.user Makefile.user)
+_IGNORE1 := $(shell test -f jacdac-c/jacdac/README.md || git submodule update --init --recursive 1>&2)
+
 include Makefile.user
 
 ifneq ($(TRG),)
