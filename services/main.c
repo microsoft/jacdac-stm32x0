@@ -3,7 +3,12 @@
 
 uint32_t now;
 
-static const uint8_t output_pins[] = {OUTPUT_PINS};
+static const uint8_t output_pins[] = {
+    OUTPUT_PINS,                                  // per-board
+    PIN_LOG0,    PIN_LOG1, PIN_LOG2,    PIN_LOG3, // JD-impl logging
+    PIN_P0,      PIN_P1,                          // application logging
+    PIN_LED,     PIN_LED2, PIN_LED_GND,           // LED
+};
 
 void led_init(void) {
     // To save power, especially in STOP mode,
@@ -24,7 +29,6 @@ void led_init(void) {
     for (unsigned i = 0; i < sizeof(output_pins); ++i)
         pin_setup_output(output_pins[i]);
 
-        // all power pins are reverse polarity
 #ifndef PWR_PIN_PULLUP
     jd_power_enable(0);
 #endif

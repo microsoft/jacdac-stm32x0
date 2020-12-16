@@ -1,10 +1,5 @@
 #define PIN_LED PA_1
 #define PIN_LED_GND PA_0
-#define PIN_LED2 -1
-#define PIN_LOG0 -1 // sig_write
-#define PIN_LOG1 -1
-#define PIN_LOG2 -1 // sig error
-#define PIN_LOG3 -1
 
 #define PIN_PWR -1
 #define PIN_P0 PF_0
