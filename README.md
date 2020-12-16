@@ -68,6 +68,10 @@ Other than the building/deployment targets, the following might be of note:
 * run `make`; this will update the number after `FIRMWARE_IDENTIFIER` - it's a hash of your module name
 * make sure to never rename your device, as that will break future firmware updates
 
+## Adding new services
+
+This topic is [covered in jacdac-c](https://github.com/microsoft/jacdac-c#adding-new-services).
+
 ## TODO
 
 * [ ] consider thermal shutdown at 50C or so (assuming it's because of heat of some other component)
