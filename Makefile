@@ -31,7 +31,7 @@ CFLAGS = $(DEFINES) \
 	-Os -g3 \
 	-Wall -Wextra -Wno-unused-parameter -Wstrict-prototypes -Werror \
 	-Wno-error=unused-function \
-	-ffunction-sections -fdata-sections -nostartfiles \
+	-ffunction-sections -nostartfiles \
 	$(WARNFLAGS) $(USERFLAGS)
 CONFIG_DEPS = \
 	$(wildcard jacdac-c/inc/*.h) \
