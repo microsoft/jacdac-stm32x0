@@ -48,10 +48,10 @@ function fnv1a(data) {
 }
 
 w0 = buf.readUInt32LE(pos)
-if ((w0 & 0xff00_0000) == 0x2000_0000) {
+if ((w0 & 0xff000000) == 0x20000000) {
     log("app mode")
 
-    const flashBase = 0x800_0000
+    const flashBase = 0x08000000
 
     const basename = fn.replace(/\.elf$/, "")
 
