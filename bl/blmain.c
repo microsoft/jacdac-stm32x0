@@ -41,9 +41,9 @@ uint32_t random(ctx_t *ctx) {
 }
 
 static const uint32_t announce_data[] = {
-    8 | (JD_SERVICE_NUMBER_CTRL << 8) | (JD_CMD_ANNOUNCE << 16), //
-    JD_SERVICE_CLASS_CTRL,                                                 //
-    JD_SERVICE_CLASS_BOOTLOADER                                            //
+    8 | (JD_SERVICE_NUMBER_CONTROL << 8) | (JD_CMD_ANNOUNCE << 16), //
+    JD_SERVICE_CLASS_CONTROL,                                       //
+    JD_SERVICE_CLASS_BOOTLOADER                                     //
 };
 
 uint32_t bl_adc_random_seed(void);
@@ -67,7 +67,8 @@ int main(void) {
     ctx->randomseed = r0;
 
     if ((bl_dev_info.device_id0 + 1) == 0) {
-        if (app_dev_info.magic == DEV_INFO_MAGIC && app_dev_info.device_id0 && (app_dev_info.device_id0 + 1)) {
+        if (app_dev_info.magic == DEV_INFO_MAGIC && app_dev_info.device_id0 &&
+            (app_dev_info.device_id0 + 1)) {
             BL_DEVICE_ID = app_dev_info.device_id;
         } else {
             uint32_t r1 = bl_adc_random_seed();

@@ -17,7 +17,7 @@ static bool valid_frame(ctx_t *ctx, jd_frame_t *frame) {
         return true;
 
     if (pkt->flags & JD_FRAME_FLAG_IDENTIFIER_IS_SERVICE_CLASS) {
-        if (pkt->device_identifier == JD_SERVICE_CLASS_CTRL) {
+        if (pkt->device_identifier == JD_SERVICE_CLASS_CONTROL) {
             pkt->service_number = 0;
             return true;
         }
@@ -45,12 +45,12 @@ static void ctrl_handle_packet(ctx_t *ctx, jd_packet_t *pkt) {
     case JD_CMD_ANNOUNCE:
         ctx->next_announce = ctx->now;
         break;
-    case JD_CTRL_CMD_IDENTIFY:
+    case JD_CONTROL_CMD_IDENTIFY:
         ctx->id_counter = 7;
         ctx->next_id_blink = ctx->now;
         identify(ctx);
         break;
-    case JD_CTRL_CMD_RESET:
+    case JD_CONTROL_CMD_RESET:
         target_reset();
         break;
     }
