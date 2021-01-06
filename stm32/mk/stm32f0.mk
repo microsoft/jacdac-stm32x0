@@ -50,7 +50,8 @@ $(BUILT)/linker.ld: $(wildcard stm32/mk/*.mk) Makefile
 	echo "MEMORY {" >> $@
 	echo "RAM (rwx)   : ORIGIN = 0x20000000, LENGTH = $(RAM_SIZE)K" >> $@
 ifeq ($(BL),)
-	echo "FLASH (rx)  : ORIGIN = 0x8000000, LENGTH = $(LD_FLASH_SIZE)K - $(BL_SIZE)K" >> $@
+# The -12 bytes is required by the flashing process, at least with BMP
+	echo "FLASH (rx)  : ORIGIN = 0x8000000, LENGTH = $(LD_FLASH_SIZE)K - $(BL_SIZE)K - 12" >> $@
 	echo "}" >> $@
 	echo "INCLUDE ld/gcc_arm.ld" >> $@
 else
