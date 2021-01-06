@@ -31,10 +31,6 @@
 #define UART_PIN PA_2
 // #define UART_PIN PA_9
 
-// These pins will be setup as output and set HIGH upon startup (of both bootloader and firmware).
-// It's best not to rely on this.
-// #define OUTPUT_PINS PA_6, PA_5
-
 // Enable JACDAC Logger (console) service for debugging.
 // #define JD_CONSOLE 1
 

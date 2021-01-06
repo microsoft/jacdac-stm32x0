@@ -10,14 +10,9 @@ static void start_app(void) {
 
 ctx_t ctx_;
 
-static const uint8_t output_pins[] = {OUTPUT_PINS};
-
 void led_init(void) {
-    for (unsigned i = 0; i < sizeof(output_pins); ++i) {
-        pin_setup_output(output_pins[i]);
-        // all power pins are reverse polarity; we don't care much for others
-        pin_set(output_pins[i], 1);
-    }
+    pin_setup_output(PIN_LED);
+    pin_setup_output(PIN_LED_GND);
     pin_set(PIN_LED_GND, 0);
 }
 

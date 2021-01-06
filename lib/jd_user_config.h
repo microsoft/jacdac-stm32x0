@@ -43,8 +43,4 @@
 #define PIN_PWR -1
 #endif
 
-#ifndef OUTPUT_PINS
-#define OUTPUT_PINS PIN_LED, PIN_LED_GND
-#endif
-
 #endif
