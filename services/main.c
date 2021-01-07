@@ -163,15 +163,7 @@ static void led_panic_blink(void) {
 void hw_panic(void) {
     DMESG("PANIC!");
     target_disable_irq();
-    while (1) {
-        led_panic_blink();
-    }
-}
-
-void fail_and_reset(void) {
-    DMESG("FAIL!");
-    target_disable_irq();
-    for (int i = 0; i < 10; ++i) {
+    for (int i = 0; i < 30; ++i) {
         led_panic_blink();
     }
     target_reset();

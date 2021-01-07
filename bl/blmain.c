@@ -139,11 +139,3 @@ void jd_panic(void) {
         led_panic_blink();
     }
 }
-
-void fail_and_reset(void) {
-    DMESG("FAIL!");
-    for (int i = 0; i < 10; ++i) {
-        led_panic_blink();
-    }
-    target_reset();
-}

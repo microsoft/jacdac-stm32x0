@@ -13,7 +13,6 @@
 void tim_init(void);
 uint64_t tim_get_micros(void);
 void tim_set_timer(int delta, cb_t cb);
-void fail_and_reset(void);
 
 #include "tinyhw.h"
 #include "dmesg.h"
