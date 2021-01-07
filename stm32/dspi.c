@@ -345,7 +345,7 @@ static void init_lookup(void) {
 
 // this is only enabled for error events
 void IRQHandler(void) {
-    DMESG("SPI handler!");
+    ERROR("SPI");
 }
 
 void DMA_Handler(void) {

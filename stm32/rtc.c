@@ -211,7 +211,7 @@ void rtc_init() {
 
     int tmp = US_TO_TICKS(RTC_SECOND_IN_US);
     uint32_t h_ms = US_TO_TICKS(100000);
-    DMESG("rtc: 100ms = %d ticks; ctx->presc=%d", h_ms, tmp);
+    DMESG("rtc: 100ms=%d ticks; presc=%d", h_ms, tmp);
     // we're expecting around 4000, but there's large drift possible
     if (!(3000 <= h_ms && h_ms <= 5000))
         jd_panic();

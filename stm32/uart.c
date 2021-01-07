@@ -75,10 +75,10 @@ void DMA_Handler(void) {
         uart_disable();
         if (isr & DMA_ISR_TCIF5) {
             // overrun?
-            DMESG("USARTx RX OK, but how?!");
+            // DMESG("USARTx RX OK, but how?!");
             jd_rx_completed(-1);
         } else {
-            DMESG("USARTx RX Error");
+            // DMESG("USARTx RX Error");
             jd_rx_completed(-2);
         }
     }
@@ -105,7 +105,7 @@ void DMA_Handler(void) {
                 ;
 #endif
         } else {
-            DMESG("USARTx TX Error");
+            ERROR("TX err");
             errCode = -1;
         }
 
