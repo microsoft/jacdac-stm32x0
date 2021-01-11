@@ -109,6 +109,7 @@ LDFLAGS = -specs=nosys.specs -specs=nano.specs \
 	-T"$(LD_SCRIPT)" -Wl,--gc-sections
 
 all: refresh-version
+	$(V)node scripts/check-fw-id.js targets
 	$(MAKE) $(MAKE_FLAGS) build
 ifeq ($(BL),)
 	$(MAKE) $(MAKE_FLAGS) BL=1 build
@@ -117,13 +118,6 @@ ifeq ($(BL),)
 	$(MAKE) combine
 endif
 	$(V)$(PREFIX)size $(BUILT_BIN)/*.elf
-
-# $(JD_CORE)/jdlow.c:
-# 	if test -f ../pxt-common-packages/libs/jacdac/jdlow.c ; then \
-# 		ln -s ../pxt-common-packages/libs/jacdac jacdac-core; \
-# 	else \
-# 		ln -s pxt-common-packages/libs/jacdac jacdac-core; \
-# 	fi
 
 r: run
 l: flash-loop

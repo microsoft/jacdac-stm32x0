@@ -64,8 +64,8 @@ Other than the building/deployment targets, the following might be of note:
 * if you have several modules with non-conflicting `board.h` definitions,
   you can create more files under `targets/acme-corp/profile/`
 * edit `Makefile.user` to set `TRG`, eg. `TRG = acme-corp servo`
-* run `make`; this will update the number after `FIRMWARE_IDENTIFIER` - it's a hash of your module name
-* make sure to never rename your device, as that will break future firmware updates
+* run `make`; this will generate a new unique identifier and place as an argument of `FIRMWARE_IDENTIFIER` macro
+* make sure to never change the firmware identifier number, as that will break future firmware updates
 
 ## Adding new services
 

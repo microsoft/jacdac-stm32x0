@@ -55,6 +55,9 @@ if ((w0 & 0xff000000) == 0x20000000) {
 
     const basename = fn.replace(/\.elf$/, "")
 
+    if (profiles_path.indexOf("\\_") > 0 || profiles_path.indexOf("/_") > 0)
+        throw "folder names cannot start with _"
+
     // figure out device class
     const profile_name = basename.replace(/.*\/app-/, "")
     const profile_fn = profiles_path + "/" + profile_name + ".c"
@@ -64,15 +67,6 @@ if ((w0 & 0xff000000) == 0x20000000) {
         throw "FIRMWARE_IDENTIFIER(0x3..., \"...\") missing"
     let dev_class = parseInt(m[1])
     const dev_class_name = m[2]
-    const computed_class = ((fnv1a(dev_class_name) << 4) >>> 4) | 0x30000000
-    if (computed_class != dev_class) {
-        const trg = "0x" + computed_class.toString(16)
-        const src2 = src.replace(m[1], trg)
-        if (src == src2) throw "whoops"
-        fs.writeFileSync(profile_fn, src2)
-        console.log(`Patching ${profile_fn}: dev_class ${m[1]} -> ${trg}`)
-        dev_class = computed_class
-    }
     log(`device class: 0x${dev_class.toString(16)} "${dev_class_name}"`)
 
     const reset = buf.readUInt32LE(pos + 4)
@@ -94,7 +88,7 @@ if ((w0 & 0xff000000) == 0x20000000) {
     const fw_version = vm[1]
 
     fs.writeFileSync(fn + ".json", JSON.stringify({
-        "0xc8a729": computed_class,
+        "0xc8a729": dev_class,
         "0x0be9f7": 1024,
         "0x650d9d": dev_class_name,
         "0x9fc7bc": fw_version
