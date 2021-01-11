@@ -37,7 +37,7 @@ CONFIG_DEPS = \
 	$(wildcard jacdac-c/inc/*.h) \
 	$(wildcard jacdac-c/inc/interfaces/*.h) \
 	$(wildcard jacdac-c/services/interfaces/*.h) \
-	$(wildcard lib/*.h) \
+	$(wildcard src/*.h) \
 	$(wildcard bl/*.h) \
 	$(wildcard $(PLATFORM)/*.h) \
 	$(wildcard $(JD_CORE)/*.h) \
@@ -62,7 +62,6 @@ DEFINES += -DDEVICE_DMESG_BUFFER_SIZE=1024
 C_SRC += $(wildcard jacdac-c/source/*.c)
 C_SRC += $(wildcard jacdac-c/services/*.c)
 C_SRC += $(wildcard jacdac-c/drivers/*.c)
-C_SRC += $(wildcard services/main.c)
 C_SRC += $(wildcard jacdac-c/source/interfaces/simple_alloc.c)
 C_SRC += $(wildcard jacdac-c/source/interfaces/sensor.c)
 C_SRC += $(wildcard jacdac-c/source/interfaces/simple_rx.c)
@@ -70,7 +69,7 @@ C_SRC += $(wildcard jacdac-c/source/interfaces/event_queue.c)
 ifeq ($(BRIDGEQ),)
 C_SRC += $(wildcard jacdac-c/source/interfaces/tx_queue.c)
 endif
-C_SRC += $(wildcard lib/*.c)
+C_SRC += $(wildcard src/*.c)
 C_SRC += $(wildcard $(PLATFORM)/*.c)
 C_SRC += $(HALSRC)
 else
@@ -81,7 +80,7 @@ C_SRC += $(PLATFORM)/pins.c
 C_SRC += $(PLATFORM)/init.c
 C_SRC += $(PLATFORM)/flash.c
 C_SRC += $(PLATFORM)/adc.c
-C_SRC += lib/dmesg.c
+C_SRC += src/dmesg.c
 C_SRC += $(JD_CORE)/source/jd_util.c
 AS_SRC += bl/boothandler.s
 endif
@@ -103,8 +102,7 @@ CPPFLAGS += \
 	-Itargets/$(BASE_TARGET) \
 	-I$(PLATFORM) \
 	-Ijacdac-c/inc \
-	-Iservices \
-	-Ilib \
+	-Isrc \
 	-I$(JD_CORE) \
 	-I$(BUILT)
 
@@ -175,7 +173,7 @@ $(BUILT)/%.o: %.c
 
 $(wildcard $(BUILT)/bl/*.o): $(CONFIG_DEPS)
 $(wildcard $(BUILT)/jd/*.o): $(CONFIG_DEPS)
-$(wildcard $(BUILT)/lib/*.o): $(CONFIG_DEPS)
+$(wildcard $(BUILT)/src/*.o): $(CONFIG_DEPS)
 $(wildcard $(BUILT)/$(PLATFORM)/*.o): $(CONFIG_DEPS)
 $(wildcard $(BUILT)/$(JD_CORE)/*.o): $(CONFIG_DEPS)
 
