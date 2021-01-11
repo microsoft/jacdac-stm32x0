@@ -1,5 +1,7 @@
 #include "jdstm.h"
 
+#include "services/interfaces/jd_pixel.h"
+
 #define CHUNK_LEN 3 * 4 * 2
 #define PX_SCRATCH_LEN (6 * CHUNK_LEN) // 144 bytes
 
@@ -309,11 +311,6 @@ static void px_dma(void) {
 }
 
 void px_tx(const void *data, uint32_t numbytes, uint8_t intensity, cb_t doneHandler) {
-    if (px_state.pxscratch == NULL) {
-        px_state.pxscratch = jd_alloc(PX_SCRATCH_LEN);
-        dma_handler = px_dma;
-    }
-
     px_state.pxdata = data;
     px_state.pxdata_len = numbytes;
     px_state.pxdata_ptr = 0;
@@ -362,6 +359,13 @@ void DMA_Handler(void) {
 // 0 - 0.40us hi 0.85us low
 // 1 - 0.80us hi 0.45us low
 
+void px_alloc() {
+    if (px_state.pxscratch == NULL) {
+        px_state.pxscratch = jd_alloc(PX_SCRATCH_LEN);
+        dma_handler = px_dma;
+    }
+}
+
 void px_init(int light_type) {
     SPI_CLK_ENABLE();
     __HAL_RCC_DMA1_CLK_ENABLE();
@@ -408,6 +412,7 @@ void px_init(int light_type) {
     NVIC_EnableIRQ(IRQn);
 
     init_lookup();
+    px_alloc();
 }
 
 #endif

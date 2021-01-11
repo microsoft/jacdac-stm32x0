@@ -6,6 +6,10 @@
 
 #define NOLOG(...) ((void)0)
 
+#ifndef DEVICE_DMESG_BUFFER_SIZE
+#define DEVICE_DMESG_BUFFER_SIZE 1024
+#endif
+
 #if DEVICE_DMESG_BUFFER_SIZE > 0
 
 #if DEVICE_DMESG_BUFFER_SIZE < 256

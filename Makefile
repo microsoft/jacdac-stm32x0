@@ -58,7 +58,6 @@ BASE_TARGET ?= $(TARGET)
 PROFILES = $(patsubst targets/$(TARGET)/profile/%.c,%,$(wildcard targets/$(TARGET)/profile/*.c))
 
 ifeq ($(BL),)
-DEFINES += -DDEVICE_DMESG_BUFFER_SIZE=1024
 C_SRC += $(wildcard jacdac-c/source/*.c)
 C_SRC += $(wildcard jacdac-c/services/*.c)
 C_SRC += $(wildcard jacdac-c/drivers/*.c)

@@ -4,9 +4,9 @@
 #include <string.h>
 #include <stdbool.h>
 
+#include "jd_services.h"
 #include "dmesg.h"
 #include "pinnames.h"
-#include "jd_services.h"
 #include "interfaces/jd_app.h"
 #include "blhw.h"
 

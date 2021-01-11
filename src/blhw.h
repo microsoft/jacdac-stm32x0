@@ -1,10 +1,10 @@
 #pragma once
 
+#include "jd_config.h"
 #include <stdint.h>
 #include <stdbool.h>
 #include "hwconfig.h"
 #include "services/interfaces/jd_pins.h"
-#include "jd_config.h"
 
 #define RAM_FUNC __attribute__((noinline, long_call, section(".data")))
 

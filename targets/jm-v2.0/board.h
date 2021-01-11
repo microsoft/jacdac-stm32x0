@@ -11,3 +11,7 @@
 #define USART_IDX 1
 
 #define SND_OFF 0
+
+#ifndef BL
+#define DEVICE_DMESG_BUFFER_SIZE 832
+#endif

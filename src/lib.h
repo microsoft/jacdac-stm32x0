@@ -3,10 +3,12 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <string.h>
+
+#include "jd_protocol.h"
+
 #include "dmesg.h"
 #include "pinnames.h"
 
-#include "jd_protocol.h"
 #include "services/interfaces/jd_oled.h"
 #include "services/interfaces/jd_hw_pwr.h"
 
