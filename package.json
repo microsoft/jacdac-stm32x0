@@ -1,6 +1,6 @@
 {
   "name": "jacdac-stm32x0",
-  "version": "0.8.0",
+  "version": "0.8.1",
   "description": "JACDAC firmware for STM32x0",
   "private": true,
   "directories": {
