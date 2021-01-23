@@ -11,12 +11,12 @@ This update process can be performed by the user from the [JACDAC website](https
 
 ## Building
 
-You will need a Unix-like environment to build the firmware.
-On Windows, you can use Windows Subsystem for Linux or mingw32.
+You will need a Unix-like environment to build the firmware (see below for instructions on how to get that on Windows).
 
-* install `arm-none-eabi-gcc` (we've been using `9-2019-q4-major`) - please note that `gcc-arm-none-eabi` is **untested** 
+* install `arm-none-eabi-gcc` (we've been using `9-2019-q4-major`);
+  please note that `gcc-arm-none-eabi` that comes with Ubuntu won't work
 * install `openocd` (optional when using Black Magic Probe)
-* install node.js (some linux distros have old versions of Node; get at least 14.5.2. from https://github.com/nodesource/distributions/blob/master/README.md) 
+* install node.js (some linux distros have old versions of Node; get at least 14.5.2 from https://github.com/nodesource/distributions/blob/master/README.md) 
 * install GNU Make
 * run `make`; you should get a successful build
 
@@ -40,6 +40,50 @@ Aliases:
 * `make r` for `make run`
 * `make l` for `make flash-loop`
 * `make ff` for `make full-flash`
+
+## Building on Windows
+
+You will need a Unix-like environment to build the firmware.
+Luckily, you most likely already have one - it comes with Git for Windows.
+If you do not have [Git for Windows](https://git-scm.com/download/win) yet, install it.
+Then you will need to install GNU Make:
+
+* download GNU Make (without guile) from https://sourceforge.net/projects/ezwinports/files/
+* open Administrator command prompt
+* run `cd "\Program Files\Git\usr"`
+* run `bin\unzip.exe c:\Users\<you>\Downloads\make-4.3-without-guile-w32-bin.zip` replacing `<you>` with your user name
+
+Head to Start -> Git Bash. When you type `make` you should now see
+`make: *** No targets specified and no makefile found.  Stop.`.
+
+Now install [GNU Arm Embedded Toolchain](https://developer.arm.com/tools-and-software/open-source-software/developer-tools/gnu-toolchain/gnu-rm/downloads)
+version `9-2019-q4-major` (do not use other versions for now).
+Get the `.exe` installer, and agree to adding the tools to your `PATH` variable.
+
+You will also need to [install node.js](https://nodejs.org/en/download/) - take the Windows `.msi` 64 bit installer.
+
+If you run Git Bash again (it has to be restart to see change in `PATH`), and type 
+`arm-none-eabi-gcc --version` you should see something about `9-2019-q4-major`,
+and if you type `node --version` you should get its version number.
+
+If using Black Magic Probe, connect it to your computer.
+You should see two COM ports that correspond to it in Device Manager (for example `COM3` and `COM4`)
+You will want to use the lower numbered one (for example `COM3`).
+
+If using stlink or cmsis/dap, you'll need to install openocd (this currently doesn't work):
+
+* get [7-Zip decompressor](https://www.7-zip.org/)
+* get openocd `.7z` archive [from GNU Toolchains](https://gnutoolchains.com/arm-eabi/openocd/)
+* extract `bin` subfolder of that archive to `C:\Program Files\Git\usr\bin`,
+  `share` to  `C:\Program Files\Git\usr\share` etc.
+
+If you want to extract somewhere else, make sure to add the `bin` somefolder to `PATH`.
+
+Now, follow the usual build instructions above.
+
+Note: using WSL2 instead of the bash shell etc coming with Git 
+is not recommended since it cannot access USB for deployment and debugging.
+
 
 ### Notable make targets
 
