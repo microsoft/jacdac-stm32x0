@@ -58,7 +58,8 @@ Head to Start -> Git Bash. When you type `make` you should now see
 
 Now install [GNU Arm Embedded Toolchain](https://developer.arm.com/tools-and-software/open-source-software/developer-tools/gnu-toolchain/gnu-rm/downloads)
 version `9-2019-q4-major` (do not use other versions for now).
-Get the `.exe` installer, and agree to adding the tools to your `PATH` variable.
+Get the `.exe` installer, and agree to adding the tools to your `PATH` variable. If the installer fails to add to `PATH`, then manual do so yourself, adding:
+* "C:\Program Files (x86)\GNU Tools Arm Embedded\9 2019-q4-major\bin"
 
 You will also need to [install node.js](https://nodejs.org/en/download/) - take the Windows `.msi` 64 bit installer.
 
