@@ -15,3 +15,6 @@
 #ifndef BL
 #define DEVICE_DMESG_BUFFER_SIZE 832
 #endif
+
+// we don't actually use it, but let's just make sure it's built somewhere
+#define ACC_QMA7981
