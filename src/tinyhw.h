@@ -2,7 +2,7 @@
 
 #include "blhw.h"
 #include "services/interfaces/jd_adc.h"
-#include "jacdac/dist/c/light.h"
+#include "jacdac/dist/c/ledpixel.h"
 
 #ifndef RTC_SECOND_IN_US
 // use a little more than 10ms, so we don't have issues with wrap around

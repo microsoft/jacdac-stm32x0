@@ -29,7 +29,7 @@ WARNFLAGS = -Wall -Wno-strict-aliasing
 CFLAGS = $(DEFINES) \
 	-mthumb -mfloat-abi=soft  \
 	-Os -g3 \
-	-Wall -Wextra -Wno-unused-parameter -Wstrict-prototypes -Werror \
+	-Wall -Wextra -Wno-unused-parameter -Wno-shift-negative-value -Wstrict-prototypes -Werror \
 	-Wno-error=unused-function \
 	-ffunction-sections -nostartfiles \
 	$(WARNFLAGS) $(USERFLAGS)
