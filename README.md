@@ -104,7 +104,8 @@ Other than the building/deployment targets, the following might be of note:
 * you likely do not need to edit [targets/acme-corp/config.mk](targets/_example/config.mk), even if using
   a beefier MCU from the F03x family - they should be backward-compatible
 * edit [targets/acme-corp/profile/module.c](targets/_example/profile/module.c) 
-  to include your module name and used services (follow comments in `module.c`)
+  to include your module name and used services (follow comments in `module.c`);
+  see [jd_service_initializers.h](jacdac-c/services/interfaces/jd_service_initializers.h) for list of services
 * rename `module.c` to match the type of module (eg. `servo.c`)
 * if you have several modules with non-conflicting `board.h` definitions,
   you can create more files under `targets/acme-corp/profile/`

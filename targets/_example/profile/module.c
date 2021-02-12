@@ -5,8 +5,16 @@
 // Do not change the 0x3.... value, as that would break the firmware update process.
 FIRMWARE_IDENTIFIER(0x0, "Example Corp. Servo Rev.A");
 
+const servo_params_t servo_params = {
+    .pin = PA_7,
+    .min_angle = -90 << 16, // -90.000deg
+    .min_pulse = 500,       // 500us
+    .max_angle = 90 << 16,  // +90.000deg
+    .max_pulse = 2500,      // 2500us
+};
+
 void app_init_services() {
-    // see jacdac-c/services/interfaces/jd_service_initializers.h for the services that can be enabled here
-    // you can enable zero or more services
-    servo_init(PA_7);
+    // see jacdac-c/services/interfaces/jd_service_initializers.h for the services that can be
+    // enabled here you can enable zero or more services
+    servo_init(&servo_params);
 }
