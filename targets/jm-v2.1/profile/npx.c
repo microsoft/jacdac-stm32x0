@@ -9,5 +9,5 @@ void app_init_services() {
     pin_set(PF_1, 0); // enable JD power
 #endif
     // The sense lines are not connected on this hw revision, so we just skip the actual power service.
-    light_init(JD_LED_PIXEL_LIGHT_TYPE_WS2812B_GRB, 15, 200);
+    ledpixel_init(JD_LED_PIXEL_LIGHT_TYPE_WS2812B_GRB, 15, 200);
 }

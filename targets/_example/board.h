@@ -53,8 +53,8 @@
 // #define SPI_RX 1
 
 // Set to 1, if buzzer is off, when buzzer pin set high. Set to 0 otherwise.
-// Best use pin PA_10 or PA_4 for sound (in snd_init()).
-// #define SND_OFF 1
+// Best use pin PA_10 or PA_4 for sound (in buzzer_init()).
+// #define BUZZER_OFF 1
 
 // Temperature (and humidity) sensor type.
 // #define TEMP_TH02 1
