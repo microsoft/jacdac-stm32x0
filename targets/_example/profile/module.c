@@ -7,6 +7,8 @@ FIRMWARE_IDENTIFIER(0x0, "Example Corp. Servo Rev.A");
 
 const servo_params_t servo_params = {
     .pin = PA_7,
+    .fixed = 0, // just a controller, can modify min/max
+    .variant = 1, // JD_SERVO_VARIANT_POSITIONAL_ROTATION
     .min_angle = -90 << 16, // -90.000deg
     .min_pulse = 500,       // 500us
     .max_angle = 90 << 16,  // +90.000deg

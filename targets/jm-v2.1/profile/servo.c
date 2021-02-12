@@ -4,6 +4,8 @@ FIRMWARE_IDENTIFIER(0x3ac74e57, "JM PWM+SERVO v2.1");
 
 const servo_params_t servo_params = {
     .pin = PA_7,
+    .fixed = 0,
+    .variant = 1, // JD_SERVO_VARIANT_POSITIONAL_ROTATION
     .min_angle = -90 << 16,
     .min_pulse = 500,
     .max_angle = 90 << 16,
