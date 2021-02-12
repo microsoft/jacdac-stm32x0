@@ -99,7 +99,7 @@ Other than the building/deployment targets, the following might be of note:
 ## Adding new modules
 
 * fork this repo
-* copy `targets/_example/` to `targets/acme-corp/`
+* copy `targets/_example/` to `targets/acme-corp/` (replaceing `acme-corp` with the name of the series of modules)
 * edit [targets/acme-corp/board.h](targets/_example/board.h) to match your module
 * you likely do not need to edit [targets/acme-corp/config.mk](targets/_example/config.mk), even if using
   a beefier MCU from the F03x family - they should be backward-compatible
@@ -109,7 +109,8 @@ Other than the building/deployment targets, the following might be of note:
   for list of services
 * rename `module.c` to match the type of module (eg. `servo.c`)
 * if you have several modules with non-conflicting `board.h` definitions,
-  you can create more files under `targets/acme-corp/profile/`
+  you can create more files under `targets/acme-corp/profile/`;
+  otherwise you'll need to create `targets/acme-corp-2` or something similar
 * edit `Makefile.user` to set `TRG`, eg. `TRG = acme-corp servo`
 * run `make`; this will generate a new unique identifier and place as an argument of `FIRMWARE_IDENTIFIER` macro
 * make sure to never change the firmware identifier number, as that will break future firmware updates
@@ -117,10 +118,6 @@ Other than the building/deployment targets, the following might be of note:
 ## Adding new services
 
 This topic is [covered in jacdac-c](https://github.com/microsoft/jacdac-c#adding-new-services).
-
-## TODO
-
-* [ ] consider thermal shutdown at 50C or so (assuming it's because of heat of some other component)
 
 ## Release process
 
