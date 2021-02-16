@@ -58,3 +58,7 @@
 
 // Temperature (and humidity) sensor type.
 // #define TEMP_TH02 1
+
+// Default is I2C_FAST_MODE=1 - 400kHz mode
+// Set to 0 to enable 100kHz mode
+// #define I2C_FAST_MODE 0

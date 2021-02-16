@@ -43,7 +43,12 @@ void i2c_init(void) {
     LL_I2C_Enable(I2Cx);
 }
 
+#ifdef STM32F0
 #define CYCLES_PER_MS (77 * cpu_mhz)
+#else
+#error "measure CYCLES_PER_MS"
+#endif
+
 static int wait_for_ack(void) {
     unsigned k = 10 * CYCLES_PER_MS;
     while (k--) {
@@ -53,51 +58,35 @@ static int wait_for_ack(void) {
     return -1;
 }
 
-int i2c_write_reg_buf(uint8_t addr, uint8_t reg, const void *src, unsigned len) {
+int i2c_setup_write(uint8_t addr, unsigned len, bool repeated) {
     addr <<= 1;
-    LL_I2C_HandleTransfer(I2Cx, addr, LL_I2C_ADDRSLAVE_7BIT, len + 1, LL_I2C_MODE_AUTOEND,
+    LL_I2C_HandleTransfer(I2Cx, addr, LL_I2C_ADDRSLAVE_7BIT, len,
+                          repeated ? LL_I2C_MODE_SOFTEND : LL_I2C_MODE_AUTOEND,
                           LL_I2C_GENERATE_START_WRITE);
 
-    if (wait_for_ack() != 0)
-        return -1;
-
-    const uint8_t *p = src - 1;
-    const uint8_t *end = (const uint8_t *)src + len;
-    while (p < end) {
-        if (LL_I2C_IsActiveFlag_TXIS(I2Cx)) {
-            LL_I2C_TransmitData8(I2Cx, p == src - 1 ? reg : *p);
-            p++;
-        }
-    }
-
-    while (!LL_I2C_IsActiveFlag_STOP(I2Cx))
-        ;
-
-    LL_I2C_ClearFlag_STOP(I2Cx);
-
-    return 0;
+    return wait_for_ack();
 }
 
-int i2c_write_buf(uint8_t addr, const void *src, unsigned len) {
-    const uint8_t *p = src;
-    return i2c_write_reg_buf(addr, *p, p + 1, len - 1);
+void i2c_write(uint8_t c) {
+    while (!LL_I2C_IsActiveFlag_TXIS(I2Cx))
+        ;
+    LL_I2C_TransmitData8(I2Cx, c);
+}
+
+void i2c_finish_write(bool repeated) {
+    if (repeated) {
+        while (!LL_I2C_IsActiveFlag_TC(I2Cx))
+            ;
+    } else {
+        while (!LL_I2C_IsActiveFlag_STOP(I2Cx))
+            ;
+        LL_I2C_ClearFlag_STOP(I2Cx);
+    }
 }
 
 #define MAXREP 10000
 
-int i2c_read_buf(uint8_t addr, uint8_t reg, void *dst, unsigned len) {
-    addr <<= 1;
-    LL_I2C_HandleTransfer(I2Cx, addr, LL_I2C_ADDRSLAVE_7BIT, 1, LL_I2C_MODE_SOFTEND,
-                          LL_I2C_GENERATE_START_WRITE);
-
-    if (wait_for_ack() != 0)
-        return -1;
-
-    LL_I2C_TransmitData8(I2Cx, reg);
-
-    while (!LL_I2C_IsActiveFlag_TC(I2Cx))
-        ;
-
+int i2c_read_ex(uint8_t addr, void *dst, unsigned len) {
     LL_I2C_HandleTransfer(I2Cx, addr, LL_I2C_ADDRSLAVE_7BIT, len, LL_I2C_MODE_AUTOEND,
                           LL_I2C_GENERATE_RESTART_7BIT_READ);
     uint8_t *p = dst;
@@ -121,15 +110,78 @@ int i2c_read_buf(uint8_t addr, uint8_t reg, void *dst, unsigned len) {
     return 0;
 }
 
-int i2c_read_reg(uint8_t addr, uint8_t reg) {
-    uint8_t r = 0;
-    if (i2c_read_buf(addr, reg, &r, 1))
-        return -1;
-    return r;
+//
+// platform-independent code starts
+//
+
+#define CHECK_RET(call)                                                                                \
+    do {                                                                                           \
+        int _r = call;                                                                             \
+        if (_r < 0)                                                                                \
+            return _r;                                                                             \
+    } while (0)
+
+int i2c_write_ex(uint8_t addr, const void *src, unsigned len, bool repeated) {
+    CHECK_RET(i2c_setup_write(addr, len, repeated));
+    const uint8_t *p = src;
+    while (len--)
+        i2c_write(*p++);
+    i2c_finish_write(repeated);
+    return 0;
+}
+
+// 8-bit reg addr
+int i2c_write_reg_buf(uint8_t addr, uint8_t reg, const void *src, unsigned len) {
+    CHECK_RET(i2c_setup_write(addr, len + 1, false));
+    i2c_write(reg);
+    const uint8_t *p = src;
+    while (len--)
+        i2c_write(*p++);
+    i2c_finish_write(false);
+    return 0;
 }
 
 int i2c_write_reg(uint8_t addr, uint8_t reg, uint8_t val) {
     return i2c_write_reg_buf(addr, reg, &val, 1);
+}
+
+int i2c_read_reg_buf(uint8_t addr, uint8_t reg, void *dst, unsigned len) {
+    CHECK_RET(i2c_write_ex(addr, &reg, 1, true) < 0);
+    return i2c_read_ex(addr, dst, len);
+}
+
+int i2c_read_reg(uint8_t addr, uint8_t reg) {
+    uint8_t r = 0;
+    CHECK_RET(i2c_read_reg_buf(addr, reg, &r, 1));
+    return r;
+}
+
+// 16-bit reg addr
+int i2c_write_reg16_buf(uint8_t addr, uint16_t reg, const void *src, unsigned len) {
+    CHECK_RET(i2c_setup_write(addr, len + 2, false));
+    i2c_write(reg >> 8);
+    i2c_write(reg & 0xff);
+    const uint8_t *p = src;
+    while (len--)
+        i2c_write(*p++);
+    i2c_finish_write(false);
+    return 0;
+}
+
+int i2c_write_reg16(uint8_t addr, uint16_t reg, uint8_t val) {
+    return i2c_write_reg16_buf(addr, reg, &val, 1);
+}
+
+int i2c_read_reg16_buf(uint8_t addr, uint16_t reg, void *dst, unsigned len) {
+    uint8_t a[] = {reg >> 8, reg & 0xff};
+    CHECK_RET(i2c_write_ex(addr, a, 2, true) < 0);
+    return i2c_read_ex(addr, dst, len);
+}
+
+int i2c_read_reg16(uint8_t addr, uint16_t reg) {
+    uint8_t r = 0;
+    CHECK_RET(i2c_read_reg16_buf(addr, reg, &r, 1));
+    return r;
 }
 
 #endif
