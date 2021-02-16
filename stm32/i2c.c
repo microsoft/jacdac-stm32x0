@@ -64,7 +64,10 @@ int i2c_setup_write(uint8_t addr, unsigned len, bool repeated) {
                           repeated ? LL_I2C_MODE_SOFTEND : LL_I2C_MODE_AUTOEND,
                           LL_I2C_GENERATE_START_WRITE);
 
-    return wait_for_ack();
+    if (wait_for_ack()) {
+        DMESG("nack %x", addr);
+        return -10;
+    }
 }
 
 void i2c_write(uint8_t c) {
@@ -87,6 +90,7 @@ void i2c_finish_write(bool repeated) {
 #define MAXREP 10000
 
 int i2c_read_ex(uint8_t addr, void *dst, unsigned len) {
+    addr <<= 1;
     LL_I2C_HandleTransfer(I2Cx, addr, LL_I2C_ADDRSLAVE_7BIT, len, LL_I2C_MODE_AUTOEND,
                           LL_I2C_GENERATE_RESTART_7BIT_READ);
     uint8_t *p = dst;
@@ -97,8 +101,10 @@ int i2c_read_ex(uint8_t addr, void *dst, unsigned len) {
             if (LL_I2C_IsActiveFlag_RXNE(I2Cx))
                 break;
 
-        if (i >= MAXREP)
+        if (i >= MAXREP) {
+            DMESG("T/o rd");
             return -1;
+        }
 
         *p++ = LL_I2C_ReceiveData8(I2Cx);
     }
@@ -114,7 +120,7 @@ int i2c_read_ex(uint8_t addr, void *dst, unsigned len) {
 // platform-independent code starts
 //
 
-#define CHECK_RET(call)                                                                                \
+#define CHECK_RET(call)                                                                            \
     do {                                                                                           \
         int _r = call;                                                                             \
         if (_r < 0)                                                                                \
