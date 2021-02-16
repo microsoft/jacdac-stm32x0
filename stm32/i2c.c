@@ -68,15 +68,30 @@ int i2c_setup_write(uint8_t addr, unsigned len, bool repeated) {
         DMESG("nack %x", addr);
         return -10;
     }
+
+    return 0;
 }
 
-void i2c_write(uint8_t c) {
-    while (!LL_I2C_IsActiveFlag_TXIS(I2Cx))
-        ;
+int i2c_write(uint8_t c) {
     LL_I2C_TransmitData8(I2Cx, c);
+
+    unsigned k = 3 * CYCLES_PER_MS;
+    while (k--) {
+        if (LL_I2C_IsActiveFlag_TXE(I2Cx)) {
+            if (LL_I2C_IsActiveFlag_NACK(I2Cx)) {
+                DMESG("nack wr:%x", c);
+                return -12;
+            } else {
+                return 0;
+            }
+        }
+    }
+
+    DMESG("t/o wr:%x", c);
+    return -13;
 }
 
-void i2c_finish_write(bool repeated) {
+int i2c_finish_write(bool repeated) {
     if (repeated) {
         while (!LL_I2C_IsActiveFlag_TC(I2Cx))
             ;
@@ -85,6 +100,7 @@ void i2c_finish_write(bool repeated) {
             ;
         LL_I2C_ClearFlag_STOP(I2Cx);
     }
+    return 0;
 }
 
 #define MAXREP 10000
@@ -131,19 +147,19 @@ int i2c_write_ex(uint8_t addr, const void *src, unsigned len, bool repeated) {
     CHECK_RET(i2c_setup_write(addr, len, repeated));
     const uint8_t *p = src;
     while (len--)
-        i2c_write(*p++);
-    i2c_finish_write(repeated);
+        CHECK_RET(i2c_write(*p++));
+    CHECK_RET(i2c_finish_write(repeated));
     return 0;
 }
 
 // 8-bit reg addr
 int i2c_write_reg_buf(uint8_t addr, uint8_t reg, const void *src, unsigned len) {
     CHECK_RET(i2c_setup_write(addr, len + 1, false));
-    i2c_write(reg);
+    CHECK_RET(i2c_write(reg));
     const uint8_t *p = src;
     while (len--)
-        i2c_write(*p++);
-    i2c_finish_write(false);
+        CHECK_RET(i2c_write(*p++));
+    CHECK_RET(i2c_finish_write(false));
     return 0;
 }
 
@@ -165,12 +181,12 @@ int i2c_read_reg(uint8_t addr, uint8_t reg) {
 // 16-bit reg addr
 int i2c_write_reg16_buf(uint8_t addr, uint16_t reg, const void *src, unsigned len) {
     CHECK_RET(i2c_setup_write(addr, len + 2, false));
-    i2c_write(reg >> 8);
-    i2c_write(reg & 0xff);
+    CHECK_RET(i2c_write(reg >> 8));
+    CHECK_RET(i2c_write(reg & 0xff));
     const uint8_t *p = src;
     while (len--)
-        i2c_write(*p++);
-    i2c_finish_write(false);
+        CHECK_RET(i2c_write(*p++));
+    CHECK_RET(i2c_finish_write(false));
     return 0;
 }
 
