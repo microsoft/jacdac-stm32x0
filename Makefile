@@ -169,6 +169,8 @@ $(wildcard $(BUILT)/jd/*.o): $(CONFIG_DEPS)
 $(wildcard $(BUILT)/src/*.o): $(CONFIG_DEPS)
 $(wildcard $(BUILT)/$(PLATFORM)/*.o): $(CONFIG_DEPS)
 $(wildcard $(BUILT)/$(JD_CORE)/*.o): $(CONFIG_DEPS)
+$(wildcard $(BUILT)/$(JD_CORE)/*/*.o): $(CONFIG_DEPS)
+$(wildcard $(BUILT)/$(JD_CORE)/*/*/*.o): $(CONFIG_DEPS)
 
 $(BUILT)/%.o: %.s
 	@mkdir -p $(dir $@)
