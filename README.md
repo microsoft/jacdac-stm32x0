@@ -9,6 +9,14 @@ and a bootloader which allows for updating the firmware using the JACDAC protoco
 This update process can be performed by the user from the [JACDAC website](https://microsoft.github.io/jacdac-ts/tools/updater)
 (while developing firmware you will typically use a debugger to deploy both the bootloader and the firmware).
 
+### Clone this repository and pull all submodules
+
+```
+git clone https://github.com/microsoft/jacdac-stm32x0
+git submodule update --init --recursive
+git pull
+```
+
 ## Building
 
 You will need a Unix-like environment to build the firmware (see below for instructions on how to get that on Windows).
