@@ -5,7 +5,7 @@ CFLAGS += -mcpu=cortex-m0
 #OPENOCD ?= ./scripts/openocd -s ./scripts -f cmsis-dap.cfg -f stm32f0x.cfg
 OPENOCD ?= openocd -f interface/cmsis-dap.cfg -f target/stm32f0x.cfg
 
-HALPREF = stm32/stm32f0xx_hal_driver/Src
+HALPREF = $(PLATFORM)/stm32f0xx_hal_driver/Src
 HALSRC =  \
 $(HALPREF)/stm32f0xx_ll_adc.c \
 $(HALPREF)/stm32f0xx_ll_comp.c \
@@ -26,25 +26,23 @@ $(HALPREF)/stm32f0xx_ll_utils.c \
 
 BMP ?= 1
 
-PLATFORM = stm32
-
 LD_FLASH_SIZE ?= $(FLASH_SIZE)
 
 # TODO move some of this to common stm32.mk
 AS_SRC = $(STARTUP_FILE)
 CPPFLAGS += 	\
-	-Istm32/stm32f0xx_hal_driver/Inc \
-	-Istm32/cmsis_device_f0/Include \
-	-Istm32/cmsis_core/Include
+	-I$(PLATFORM)/stm32f0xx_hal_driver/Inc \
+	-I$(PLATFORM)/cmsis_device_f0/Include \
+	-I$(PLATFORM)/cmsis_core/Include
 DEFINES += -DUSE_FULL_LL_DRIVER -DSTM32$(SERIES)
 DEFINES += -D$(MCU) -DFLASH_SIZE="1024*$(FLASH_SIZE)" -DFLASH_PAGE_SIZE=$(PAGE_SIZE) -DBL_SIZE="1024*$(BL_SIZE)"
 
-include stm32/mk/$(MCU).mk
+include $(PLATFORM)/mk/$(MCU).mk
 
-CONFIG_DEPS += $(wildcard stm32/mk/*.mk)
+CONFIG_DEPS += $(wildcard $(PLATFORM)/mk/*.mk)
 
 LD_SCRIPT = $(BUILT)/linker.ld
-$(BUILT)/linker.ld: $(wildcard stm32/mk/*.mk) Makefile
+$(BUILT)/linker.ld: $(wildcard $(PLATFORM)/mk/*.mk) Makefile
 	mkdir -p $(BUILT)
 	: > $@
 	echo "MEMORY {" >> $@
@@ -53,9 +51,9 @@ ifeq ($(BL),)
 # The -12 bytes is required by the flashing process, at least with BMP
 	echo "FLASH (rx)  : ORIGIN = 0x8000000, LENGTH = $(LD_FLASH_SIZE)K - $(BL_SIZE)K - 12" >> $@
 	echo "}" >> $@
-	echo "INCLUDE ld/gcc_arm.ld" >> $@
+	echo "INCLUDE $(JD_STM)/ld/gcc_arm.ld" >> $@
 else
 	echo "FLASH (rx)  : ORIGIN = 0x8000000 + $(LD_FLASH_SIZE)K - $(BL_SIZE)K, LENGTH = $(BL_SIZE)K" >> $@
 	echo "}" >> $@
-	echo "INCLUDE ld/gcc_arm_bl_at_end.ld" >> $@
+	echo "INCLUDE $(JD_STM)/ld/gcc_arm_bl_at_end.ld" >> $@
 endif
