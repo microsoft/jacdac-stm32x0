@@ -1,11 +1,3 @@
-.SECONDARY: # this prevents object files from being removed
-.DEFAULT_GOAL := all
-
-_IGNORE0 := $(shell test -f Makefile.user || cp sample-Makefile.user Makefile.user)
-_IGNORE1 := $(shell test -f jacdac-c/jacdac/README.md || git submodule update --init --recursive 1>&2)
-
-include Makefile.user
-
 ifneq ($(TRG),)
 TARGET := $(word 1,$(TRG))
 PROF := $(word 2,$(TRG))
@@ -17,7 +9,8 @@ endif
 
 FORCE ?=
 
-JD_CORE = jacdac-c
+SCRIPTS = $(JD_STM)/scripts
+PLATFORM = $(JD_STM)/stm32
 
 PREFIX = arm-none-eabi-
 CC = $(PREFIX)gcc
@@ -34,11 +27,11 @@ CFLAGS = $(DEFINES) \
 	-ffunction-sections -nostartfiles \
 	$(WARNFLAGS) $(USERFLAGS)
 CONFIG_DEPS = \
-	$(wildcard jacdac-c/inc/*.h) \
-	$(wildcard jacdac-c/inc/interfaces/*.h) \
-	$(wildcard jacdac-c/services/interfaces/*.h) \
-	$(wildcard src/*.h) \
-	$(wildcard bl/*.h) \
+	$(wildcard $(JD_CORE)/inc/*.h) \
+	$(wildcard $(JD_CORE)/inc/interfaces/*.h) \
+	$(wildcard $(JD_CORE)/services/interfaces/*.h) \
+	$(wildcard $(JD_STM)/src/*.h) \
+	$(wildcard $(JD_STM)/bl/*.h) \
 	$(wildcard $(PLATFORM)/*.h) \
 	$(wildcard $(JD_CORE)/*.h) \
 	$(wildcard targets/$(TARGET)/*.h) \
@@ -58,30 +51,30 @@ BASE_TARGET ?= $(TARGET)
 PROFILES = $(patsubst targets/$(TARGET)/profile/%.c,%,$(wildcard targets/$(TARGET)/profile/*.c))
 
 ifeq ($(BL),)
-C_SRC += $(wildcard jacdac-c/source/*.c)
-C_SRC += $(wildcard jacdac-c/services/*.c)
-C_SRC += $(wildcard jacdac-c/drivers/*.c)
-C_SRC += $(wildcard jacdac-c/source/interfaces/simple_alloc.c)
-C_SRC += $(wildcard jacdac-c/source/interfaces/sensor.c)
-C_SRC += $(wildcard jacdac-c/source/interfaces/simple_rx.c)
-C_SRC += $(wildcard jacdac-c/source/interfaces/event_queue.c)
+C_SRC += $(wildcard $(JD_CORE)/source/*.c)
+C_SRC += $(wildcard $(JD_CORE)/services/*.c)
+C_SRC += $(wildcard $(JD_CORE)/drivers/*.c)
+C_SRC += $(wildcard $(JD_CORE)/source/interfaces/simple_alloc.c)
+C_SRC += $(wildcard $(JD_CORE)/source/interfaces/sensor.c)
+C_SRC += $(wildcard $(JD_CORE)/source/interfaces/simple_rx.c)
+C_SRC += $(wildcard $(JD_CORE)/source/interfaces/event_queue.c)
 ifeq ($(BRIDGEQ),)
-C_SRC += $(wildcard jacdac-c/source/interfaces/tx_queue.c)
+C_SRC += $(wildcard $(JD_CORE)/source/interfaces/tx_queue.c)
 endif
-C_SRC += $(wildcard src/*.c)
+C_SRC += $(wildcard $(JD_STM)/src/*.c)
 C_SRC += $(wildcard $(PLATFORM)/*.c)
 C_SRC += $(HALSRC)
 else
 DEFINES += -DDEVICE_DMESG_BUFFER_SIZE=0 -DBL
 CPPFLAGS += -Ibl
-C_SRC += $(wildcard bl/*.c)
+C_SRC += $(wildcard $(JD_STM)/bl/*.c)
 C_SRC += $(PLATFORM)/pins.c
 C_SRC += $(PLATFORM)/init.c
 C_SRC += $(PLATFORM)/flash.c
 C_SRC += $(PLATFORM)/adc.c
-C_SRC += src/dmesg.c
+C_SRC += $(JD_STM)/src/dmesg.c
 C_SRC += $(JD_CORE)/source/jd_util.c
-AS_SRC += bl/boothandler.s
+AS_SRC += $(JD_STM)/bl/boothandler.s
 endif
 
 ELF = $(BUILT_BIN)/$(PREF)-$(PROF).elf
@@ -100,8 +93,8 @@ CPPFLAGS += \
 	-Itargets/$(TARGET) \
 	-Itargets/$(BASE_TARGET) \
 	-I$(PLATFORM) \
-	-Ijacdac-c/inc \
-	-Isrc \
+	-I$(JD_CORE)/inc \
+	-I$(JD_STM)/src \
 	-I$(JD_CORE) \
 	-I$(BUILT)
 
@@ -109,7 +102,7 @@ LDFLAGS = -specs=nosys.specs -specs=nano.specs \
 	-T"$(LD_SCRIPT)" -Wl,--gc-sections
 
 all: refresh-version
-	$(V)node scripts/check-fw-id.js targets
+	$(V)node $(SCRIPTS)/check-fw-id.js targets
 	$(MAKE) $(MAKE_FLAGS) build
 ifeq ($(BL),)
 	$(MAKE) $(MAKE_FLAGS) BL=1 build
@@ -149,7 +142,7 @@ flash-loop: all
 prep-built-gdb:
 	echo "file $(ELF)" > built/debug.gdb
 ifeq ($(BMP),)
-	echo "target extended-remote | $(OPENOCD) -f scripts/gdbdebug.cfg" >> built/debug.gdb
+	echo "target extended-remote | $(OPENOCD) -f $(SCRIPTS)/gdbdebug.cfg" >> built/debug.gdb
 else
 	echo "target extended-remote $(BMP_PORT)" >> built/debug.gdb
 	echo "monitor swdp_scan" >> built/debug.gdb
@@ -164,30 +157,28 @@ $(BUILT)/%.o: %.c
 	@echo CC $<
 	$(V)$(CC) $(CFLAGS) $(CPPFLAGS) -o $@ -c $<
 
-$(wildcard $(BUILT)/bl/*.o): $(CONFIG_DEPS)
-$(wildcard $(BUILT)/jd/*.o): $(CONFIG_DEPS)
-$(wildcard $(BUILT)/src/*.o): $(CONFIG_DEPS)
-$(wildcard $(BUILT)/$(PLATFORM)/*.o): $(CONFIG_DEPS)
-$(wildcard $(BUILT)/$(JD_CORE)/*.o): $(CONFIG_DEPS)
-$(wildcard $(BUILT)/$(JD_CORE)/*/*.o): $(CONFIG_DEPS)
-$(wildcard $(BUILT)/$(JD_CORE)/*/*/*.o): $(CONFIG_DEPS)
+$(wildcard $(BUILT)/*/*.o): $(CONFIG_DEPS)
+$(wildcard $(BUILT)/*/*/*.o): $(CONFIG_DEPS)
+$(wildcard $(BUILT)/*/*/*/*.o): $(CONFIG_DEPS)
+$(wildcard $(BUILT)/*/*/*/*/*.o): $(CONFIG_DEPS)
+$(OBJ): $(CONFIG_DEPS)
 
 $(BUILT)/%.o: %.s
 	@mkdir -p $(dir $@)
 	@echo AS $<
 	$(V)$(CC) $(CFLAGS) $(CPPFLAGS) -o $@ -c $<
 
-%.hex: %.elf scripts/bin2uf2.js
+%.hex: %.elf $(SCRIPTS)/bin2uf2.js
 	@echo BIN/HEX $<
 	$(V)$(PREFIX)objcopy -O binary $< $(@:.hex=.bin)
 	$(V)$(PREFIX)objcopy -O ihex $< $@
 ifeq ($(BL),)
 	@echo UF2 $<
-	$(V)node scripts/bin2uf2.js $(@:.hex=.bin)
+	$(V)node $(SCRIPTS)/bin2uf2.js $(@:.hex=.bin)
 endif
 
-built/compress.js: scripts/compress.ts
-	cd scripts; tsc
+built/compress.js: $(SCRIPTS)/compress.ts
+	cd $(SCRIPTS); tsc
 
 run-compress: built/compress.js
 	node $< tmp/images/*.bin
@@ -196,10 +187,10 @@ clean:
 	rm -rf built
 
 st:
-	$(V)node scripts/map-file-stats.js $(ELF).map
+	$(V)node $(SCRIPTS)/map-file-stats.js $(ELF).map
 
 stf:
-	$(V)node scripts/map-file-stats.js  $(ELF).map -fun
+	$(V)node $(SCRIPTS)/map-file-stats.js  $(ELF).map -fun
 
 $(BUILT)/jd/prof-%.o: targets/$(TARGET)/profile/%.c
 	@echo CC $<
@@ -216,11 +207,11 @@ $(BUILT_BIN)/version.o: $(BUILT_BIN)/version.c
 	$(V)$(CC) $(CFLAGS) $(CPPFLAGS) -o $@ -c $<
 
 
-$(BUILT_BIN)/$(PREF)-%.elf: $(BUILT)/jd/prof-%.o $(OBJ) Makefile $(LD_SCRIPT) scripts/patch-bin.js $(FORCE)
+$(BUILT_BIN)/$(PREF)-%.elf: $(BUILT)/jd/prof-%.o $(OBJ) Makefile $(LD_SCRIPT) $(SCRIPTS)/patch-bin.js $(FORCE)
 	@echo LD $@
 	$(V)$(CC) $(CFLAGS) $(LDFLAGS) -Wl,-Map=$@.map  -o $@ $(OBJ) $< -lm
 	@echo BIN-PATCH $@
-	$(V)node scripts/patch-bin.js -q $@ $(FLASH_SIZE) $(BL_SIZE) targets/$(TARGET)/profile
+	$(V)node $(SCRIPTS)/patch-bin.js -q $@ $(FLASH_SIZE) $(BL_SIZE) targets/$(TARGET)/profile
 
 build: $(addsuffix .hex,$(addprefix $(BUILT_BIN)/$(PREF)-,$(PROFILES)))
 
@@ -233,7 +224,7 @@ $(BUILT_BIN)/combined-%.hex: $(BUILT_BIN)/$(PREF)-%.hex
 # make sure we re-binary-patch the bootloader on every flash, to get different random seed
 rc: run-combined
 run-combined:
-	touch scripts/patch-bin.js
+	touch $(SCRIPTS)/patch-bin.js
 	$(MAKE) $(MAKE_FLAGS) BL=1 $(BUILT_BIN)/combined-$(PROF).hex
 	$(MAKE) $(MAKE_FLAGS) $(BUILT_BIN)/combined-$(PROF).hex
 	$(MAKE) ELF=$(BUILT_BIN)/combined-$(PROF).hex flash
