@@ -23,12 +23,13 @@ CFLAGS = $(DEFINES) \
 	-mthumb -mfloat-abi=soft  \
 	-Os -g3 \
 	-Wall -Wextra -Wno-unused-parameter -Wno-shift-negative-value -Wstrict-prototypes -Werror \
-	-Wno-error=unused-function \
+	-Wno-error=unused-function -Wno-error=cpp \
 	-ffunction-sections -nostartfiles \
 	$(WARNFLAGS) $(USERFLAGS)
 CONFIG_DEPS = \
 	$(wildcard $(JD_CORE)/inc/*.h) \
 	$(wildcard $(JD_CORE)/inc/interfaces/*.h) \
+	$(wildcard $(JD_CORE)/services/*.h) \
 	$(wildcard $(JD_CORE)/services/interfaces/*.h) \
 	$(wildcard $(JD_STM)/src/*.h) \
 	$(wildcard $(JD_STM)/bl/*.h) \

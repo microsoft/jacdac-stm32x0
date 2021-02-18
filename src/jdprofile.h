@@ -4,10 +4,10 @@
 #include <string.h>
 #include <stdbool.h>
 
-#include "jd_services.h"
+#include "jd_protocol.h"
+#include "services/jd_services.h"
 #include "dmesg.h"
 #include "pinnames.h"
-#include "interfaces/jd_app.h"
 #include "blhw.h"
 
 #ifdef BL
