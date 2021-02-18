@@ -22,6 +22,7 @@ and [jacdac-c](https://github.com/microsoft/jacdac-c)
 When building your own firmware, you will need to create your own repository from `jacdac-msr-modules` template.
 You can do it by following this link https://github.com/microsoft/jacdac-msr-modules/generate
 or using the green "Use this template" button in top-right corner at https://github.com/microsoft/jacdac-msr-modules
+If you're just playing around, you can simply clone `jacdac-msr-modules`.
 
 All the instructions below use your copy of `jacdac-msr-modules` as the root folder.
 You typically will not need to fork `jacdac-stm32x0` nor `jacdac-c`.
