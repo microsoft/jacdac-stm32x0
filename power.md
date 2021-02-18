@@ -1,4 +1,4 @@
-# JACDAC power
+# Jacdac power
 
 JD device that delivers power to the bus needs to limit it.
 This document has notes on one way of implementing this.

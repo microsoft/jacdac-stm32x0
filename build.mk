@@ -35,6 +35,7 @@ CONFIG_DEPS = \
 	$(wildcard $(JD_STM)/bl/*.h) \
 	$(wildcard $(PLATFORM)/*.h) \
 	$(wildcard $(JD_CORE)/*.h) \
+	$(wildcard addons/*.h) \
 	$(wildcard targets/$(TARGET)/*.h) \
 	targets/$(TARGET)/config.mk
 
@@ -55,6 +56,7 @@ ifeq ($(BL),)
 C_SRC += $(wildcard $(JD_CORE)/source/*.c)
 C_SRC += $(wildcard $(JD_CORE)/services/*.c)
 C_SRC += $(wildcard $(JD_CORE)/drivers/*.c)
+C_SRC += $(wildcard addons/*.c)
 C_SRC += $(wildcard $(JD_CORE)/source/interfaces/simple_alloc.c)
 C_SRC += $(wildcard $(JD_CORE)/source/interfaces/sensor.c)
 C_SRC += $(wildcard $(JD_CORE)/source/interfaces/simple_rx.c)
@@ -97,7 +99,8 @@ CPPFLAGS += \
 	-I$(JD_CORE)/inc \
 	-I$(JD_STM)/src \
 	-I$(JD_CORE) \
-	-I$(BUILT)
+	-I$(BUILT) \
+	-I.
 
 LDFLAGS = -specs=nosys.specs -specs=nano.specs \
 	-T"$(LD_SCRIPT)" -Wl,--gc-sections

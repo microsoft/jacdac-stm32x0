@@ -112,7 +112,8 @@ is not recommended since it cannot access USB for deployment and debugging.
 
 ## Adding new modules
 
-* copy the `jacdac-msr-modules` repo, into (say) `jacdac-acme-corp-modules`
+* [create a new repo](https://github.com/microsoft/jacdac-msr-modules/generate) from `jacdac-msr-modules`;
+  let's say the new repo is called `jacdac-acme-corp-modules`
 * replace string `jacdac-msr-modules` with `jacdac-acme-corp-modules` in `package.json`
 * copy `targets/_example/` to `targets/acme-corp/` (replaceing `acme-corp` with the name of the series of modules)
 * edit [targets/acme-corp/board.h](targets/_example/board.h) to match your module
@@ -120,7 +121,7 @@ is not recommended since it cannot access USB for deployment and debugging.
   a beefier MCU from the F03x family - they should be backward-compatible
 * edit [targets/acme-corp/profile/module.c](targets/_example/profile/module.c) 
   to include your module name and used services (follow comments in `module.c`);
-  see [jd_service_initializers.h](https://github.com/microsoft/jacdac-c/blob/master/services/interfaces/jd_service_initializers.h)
+  see [jd_services.h](https://github.com/microsoft/jacdac-c/blob/master/services/jd_services.h)
   for list of services
 * rename `module.c` to match the type of module (eg. `servo.c`)
 * if you have several modules with non-conflicting `board.h` definitions,
@@ -140,9 +141,11 @@ You don't need to build `jm-*` modules, so remove them from `DROP_TARGETS`.
 
 When you run `make drop` now, you should get a `.uf2` file combining firmware for all your modules.
 
-## Adding new services
+## Adding new services and drivers
 
 This topic is [covered in jacdac-c](https://github.com/microsoft/jacdac-c#adding-new-services).
+When adding services or drivers, you can put them in `addons/` folder of your modules repo,
+or submit them as PRs in `jacdac-c`.
 
 ## Contributing
 
