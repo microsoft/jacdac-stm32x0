@@ -131,6 +131,12 @@ If you copy `targets/jm-*/profiles/something.c` to start your own module, rememb
 set the `FIRMWARE_IDENTIFIER` to `0` (the one in `targets/_examples` already has it set to `0`).
 This way, the build process will generate a new firmware identifier.
 
+Now, edit `DROP_TARGETS` in `Makefile` to only include your `acme-corp` folder
+(and in future `acme-corp-v2` etc.).
+You don't need to build `jm-*` modules, so remove them from `DROP_TARGETS`.
+
+When you run `make drop` now, you should get a `.uf2` file combining firmware for all your modules.
+
 ## Adding new services
 
 This topic is [covered in jacdac-c](https://github.com/microsoft/jacdac-c#adding-new-services).
