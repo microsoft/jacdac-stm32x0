@@ -1,30 +1,36 @@
-# JACDAC for STM32F0xx
+# Jacdac for STM32F0xx and STM32G0xx
 
-This repository contains firmware for [JACDAC](https://aka.ms/jacdac) modules based on STM32F0xx chips and is part of the [JACDAC Module Development Kit](https://github.com/microsoft/jacdac-mdk).
+This repository contains firmware for [Jacdac](https://aka.ms/jacdac) modules based on STM32F0xx and STM32G0xx
+chips and is part of the [Jacdac Module Development Kit](https://github.com/microsoft/jacdac-mdk).
+
+(The STM32G0xx support is still a work in progress.)
 
 ## Bootloader
 
-This repository contains both the firmware for running services (eg., accelerometer service) on a JACDAC module,
-and a bootloader which allows for updating the firmware using the JACDAC protocol.
-This update process can be performed by the user from the [JACDAC website](https://microsoft.github.io/jacdac-ts/tools/updater)
+This repository contains both the firmware for running services (eg., accelerometer service) on a Jacdac module,
+and a bootloader which allows for updating the firmware using the Jacdac protocol.
+This update process can be performed by the user from the [Jacdac website](https://microsoft.github.io/jacdac-ts/tools/updater)
 (while developing firmware you will typically use a debugger to deploy both the bootloader and the firmware).
 
-### Clone this repository and pull all submodules
-
-```
-git clone https://github.com/microsoft/jacdac-stm32x0
-git submodule update --init --recursive
-git pull
-```
-
 ## Building
+
+The top-level repo to build is [jacdac-msr-modules](https://github.com/microsoft/jacdac-msr-modules).
+It imports as submodules [this repo (jacdac-stm32x0)](https://github.com/microsoft/jacdac-stm32x0) 
+and [jacdac-c](https://github.com/microsoft/jacdac-c)
+(which contains platform-independent code implementing Jacdac services, as well as various I2C drivers).
+
+When building your own firmware, you will need to copy (or fork) `jacdac-msr-modules`.
+All the instructions below use `jacdac-msr-modules` (or its copy) as the root folder.
+You typically will not need to fork `jacdac-stm32x0` nor `jacdac-c`.
+
+The build instructions are here, and not in `jacdac-msr-modules`, to avoid them getting stale in its various forks.
 
 You will need a Unix-like environment to build the firmware (see below for instructions on how to get that on Windows).
 
 * install `arm-none-eabi-gcc` (we've been using `9-2019-q4-major`);
   please note that `gcc-arm-none-eabi` that comes with Ubuntu won't work
 * install `openocd` (optional when using Black Magic Probe)
-* install node.js (some linux distros have old versions of Node; get at least 14.5.2 from https://github.com/nodesource/distributions/blob/master/README.md) 
+* install node.js (some linux distros have old versions of Node; get at least 14.5.2 from [NodeSource](https://github.com/nodesource/distributions/blob/master/README.md))
 * install GNU Make
 * run `make`; you should get a successful build
 
@@ -49,6 +55,14 @@ Aliases:
 * `make l` for `make flash-loop`
 * `make ff` for `make full-flash`
 
+Other than the building/deployment targets, the following might be of note:
+
+* `make st` - print RAM/flash stats for the current firmware
+* `make stf` - same, but break it up by function, not only file
+* `make gdb` - run GDB debugger
+* `make clean` - clean (duh!)
+* `make drop` - build all firmware images specified in `DROP_TARGETS`
+
 ## Building on Windows
 
 You will need a Unix-like environment to build the firmware.
@@ -56,7 +70,7 @@ Luckily, you most likely already have one - it comes with Git for Windows.
 If you do not have [Git for Windows](https://git-scm.com/download/win) yet, install it.
 Then you will need to install GNU Make:
 
-* download GNU Make (without guile) from https://sourceforge.net/projects/ezwinports/files/
+* download GNU Make (without guile) from [EzWinPorts](https://sourceforge.net/projects/ezwinports/files/)
 * open Administrator command prompt
 * run `cd "\Program Files\Git\usr"`
 * run `bin\unzip.exe c:\Users\<you>\Downloads\make-4.3-without-guile-w32-bin.zip` replacing `<you>` with your user name
@@ -66,20 +80,20 @@ Head to Start -> Git Bash. When you type `make` you should now see
 
 Now install [GNU Arm Embedded Toolchain](https://developer.arm.com/tools-and-software/open-source-software/developer-tools/gnu-toolchain/gnu-rm/downloads)
 version `9-2019-q4-major` (do not use other versions for now).
-Get the `.exe` installer, and agree to adding the tools to your `PATH` variable. If the installer fails to add to `PATH`, then manual do so yourself, adding:
-* "C:\Program Files (x86)\GNU Tools Arm Embedded\9 2019-q4-major\bin"
+Get the `.exe` installer, and agree to adding the tools to your `PATH` variable. If the installer fails to add to `PATH`, then do so yourself, adding:
+`C:\Program Files (x86)\GNU Tools Arm Embedded\9 2019-q4-major\bin`
 
 You will also need to [install node.js](https://nodejs.org/en/download/) - take the Windows `.msi` 64 bit installer.
 
-If you run Git Bash again (it has to be restart to see change in `PATH`), and type 
+If you run Git Bash again (it has to be restarted to see change in `PATH`), and type 
 `arm-none-eabi-gcc --version` you should see something about `9-2019-q4-major`,
 and if you type `node --version` you should get its version number.
 
 If using Black Magic Probe, connect it to your computer.
-You should see two COM ports that correspond to it in Device Manager (for example `COM3` and `COM4`)
-You will want to use the lower numbered one (for example `COM3`).
+You should see two COM ports that correspond to it in Device Manager (for example `COM7` and `COM8`)
+You will want to use the lower numbered one (for example `COM7`).
 
-If using stlink or cmsis/dap, you'll need to install openocd (this currently doesn't work):
+If using stlink or cmsis/dap, you'll need to install openocd **(TODO: this currently doesn't work)**:
 
 * get [7-Zip decompressor](https://www.7-zip.org/)
 * get openocd `.7z` archive [from GNU Toolchains](https://gnutoolchains.com/arm-eabi/openocd/)
@@ -93,20 +107,10 @@ Now, follow the usual build instructions above.
 Note: using WSL2 instead of the bash shell etc coming with Git 
 is not recommended since it cannot access USB for deployment and debugging.
 
-
-### Notable make targets
-
-Other than the building/deployment targets, the following might be of note:
-
-* `make st` - print RAM/flash stats for the current firmware
-* `make stf` - same, but break it up by function, not only file
-* `make gdb` - run GDB debugger
-* `make clean` - clean (duh!)
-* `make drop` - build all firmware images specified in `DROP_TARGETS`
-
 ## Adding new modules
 
-* fork this repo
+* copy the `jacdac-msr-modules` repo, into (say) `jacdac-acme-corp-modules`
+* replace string `jacdac-msr-modules` with `jacdac-acme-corp-modules` in `package.json`
 * copy `targets/_example/` to `targets/acme-corp/` (replaceing `acme-corp` with the name of the series of modules)
 * edit [targets/acme-corp/board.h](targets/_example/board.h) to match your module
 * you likely do not need to edit [targets/acme-corp/config.mk](targets/_example/config.mk), even if using
@@ -123,18 +127,13 @@ Other than the building/deployment targets, the following might be of note:
 * run `make`; this will generate a new unique identifier and place as an argument of `FIRMWARE_IDENTIFIER` macro
 * make sure to never change the firmware identifier number, as that will break future firmware updates
 
+If you copy `targets/jm-*/profiles/something.c` to start your own module, remember to rename it, and
+set the `FIRMWARE_IDENTIFIER` to `0` (the one in `targets/_examples` already has it set to `0`).
+This way, the build process will generate a new firmware identifier.
+
 ## Adding new services
 
 This topic is [covered in jacdac-c](https://github.com/microsoft/jacdac-c#adding-new-services).
-
-## Release process
-
-This repository uses [semantic release](https://github.com/semantic-release/semantic-release) to automatically create releases upon analyzing commits.
-
-The commits can be formatted using https://github.com/angular/angular.js/blob/master/DEVELOPERS.md#-git-commit-guidelines.
-
-* ``fix: some fix``, create a patch release
-* ``feat: some feature``, create a minor release
 
 ## Contributing
 
