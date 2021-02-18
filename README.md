@@ -19,11 +19,14 @@ It imports as submodules [this repo (jacdac-stm32x0)](https://github.com/microso
 and [jacdac-c](https://github.com/microsoft/jacdac-c)
 (which contains platform-independent code implementing Jacdac services, as well as various I2C drivers).
 
-When building your own firmware, you will need to copy (or fork) `jacdac-msr-modules`.
-All the instructions below use `jacdac-msr-modules` (or its copy) as the root folder.
+When building your own firmware, you will need to create your own repository from `jacdac-msr-modules` template.
+You can do it by following this link https://github.com/microsoft/jacdac-msr-modules/generate
+or using the green "Use this template" button in top-right corner at https://github.com/microsoft/jacdac-msr-modules
+
+All the instructions below use your copy of `jacdac-msr-modules` as the root folder.
 You typically will not need to fork `jacdac-stm32x0` nor `jacdac-c`.
 
-The build instructions are here, and not in `jacdac-msr-modules`, to avoid them getting stale in its various forks.
+The build instructions are here, and not in `jacdac-msr-modules`, to avoid them getting stale in its various copies.
 
 You will need a Unix-like environment to build the firmware (see below for instructions on how to get that on Windows).
 
