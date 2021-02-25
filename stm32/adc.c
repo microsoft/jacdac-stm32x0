@@ -168,7 +168,7 @@ static const uint32_t channels_PB[] = {
 
 #ifdef STM32F0
 #define TS_CAL1 *(uint16_t *)0x1FFFF7B8
-#ifdef STM32F031x6
+#if defined(STM32F031x6) || defined(STM32F042x6)
 // not present on F030
 #define TS_CAL2 *(uint16_t *)0x1FFFF7C2
 #endif
