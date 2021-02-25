@@ -46,7 +46,9 @@ uint32_t bl_adc_random_seed(void);
 int main(void) {
     __disable_irq();
     clk_setup_pll();
+#if USART_IDX==2
     LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_USART2);
+#endif
     LL_APB1_GRP2_EnableClock(LL_APB1_GRP2_PERIPH_TIM17 | LL_APB1_GRP2_PERIPH_USART1 |
                              LL_APB1_GRP2_PERIPH_ADC1);
 
