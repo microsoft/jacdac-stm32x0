@@ -125,7 +125,7 @@ static void DMA_Init(void) {
 static void USART_UART_Init(void) {
 #if USART_IDX == 2
 #if defined(STM32F042x6)
-    // LL_RCC_SetUSARTClockSource(LL_RCC_USART2_CLKSOURCE_SYSCLK);
+    // no usart clock source configuration required
 #else
     LL_RCC_SetUSARTClockSource(LL_RCC_USART2_CLKSOURCE_HSI);
 #endif
