@@ -184,9 +184,9 @@ uint16_t adc_read_temp(void) {
     LL_ADC_Disable(ADC1);
     set_temp_ref(0);
 
-#if defined(STM32F030x6) || defined(STM32F030x8) || defined(STM32F042x6)
+#if defined(STM32F030x6) || defined(STM32F030x8) 
     return ((TS_CAL1 - r) * 1000) / 5336 + 30;
-#elif defined(STM32F031x6)
+#elif defined(STM32F031x6) || defined(STM32F042x6)
     return ((110 - 30) * (r - TS_CAL1)) / (TS_CAL2 - TS_CAL1) + 30;
 #else
 #error "check datasheet!"
