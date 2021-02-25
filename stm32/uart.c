@@ -241,7 +241,6 @@ int uart_wait_high() {
 }
 
 int uart_start_tx(const void *data, uint32_t numbytes) {
-    DMESG("DMA TFR %p %d", &data, numbytes);
     exti_disable(PIN_MASK(UART_PIN));
     exti_clear(PIN_MASK(UART_PIN));
     // We assume EXTI runs at higher priority than us
