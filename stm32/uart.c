@@ -124,7 +124,11 @@ static void DMA_Init(void) {
 
 static void USART_UART_Init(void) {
 #if USART_IDX == 2
+#if defined(STM32F042x6)
+    // LL_RCC_SetUSARTClockSource(LL_RCC_USART2_CLKSOURCE_SYSCLK);
+#else
     LL_RCC_SetUSARTClockSource(LL_RCC_USART2_CLKSOURCE_HSI);
+#endif
     __HAL_RCC_USART2_CLK_ENABLE();
 #elif USART_IDX == 1
     LL_RCC_SetUSARTClockSource(LL_RCC_USART1_CLKSOURCE_HSI);
@@ -237,6 +241,7 @@ int uart_wait_high() {
 }
 
 int uart_start_tx(const void *data, uint32_t numbytes) {
+    DMESG("DMA TFR %p %d", &data, numbytes);
     exti_disable(PIN_MASK(UART_PIN));
     exti_clear(PIN_MASK(UART_PIN));
     // We assume EXTI runs at higher priority than us

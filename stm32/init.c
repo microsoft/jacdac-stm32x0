@@ -73,7 +73,12 @@ void clk_setup_pll(void) {
     LL_RCC_PLL_ConfigDomain_SYS(LL_RCC_PLLSOURCE_HSI, LL_RCC_PLLM_DIV_1, 8, LL_RCC_PLLR_DIV_2);
 #elif defined(STM32F0)
     LL_FLASH_SetLatency(LL_FLASH_LATENCY_1);
+
+#if defined(STM32F042x6)
+    LL_RCC_PLL_ConfigDomain_SYS(LL_RCC_PLLSOURCE_HSI, LL_RCC_PLL_MUL_12, LL_RCC_PREDIV_DIV_2);
+#else
     LL_RCC_PLL_ConfigDomain_SYS(LL_RCC_PLLSOURCE_HSI_DIV_2, LL_RCC_PLL_MUL_12);
+#endif
 #else
 #error "clock?"
 #endif
