@@ -9,7 +9,6 @@ HALPREF = $(PLATFORM)/stm32f0xx_hal_driver/Src
 HALSRC =  \
 $(HALPREF)/stm32f0xx_ll_adc.c \
 $(HALPREF)/stm32f0xx_ll_comp.c \
-$(HALPREF)/stm32f0xx_ll_crc.c \
 $(HALPREF)/stm32f0xx_ll_crs.c \
 $(HALPREF)/stm32f0xx_ll_dac.c \
 $(HALPREF)/stm32f0xx_ll_dma.c \
