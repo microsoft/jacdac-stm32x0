@@ -174,8 +174,19 @@ static const uint32_t channels_PB[] = {
 #endif
 #endif
 
+#ifdef STM32G0
+#define TS_CAL1 *(uint16_t *)0x1FFF75A8 // @30C
+#ifdef STM32G031xx
+#define TS_CAL2 *(uint16_t *)0x1FFF75CA // @130C (not defined on G030)
+#endif
+#endif
+
 uint16_t adc_read_temp(void) {
+#ifdef STM32G0
+    set_sampling_time(LL_ADC_SAMPLINGTIME_160CYCLES_5);
+#else
     set_sampling_time(LL_ADC_SAMPLINGTIME_71CYCLES_5); // min. sampling time for temp is 4us
+#endif
     set_temp_ref(1);
     set_channel(LL_ADC_CHANNEL_TEMPSENSOR);
 
@@ -184,10 +195,12 @@ uint16_t adc_read_temp(void) {
     LL_ADC_Disable(ADC1);
     set_temp_ref(0);
 
-#if defined(STM32F030x6) || defined(STM32F030x8) 
+#if defined(STM32F030x6) || defined(STM32F030x8)
     return ((TS_CAL1 - r) * 1000) / 5336 + 30;
 #elif defined(STM32F031x6) || defined(STM32F042x6)
     return ((110 - 30) * (r - TS_CAL1)) / (TS_CAL2 - TS_CAL1) + 30;
+#elif defined(STM32G031xx)
+    return ((130 - 30) * (r - TS_CAL1)) / (TS_CAL2 - TS_CAL1) + 30;
 #else
 #error "check datasheet!"
 #endif
@@ -219,7 +232,11 @@ void adc_prep_read_pin(uint8_t pin) {
 
     pin_setup_analog_input(pin);
 
+#ifdef STM32G0
+    set_sampling_time(LL_ADC_SAMPLINGTIME_39CYCLES_5);
+#else
     set_sampling_time(LL_ADC_SAMPLINGTIME_41CYCLES_5);
+#endif
 
     set_channel(chan);
 }

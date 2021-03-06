@@ -17,7 +17,12 @@
 #include "stm32g0xx_ll_tim.h"
 #include "stm32g0xx_ll_spi.h"
 #include "stm32g0xx_ll_adc.h"
+#include "stm32g0xx_ll_rtc.h"
+#include "stm32g0xx_ll_i2c.h"
 
 #include "stm32g0xx_hal_rcc.h"
+
+#define HSI_MHZ 16
+#define PLL_MHZ 64
 
 #endif

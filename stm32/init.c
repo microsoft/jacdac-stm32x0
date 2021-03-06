@@ -132,14 +132,21 @@ void SystemClock_Config(void) {
 
 void SystemInit(void) {
 #ifdef STM32G0
-    SCB->VTOR = FLASH_BASE;
-#endif
-
+    SCB->VTOR = FLASH_BASE; // needed?
+    LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_SYSCFG);
+    LL_IOP_GRP1_EnableClock(LL_IOP_GRP1_PERIPH_GPIOA | LL_IOP_GRP1_PERIPH_GPIOB |
+                            LL_IOP_GRP1_PERIPH_GPIOC);
+#else
     LL_APB1_GRP2_EnableClock(LL_APB1_GRP2_PERIPH_SYSCFG);
-    LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_PWR);
-
     LL_AHB1_GRP1_EnableClock(LL_AHB1_GRP1_PERIPH_GPIOA | LL_AHB1_GRP1_PERIPH_GPIOB |
                              LL_AHB1_GRP1_PERIPH_GPIOC | LL_AHB1_GRP1_PERIPH_GPIOF);
+#endif
+
+    LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_PWR);
+
+#ifdef BOARD_INIT_CODE
+    BOARD_INIT_CODE;
+#endif
 
     SystemClock_Config();
 }

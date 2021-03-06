@@ -7,6 +7,10 @@ static void _check_line(int ln) {
     callbacks[ln]();
 }
 
+#ifdef STM32G0
+#define PR FPR1
+#endif
+
 #define check_line(ln)                                                                             \
     if (lines & (1 << (ln)))                                                                       \
     _check_line(ln)

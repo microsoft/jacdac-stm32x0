@@ -7,6 +7,14 @@ struct TimDesc {
 };
 
 static const struct TimDesc tims[] = {
+#ifdef STM32G0
+#define APB1ENR APBENR1
+#define APB2ENR APBENR2
+    {TIM1, 2, RCC_APBENR2_TIM1EN},   //
+    {TIM14, 2, RCC_APBENR2_TIM14EN}, //
+    {TIM16, 2, RCC_APBENR2_TIM16EN}, //
+    {TIM3, 1, RCC_APBENR1_TIM3EN},   //
+#else
     {TIM1, 2, RCC_APB2ENR_TIM1EN}, //
 #ifdef TIM2
     {TIM2, 1, RCC_APB1ENR_TIM2EN},
@@ -14,7 +22,8 @@ static const struct TimDesc tims[] = {
     {TIM3, 1, RCC_APB1ENR_TIM3EN},   //
     {TIM14, 1, RCC_APB1ENR_TIM14EN}, //
     {TIM16, 2, RCC_APB2ENR_TIM16EN}, //
-    // {TIM17, 2, RCC_APB2ENR_TIM17EN}, // used in tim.c, skip here
+#endif
+    // TIM17 // used in tim.c, skip here
 };
 
 struct PinPWM {
@@ -25,10 +34,16 @@ struct PinPWM {
 };
 
 static const struct PinPWM pins[] = {
+#ifdef STM32G0
+    {PA_4, 1, LL_GPIO_AF_4, TIM14}, // PWM mikrobus
+    {PA_6, 1, LL_GPIO_AF_1, TIM3},  // rgb led
+    {PA_7, 2, LL_GPIO_AF_1, TIM3},  // rgb led
+    {PB_0, 3, LL_GPIO_AF_1, TIM3},  // rgb led
+#else
 #ifdef TIM2
-    {PA_1, 2, LL_GPIO_AF_2, TIM2},  // LED on jdm-v2
-    {PA_3, 4, LL_GPIO_AF_2, TIM2},  // POWER on jdm-v2
-    {PA_15, 1, LL_GPIO_AF_2, TIM2}, // LED on jdm-v3 (TIM2_CH1_ETR?)
+    {PA_1, 2, LL_GPIO_AF_2, TIM2},   // LED on jdm-v2
+    {PA_3, 4, LL_GPIO_AF_2, TIM2},   // POWER on jdm-v2
+    {PA_15, 1, LL_GPIO_AF_2, TIM2},  // LED on jdm-v3 (TIM2_CH1_ETR?)
 #endif
     //{PA_6, 1, LL_GPIO_AF_5, TIM16}, // SERVO on jdm-v2,3 - doesn't seem to work, TIM3 works
     {PA_6, 1, LL_GPIO_AF_1, TIM3},  // SERVO on jdm-v2,3
@@ -38,6 +53,7 @@ static const struct PinPWM pins[] = {
     {PA_10, 3, LL_GPIO_AF_2, TIM1}, // SND
     {PA_4, 1, LL_GPIO_AF_4, TIM14}, // SND
     {PA_7, 1, LL_GPIO_AF_4, TIM14}, // servo
+#endif
 };
 
 static const struct PinPWM *lookup_pwm(uint8_t pin) {
@@ -63,7 +79,8 @@ uint8_t pwm_init(uint8_t pin, uint32_t period, uint32_t duty, uint8_t prescaler)
 
     TIM_TypeDef *TIMx = pwm->tim;
 
-    if (prescaler == 0) prescaler = 1;
+    if (prescaler == 0)
+        prescaler = 1;
 
     const struct TimDesc *td = lookup_tim(TIMx);
     if (td->apb == 1) {
