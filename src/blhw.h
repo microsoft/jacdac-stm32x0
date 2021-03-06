@@ -74,5 +74,5 @@ struct app_top_handlers {
 #define app_dev_info app_handlers->devinfo
 
 #ifndef BL
-#define bl_info (*((struct bl_info_block *)(0x8000000 + FLASH_SIZE - BL_SIZE)))
+#define bl_info (*((struct bl_info_block *)(0x8000000 + JD_FLASH_SIZE - BL_SIZE)))
 #endif
