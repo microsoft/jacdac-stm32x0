@@ -1,5 +1,7 @@
 #include "lib.h"
 
+// SPI-Jacdac bridge (not used)
+
 #ifdef BRIDGEQ
 
 struct srv_state {
