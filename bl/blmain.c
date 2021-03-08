@@ -47,13 +47,22 @@ int main(void) {
     __disable_irq();
     clk_setup_pll();
 
-#if USART_IDX==1
+#if USART_IDX == 1
+#ifdef STM32G0
+    LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_USART1);
+#else
     LL_APB1_GRP1_EnableClock(LL_APB1_GRP2_PERIPH_USART1);
 #endif
-#if USART_IDX==2
+#endif
+#if USART_IDX == 2
     LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_USART2);
 #endif
+
+#ifdef STM32G0
+    LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_TIM17 | LL_APB2_GRP1_PERIPH_ADC);
+#else
     LL_APB1_GRP2_EnableClock(LL_APB1_GRP2_PERIPH_TIM17 | LL_APB1_GRP2_PERIPH_ADC1);
+#endif
 
     ctx_t *ctx = &ctx_;
 

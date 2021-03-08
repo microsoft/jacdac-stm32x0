@@ -84,7 +84,7 @@ int uart_process(ctx_t *ctx) {
         if (isr & USART_ISR_FE || ctx->now > ctx->rx_timeout) {
             uart_disable(ctx);
             return UART_END_RX;
-        } else if (isr & USART_ISR_RXNE) {
+        } else if (isr & USART_ISR_RXNE_RXFNE) {
             uint8_t c = USARTx->RDR;
             if (ctx->uart_bytesleft) {
                 ctx->uart_bytesleft--;
@@ -92,7 +92,7 @@ int uart_process(ctx_t *ctx) {
             }
         }
     } else if (ctx->uart_mode == UART_MODE_TX) {
-        if (isr & USART_ISR_TXE) {
+        if (isr & USART_ISR_TXFE) {
             if (ctx->uart_bytesleft) {
                 ctx->uart_bytesleft--;
                 USARTx->TDR = *ctx->uart_data++;
