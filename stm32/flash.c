@@ -16,6 +16,10 @@ static void unlock(void) {
     }
     FLASH->SR = FLASH_SR_EOP;
     FLASH->CR &= ~(FLASH_CR_PG | FLASH_CR_PER | FLASH_CR_STRT);
+#ifdef STM32G0
+    // this is required for the EOP/error bit to be set
+    FLASH->CR |= FLASH_CR_EOPIE | FLASH_CR_ERRIE;
+#endif
 }
 
 static void lock(void) {
@@ -44,7 +48,7 @@ void flash_program(void *dst, const void *src, uint32_t len) {
     FLASH->CR |= FLASH_CR_PG; // enable programming
 
 #ifdef STM32G0
-    len >>= 1;
+    len >>= 3;
     __IO uint32_t *dp = dst;
     const uint32_t *sp = src;
     while (len--) {
@@ -52,11 +56,12 @@ void flash_program(void *dst, const void *src, uint32_t len) {
         if (!erased && (sp[0] || sp[1]))
             jd_panic();
 
+        WAIT_BUSY();
         dp[0] = sp[0];
         dp[1] = sp[1];
         check_eop();
-        dst = (uint32_t *)dst + 2;
-        src = (uint32_t *)src + 2;
+        dp += 2;
+        sp += 2;
     }
 #else
     len >>= 1;

@@ -76,6 +76,16 @@ int main(void) {
     uint32_t r0 = bl_adc_random_seed();
     ctx->randomseed = r0;
 
+#ifdef OTP_DEVICE_ID_ADDR
+    if (*(uint32_t *)OTP_DEVICE_ID_ADDR + 1 == 0) {
+        uint32_t r1 = bl_adc_random_seed();
+        r0 &= ~0x02000000; // clear "universal" bit
+        BL_DEVICE_ID = ((uint64_t)r0 << 32) | r1;
+        flash_program((void *)OTP_DEVICE_ID_ADDR, &BL_DEVICE_ID, 8);
+    } else {
+        BL_DEVICE_ID = *(uint64_t *)OTP_DEVICE_ID_ADDR;
+    }
+#else
     if ((bl_dev_info.device_id0 + 1) == 0) {
         if (app_dev_info.magic == DEV_INFO_MAGIC && app_dev_info.device_id0 &&
             (app_dev_info.device_id0 + 1)) {
@@ -89,6 +99,7 @@ int main(void) {
     } else {
         BL_DEVICE_ID = bl_dev_info.device_id;
     }
+#endif
 
     BL_DEVICE_ID ^= 1; // use different dev-id for application and bootloader
 
@@ -99,14 +110,14 @@ int main(void) {
 
     bool app_valid = bl_fixup_app_handlers(ctx);
 
-#if 1
+#if 0
     if (app_valid)
         ctx->app_start_time = 512 * 1024;
     else
 #else
     (void)app_valid;
 #endif
-        ctx->app_start_time = 0x80000000;
+    ctx->app_start_time = 0x80000000;
 
     while (1) {
         uint32_t now = ctx->now = tim_get_micros();
