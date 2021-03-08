@@ -100,6 +100,7 @@ void clk_setup_pll(void) {
 }
 
 void clk_set_pll(int on) {
+#ifndef DISABLE_PLL
     if (!on) {
         LL_RCC_SetSysClkSource(LL_RCC_SYS_CLKSOURCE_HSI);
         while (LL_RCC_GetSysClkSource() != LL_RCC_SYS_CLKSOURCE_HSI)
@@ -117,6 +118,7 @@ void clk_set_pll(int on) {
     tim_update_prescaler();
 
     // LL_RCC_SetAPB1Prescaler(LL_RCC_APB1_DIV_1);
+#endif
 }
 
 uint8_t cpu_mhz;
