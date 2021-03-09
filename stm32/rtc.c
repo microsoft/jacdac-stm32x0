@@ -150,7 +150,12 @@ void RTC_IRQHandler(void) {
 }
 
 static void rtc_config(uint8_t p0, uint16_t p1) {
+#ifdef STM32G0
+    LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_PWR | LL_APB1_GRP1_PERIPH_RTC);
+#else
     LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_PWR);
+#endif
+
     LL_PWR_EnableBkUpAccess();
 
     LL_RCC_LSI_Enable();
