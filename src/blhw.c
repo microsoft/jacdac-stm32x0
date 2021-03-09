@@ -4,7 +4,7 @@
 #include "pinnames.h"
 
 uint64_t hw_device_id(void) {
-    return app_dev_info.device_id;
+    return APP_DEVICE_ID;
 }
 
 uint32_t app_get_device_class(void) {

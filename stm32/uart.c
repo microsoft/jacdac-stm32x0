@@ -124,10 +124,8 @@ static void DMA_Init(void) {
 
 static void USART_UART_Init(void) {
 #if USART_IDX == 2
-#if defined(STM32F042x6)
-    // no usart clock source configuration required
-#else
-    LL_RCC_SetUSARTClockSource(LL_RCC_USART2_CLKSOURCE_HSI);
+#ifndef DISABLE_PLL
+#error "PLL not supported"
 #endif
     __HAL_RCC_USART2_CLK_ENABLE();
 #elif USART_IDX == 1
@@ -182,15 +180,14 @@ static void USART_UART_Init(void) {
     LL_DMA_EnableIT_TC(DMA1, LL_DMA_CHANNEL_5);
     LL_DMA_EnableIT_TE(DMA1, LL_DMA_CHANNEL_5);
 
-    USARTx->CR1 = LL_USART_DATAWIDTH_8B | LL_USART_PARITY_NONE | LL_USART_OVERSAMPLING_8 |
-                  LL_USART_DIRECTION_TX;
-    USARTx->BRR = HSI_MHZ * 2; // ->1MHz
-
-#ifndef STM32F0
-#error "maybe can use 16 oversampling if HSI_MHZ is 16"
+#ifdef STM32G0
     USARTx->CR1 = LL_USART_DATAWIDTH_8B | LL_USART_PARITY_NONE | LL_USART_OVERSAMPLING_16 |
                   LL_USART_DIRECTION_TX;
-    USARTx->BRR = HSI_MHZ; // ->1MHz
+    USARTx->BRR = HSI_MHZ; // ->1MHz (16x oversampling)
+#else
+    USARTx->CR1 = LL_USART_DATAWIDTH_8B | LL_USART_PARITY_NONE | LL_USART_OVERSAMPLING_8 |
+                  LL_USART_DIRECTION_TX;
+    USARTx->BRR = HSI_MHZ * 2; // ->1MHz (8x oversampling)
 #endif
 
     USARTx->CR2 = LL_USART_STOPBITS_1;
@@ -201,9 +198,9 @@ static void USART_UART_Init(void) {
 #endif
 
 #ifdef LL_USART_FIFOTHRESHOLD_1_8
-    LL_USART_SetTXFIFOThreshold(USARTx, LL_USART_FIFOTHRESHOLD_1_8);
-    LL_USART_SetRXFIFOThreshold(USARTx, LL_USART_FIFOTHRESHOLD_1_8);
-    LL_USART_DisableFIFO(USARTx);
+    //LL_USART_SetTXFIFOThreshold(USARTx, LL_USART_FIFOTHRESHOLD_1_8);
+    //LL_USART_SetRXFIFOThreshold(USARTx, LL_USART_FIFOTHRESHOLD_1_8);
+    //LL_USART_DisableFIFO(USARTx);
 #endif
     LL_USART_ConfigHalfDuplexMode(USARTx);
     LL_USART_EnableIT_ERROR(USARTx);
@@ -282,17 +279,12 @@ int uart_start_tx(const void *data, uint32_t numbytes) {
     LL_USART_EnableDMAReq_TX(USARTx);
     // to here, it's about 1.3us
 
-#ifndef STM32F0
-#error "need time measurements for the wait_us below"
-#endif
-
-    // the USART takes a few us to start transmiting
-    // this value gives 40us from the end of low pulse to start bit
-#ifdef LOW_POWER
-    target_wait_us(24);
-#else
-    target_wait_us(37);
-#endif
+    // the USART takes a few us to start transmitting
+    target_wait_us(40);
+    // this works out to be:
+    // 57us on F0 at 8MHz
+    // 51us on G0 at 16MHz
+    // The spec requires min of 40us and max of 89us.
 
     LL_DMA_EnableChannel(DMA1, LL_DMA_CHANNEL_4);
 

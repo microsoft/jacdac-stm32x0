@@ -23,6 +23,7 @@ static void enable_nrst_pin(void) {
 
     DMESG("check NRST", FLASH->OPTR & FLASH_OPTR_NRST_MODE);
 
+    // this is default production value, but we check it anyways
     if (FLASH->OPTR & FLASH_OPTR_NRST_MODE_0)
         return;
 
@@ -100,6 +101,7 @@ void clk_setup_pll(void) {
 }
 
 void clk_set_pll(int on) {
+#ifndef DISABLE_PLL
     if (!on) {
         LL_RCC_SetSysClkSource(LL_RCC_SYS_CLKSOURCE_HSI);
         while (LL_RCC_GetSysClkSource() != LL_RCC_SYS_CLKSOURCE_HSI)
@@ -117,29 +119,30 @@ void clk_set_pll(int on) {
     tim_update_prescaler();
 
     // LL_RCC_SetAPB1Prescaler(LL_RCC_APB1_DIV_1);
+#endif
 }
 
-uint8_t cpu_mhz;
-
-void SystemClock_Config(void) {
-    cpu_mhz = HSI_MHZ;
-
-    // LL_InitTick(cpu_mhz * 1000000, 1000U);
-    // LL_SYSTICK_SetClkSource(LL_SYSTICK_CLKSOURCE_HCLK);
-
-    enable_nrst_pin();
-}
+uint8_t cpu_mhz = HSI_MHZ;
 
 void SystemInit(void) {
+    // on G0 this is called before global variables are initialized
+    // also, they will be initialized after this is finished, so any writes to globals will be lost
+
 #ifdef STM32G0
-    SCB->VTOR = FLASH_BASE;
-#endif
-
+    SCB->VTOR = FLASH_BASE; // needed?
+    LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_SYSCFG);
+    LL_IOP_GRP1_EnableClock(LL_IOP_GRP1_PERIPH_GPIOA | LL_IOP_GRP1_PERIPH_GPIOB |
+                            LL_IOP_GRP1_PERIPH_GPIOC);
+#else
     LL_APB1_GRP2_EnableClock(LL_APB1_GRP2_PERIPH_SYSCFG);
-    LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_PWR);
-
     LL_AHB1_GRP1_EnableClock(LL_AHB1_GRP1_PERIPH_GPIOA | LL_AHB1_GRP1_PERIPH_GPIOB |
                              LL_AHB1_GRP1_PERIPH_GPIOC | LL_AHB1_GRP1_PERIPH_GPIOF);
+#endif
 
-    SystemClock_Config();
+    LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_PWR);
+
+#ifdef BOARD_STARTUP_CODE
+    BOARD_STARTUP_CODE;
+#endif
+    enable_nrst_pin();
 }

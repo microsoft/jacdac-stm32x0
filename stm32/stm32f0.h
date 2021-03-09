@@ -30,4 +30,10 @@
 #define HSI_MHZ 8
 #define PLL_MHZ 48
 
+// USART2 on lower end F0 can't be set to run from HSI
+// we're not currently setup to handle clock freq switching at that time
+#if USART_IDX != 1
+#define DISABLE_PLL 1
+#endif
+
 #endif

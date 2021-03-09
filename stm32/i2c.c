@@ -2,8 +2,20 @@
 
 #ifdef PIN_SDA
 
+#ifndef I2C_IDX
+#define I2C_IDX 1
+#endif
+
+#if I2C_IDX == 1
 #define I2Cx I2C1
 #define I2C_CLK LL_APB1_GRP1_PERIPH_I2C1
+#define I2C_CLK_SRC LL_RCC_I2C1_CLKSOURCE_HSI
+#elif I2C_IDX == 2
+#define I2Cx I2C2
+#define I2C_CLK LL_APB1_GRP1_PERIPH_I2C2
+// only G0Bx and G0Cx support this - we don't really want PCLK source, so in reality only I2C1 is supported
+#define I2C_CLK_SRC LL_RCC_I2C2_CLKSOURCE_HSI 
+#endif
 
 #ifndef I2C_FAST_MODE
 #define I2C_FAST_MODE 1
@@ -27,6 +39,15 @@
 #endif
 #endif
 
+#ifdef STM32G0
+// 25.4.11 I2C_TIMINGR register configuration examples
+#if I2C_FAST_MODE
+#define I2C_TIMING 0x10320309
+#else
+#define I2C_TIMING 0x30420F13
+#endif
+#endif
+
 static void setup_pin(uint8_t pin) {
     pin_setup_output_af(pin, I2C_AF);
     LL_GPIO_SetPinOutputType(PIN_PORT(pin), PIN_MASK(pin), LL_GPIO_OUTPUT_OPENDRAIN);
@@ -36,7 +57,7 @@ static void setup_pin(uint8_t pin) {
 void i2c_init(void) {
     setup_pin(PIN_SDA);
     setup_pin(PIN_SCL);
-    LL_RCC_SetI2CClockSource(LL_RCC_I2C1_CLKSOURCE_HSI);
+    LL_RCC_SetI2CClockSource(I2C_CLK_SRC);
     LL_APB1_GRP1_EnableClock(I2C_CLK);
     LL_I2C_Disable(I2Cx);
     LL_I2C_SetTiming(I2Cx, I2C_TIMING);
@@ -45,6 +66,8 @@ void i2c_init(void) {
 
 #ifdef STM32F0
 #define CYCLES_PER_MS (77 * cpu_mhz)
+#elif defined(STM32G0)
+#define CYCLES_PER_MS (100 * cpu_mhz) // TODO measure this!
 #else
 #error "measure CYCLES_PER_MS"
 #endif

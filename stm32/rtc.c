@@ -26,6 +26,15 @@ static ctx_t ctx_;
 #define PIN_PWR_LOG -1
 #endif
 
+#ifdef STM32G0
+#define RTC_IRQn RTC_TAMP_IRQn
+#define RTC_IRQHandler RTC_TAMP_IRQHandler
+#define EXTI_LINE LL_EXTI_LINE_19
+#else
+#define EXTI_LINE LL_EXTI_LINE_17
+#define LL_EXTI_ClearRisingFlag_0_31 LL_EXTI_ClearFlag_0_31
+#endif
+
 #define BCD(t, h) (((t)&0xf) + 10 * (((t) >> 4) & ((1 << h) - 1)))
 uint32_t rtc_get_seconds(void) {
     uint32_t t = RTC->TR;
@@ -111,7 +120,7 @@ static void rtc_set(ctx_t *ctx, uint32_t delta_us, cb_t f) {
 
     LL_RTC_ALMA_SetSubSecond(RTC, nv);
     LL_RTC_ClearFlag_ALRA(RTC);
-    LL_EXTI_ClearFlag_0_31(LL_EXTI_LINE_17);
+    LL_EXTI_ClearRisingFlag_0_31(EXTI_LINE);
     NVIC_ClearPendingIRQ(RTC_IRQn);
     LL_RTC_ALMA_Enable(RTC);
     // pin_pulse(PIN_PWR_LOG, 1);
@@ -137,11 +146,16 @@ void RTC_IRQHandler(void) {
     }
 
     // Clear the EXTI's Flag for RTC Alarm
-    LL_EXTI_ClearFlag_0_31(LL_EXTI_LINE_17);
+    LL_EXTI_ClearRisingFlag_0_31(EXTI_LINE);
 }
 
 static void rtc_config(uint8_t p0, uint16_t p1) {
+#ifdef STM32G0
+    LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_PWR | LL_APB1_GRP1_PERIPH_RTC);
+#else
     LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_PWR);
+#endif
+
     LL_PWR_EnableBkUpAccess();
 
     LL_RCC_LSI_Enable();
@@ -180,8 +194,8 @@ static void rtc_config(uint8_t p0, uint16_t p1) {
     LL_RTC_ClearFlag_ALRA(RTC);
     LL_RTC_EnableIT_ALRA(RTC);
 
-    LL_EXTI_EnableIT_0_31(LL_EXTI_LINE_17);
-    LL_EXTI_EnableRisingTrig_0_31(LL_EXTI_LINE_17);
+    LL_EXTI_EnableIT_0_31(EXTI_LINE);
+    LL_EXTI_EnableRisingTrig_0_31(EXTI_LINE);
 
     NVIC_SetPriority(RTC_IRQn, 2); // match tim.c
     NVIC_EnableIRQ(RTC_IRQn);
@@ -224,6 +238,7 @@ void rtc_init() {
     rtc_sync_time();
 }
 
+// standby stuff not currently used
 void rtc_set_to_seconds_and_standby() {
     ctx_t *ctx = &ctx_;
 
@@ -275,7 +290,11 @@ void rtc_sleep(bool forceShallow) {
     }
 
     rtc_set(&ctx_, usec, f);
+#ifdef STM32G0
+    LL_PWR_SetPowerMode(LL_PWR_MODE_STOP1);
+#else
     LL_PWR_SetPowerMode(LL_PWR_MODE_STOP_LPREGU);
+#endif
 
 // enable to test power in stand by; should be around 3.2uA
 #if 0

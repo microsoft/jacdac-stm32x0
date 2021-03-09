@@ -15,7 +15,7 @@ static int setup_tx(ctx_t *ctx, int cmd, const void *data, int size) {
 }
 
 static const uint32_t bl_ad_data[] = {JD_SERVICE_CLASS_BOOTLOADER, BL_PAGE_SIZE,
-                                      FLASH_SIZE - BL_SIZE, 0};
+                                      JD_FLASH_SIZE - BL_SIZE, 0};
 
 void bl_process(ctx_t *ctx) {
     if (ctx->chunk_no == 0xff && setup_tx(ctx, JD_BOOTLOADER_CMD_PAGE_DATA, &ctx->session_id, 12) == 0)

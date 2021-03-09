@@ -9,7 +9,6 @@ HALPREF = $(PLATFORM)/stm32f0xx_hal_driver/Src
 HALSRC =  \
 $(HALPREF)/stm32f0xx_ll_adc.c \
 $(HALPREF)/stm32f0xx_ll_comp.c \
-$(HALPREF)/stm32f0xx_ll_crc.c \
 $(HALPREF)/stm32f0xx_ll_crs.c \
 $(HALPREF)/stm32f0xx_ll_dac.c \
 $(HALPREF)/stm32f0xx_ll_dma.c \
@@ -35,7 +34,7 @@ CPPFLAGS += 	\
 	-I$(PLATFORM)/cmsis_device_f0/Include \
 	-I$(PLATFORM)/cmsis_core/Include
 DEFINES += -DUSE_FULL_LL_DRIVER -DSTM32$(SERIES)
-DEFINES += -D$(MCU) -DFLASH_SIZE="1024*$(FLASH_SIZE)" -DFLASH_PAGE_SIZE=$(PAGE_SIZE) -DBL_SIZE="1024*$(BL_SIZE)"
+DEFINES += -D$(MCU) -DJD_FLASH_SIZE="1024*$(FLASH_SIZE)" -DFLASH_PAGE_SIZE=$(PAGE_SIZE) -DBL_SIZE="1024*$(BL_SIZE)"
 
 include $(PLATFORM)/mk/$(MCU).mk
 

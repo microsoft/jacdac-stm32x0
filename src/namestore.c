@@ -1,8 +1,13 @@
 #include "lib.h"
 
+// (not used)
+
+// STM32G0 requires 8-byte aligned flash writes
+#ifndef STM32G0
+
 #define MAGIC 0xe233b285
 #define SETTINGS_SIZE 1024
-#define SETTINGS_START (0x08000000 + (FLASH_SIZE - BL_SIZE - SETTINGS_SIZE))
+#define SETTINGS_START (0x08000000 + (JD_FLASH_SIZE - BL_SIZE - SETTINGS_SIZE))
 
 extern uint32_t __etext;
 
@@ -137,3 +142,5 @@ const char *ns_get(uint64_t key) {
         return NULL;
     return ex->name;
 }
+
+#endif

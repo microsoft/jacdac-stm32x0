@@ -1,5 +1,10 @@
 #include "bl.h"
 
+#ifdef USART_ISR_TXE_TXFNF
+#define USART_ISR_TXE USART_ISR_TXE_TXFNF
+#define USART_ISR_RXNE USART_ISR_RXNE_RXFNE
+#endif
+
 #define PORT(pin) ((GPIO_TypeDef *)(GPIOA_BASE + (0x400 * (pin >> 4))))
 #define PIN(pin) (1 << ((pin)&0xf))
 
@@ -49,9 +54,9 @@ void uart_init(ctx_t *ctx) {
 #endif
 
 #ifdef LL_USART_FIFOTHRESHOLD_1_8
-    LL_USART_SetTXFIFOThreshold(USARTx, LL_USART_FIFOTHRESHOLD_1_8);
-    LL_USART_SetRXFIFOThreshold(USARTx, LL_USART_FIFOTHRESHOLD_1_8);
-    LL_USART_DisableFIFO(USARTx);
+    //LL_USART_SetTXFIFOThreshold(USARTx, LL_USART_FIFOTHRESHOLD_1_8);
+    //LL_USART_SetRXFIFOThreshold(USARTx, LL_USART_FIFOTHRESHOLD_1_8);
+    //LL_USART_DisableFIFO(USARTx);
 #endif
 
     LL_USART_ConfigHalfDuplexMode(USARTx);
@@ -133,7 +138,7 @@ int uart_start_tx(ctx_t *ctx, const void *data, uint32_t numbytes) {
     ctx->uart_bytesleft = numbytes;
     ctx->uart_mode = UART_MODE_TX;
 
-    target_wait_us(37);
+    target_wait_us(40);
 
     return 0;
 }

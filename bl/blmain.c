@@ -47,13 +47,22 @@ int main(void) {
     __disable_irq();
     clk_setup_pll();
 
-#if USART_IDX==1
+#if USART_IDX == 1
+#ifdef STM32G0
+    LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_USART1);
+#else
     LL_APB1_GRP1_EnableClock(LL_APB1_GRP2_PERIPH_USART1);
 #endif
-#if USART_IDX==2
+#endif
+#if USART_IDX == 2
     LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_USART2);
 #endif
+
+#ifdef STM32G0
+    LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_TIM17 | LL_APB2_GRP1_PERIPH_ADC);
+#else
     LL_APB1_GRP2_EnableClock(LL_APB1_GRP2_PERIPH_TIM17 | LL_APB1_GRP2_PERIPH_ADC1);
+#endif
 
     ctx_t *ctx = &ctx_;
 
@@ -67,6 +76,16 @@ int main(void) {
     uint32_t r0 = bl_adc_random_seed();
     ctx->randomseed = r0;
 
+#ifdef OTP_DEVICE_ID_ADDR
+    if (*(uint32_t *)OTP_DEVICE_ID_ADDR + 1 == 0) {
+        uint32_t r1 = bl_adc_random_seed();
+        r0 &= ~0x02000000; // clear "universal" bit
+        BL_DEVICE_ID = ((uint64_t)r0 << 32) | r1;
+        flash_program((void *)OTP_DEVICE_ID_ADDR, &BL_DEVICE_ID, 8);
+    } else {
+        BL_DEVICE_ID = *(uint64_t *)OTP_DEVICE_ID_ADDR;
+    }
+#else
     if ((bl_dev_info.device_id0 + 1) == 0) {
         if (app_dev_info.magic == DEV_INFO_MAGIC && app_dev_info.device_id0 &&
             (app_dev_info.device_id0 + 1)) {
@@ -80,6 +99,7 @@ int main(void) {
     } else {
         BL_DEVICE_ID = bl_dev_info.device_id;
     }
+#endif
 
     BL_DEVICE_ID ^= 1; // use different dev-id for application and bootloader
 
@@ -97,7 +117,7 @@ int main(void) {
 #else
     (void)app_valid;
 #endif
-        ctx->app_start_time = 0x80000000;
+    ctx->app_start_time = 0x80000000;
 
     while (1) {
         uint32_t now = ctx->now = tim_get_micros();
