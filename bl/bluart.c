@@ -49,9 +49,9 @@ void uart_init(ctx_t *ctx) {
 #endif
 
 #ifdef LL_USART_FIFOTHRESHOLD_1_8
-    LL_USART_SetTXFIFOThreshold(USARTx, LL_USART_FIFOTHRESHOLD_1_8);
-    LL_USART_SetRXFIFOThreshold(USARTx, LL_USART_FIFOTHRESHOLD_1_8);
-    LL_USART_DisableFIFO(USARTx);
+    //LL_USART_SetTXFIFOThreshold(USARTx, LL_USART_FIFOTHRESHOLD_1_8);
+    //LL_USART_SetRXFIFOThreshold(USARTx, LL_USART_FIFOTHRESHOLD_1_8);
+    //LL_USART_DisableFIFO(USARTx);
 #endif
 
     LL_USART_ConfigHalfDuplexMode(USARTx);
@@ -92,7 +92,7 @@ int uart_process(ctx_t *ctx) {
             }
         }
     } else if (ctx->uart_mode == UART_MODE_TX) {
-        if (isr & USART_ISR_TXFE) {
+        if (isr & USART_ISR_TXE_TXFNF) {
             if (ctx->uart_bytesleft) {
                 ctx->uart_bytesleft--;
                 USARTx->TDR = *ctx->uart_data++;

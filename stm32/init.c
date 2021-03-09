@@ -23,6 +23,7 @@ static void enable_nrst_pin(void) {
 
     DMESG("check NRST", FLASH->OPTR & FLASH_OPTR_NRST_MODE);
 
+    // this is default production value, but we check it anyways
     if (FLASH->OPTR & FLASH_OPTR_NRST_MODE_0)
         return;
 
