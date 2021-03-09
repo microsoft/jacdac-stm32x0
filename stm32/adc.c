@@ -200,11 +200,14 @@ uint16_t adc_read_temp(void) {
 #elif defined(STM32F031x6) || defined(STM32F042x6)
     return ((110 - 30) * (r - TS_CAL1)) / (TS_CAL2 - TS_CAL1) + 30;
 #elif defined(STM32G031xx)
-    return ((130 - 30) * (r - TS_CAL1)) / (TS_CAL2 - TS_CAL1) + 30;
+    // 33/30 - because factory measurements are done at 3.0V and we're running at 3.3V
+    return ((130 - 30) * 33 * (r - TS_CAL1)) / (30 * TS_CAL2 - TS_CAL1) + 30;
 #else
-#error "check datasheet!"
+    // copied TEMP slope from G031; hopefully that works for G030
+    return ((130 - 30) * 33 * (r - TS_CAL1)) / (30 * 343) + 30;
 #endif
 }
+
 
 static uint32_t pin_channel(uint8_t pin) {
     if (pin >> 4 == 0) {
