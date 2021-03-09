@@ -28,3 +28,10 @@
 #define FIRMWARE_IDENTIFIER(dev_class, dev_class_name)                                             \
     const char app_dev_class_name[] = dev_class_name;
 #endif
+
+#ifdef BL
+void board_init(void);
+#else
+#define PROFILE_INIT 1
+#include "board.h" // again
+#endif

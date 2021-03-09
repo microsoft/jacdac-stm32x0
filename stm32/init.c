@@ -141,8 +141,8 @@ void SystemInit(void) {
 
     LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_PWR);
 
-#ifdef BOARD_INIT_CODE
-    BOARD_INIT_CODE;
+#ifdef BOARD_STARTUP_CODE
+    BOARD_STARTUP_CODE;
 #endif
     enable_nrst_pin();
 }
