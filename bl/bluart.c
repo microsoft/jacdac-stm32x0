@@ -53,12 +53,6 @@ void uart_init(ctx_t *ctx) {
     LL_USART_SetPrescaler(USARTx, LL_USART_PRESCALER_DIV1);
 #endif
 
-#ifdef LL_USART_FIFOTHRESHOLD_1_8
-    //LL_USART_SetTXFIFOThreshold(USARTx, LL_USART_FIFOTHRESHOLD_1_8);
-    //LL_USART_SetRXFIFOThreshold(USARTx, LL_USART_FIFOTHRESHOLD_1_8);
-    //LL_USART_DisableFIFO(USARTx);
-#endif
-
     LL_USART_ConfigHalfDuplexMode(USARTx);
 }
 

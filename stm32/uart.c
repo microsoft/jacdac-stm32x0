@@ -197,11 +197,6 @@ static void USART_UART_Init(void) {
     LL_USART_SetPrescaler(USARTx, LL_USART_PRESCALER_DIV1);
 #endif
 
-#ifdef LL_USART_FIFOTHRESHOLD_1_8
-    //LL_USART_SetTXFIFOThreshold(USARTx, LL_USART_FIFOTHRESHOLD_1_8);
-    //LL_USART_SetRXFIFOThreshold(USARTx, LL_USART_FIFOTHRESHOLD_1_8);
-    //LL_USART_DisableFIFO(USARTx);
-#endif
     LL_USART_ConfigHalfDuplexMode(USARTx);
     LL_USART_EnableIT_ERROR(USARTx);
     // LL_USART_EnableDMADeactOnRxErr(USARTx);
@@ -217,12 +212,6 @@ void uart_init() {
 }
 
 static void check_idle(void) {
-#if 0
-    if (LL_DMA_IsEnabledChannel(DMA1, LL_DMA_CHANNEL_4))
-        jd_panic();
-    if (LL_DMA_IsEnabledChannel(DMA1, LL_DMA_CHANNEL_5))
-        jd_panic();
-#endif
     if (LL_USART_IsEnabled(USARTx))
         jd_panic();
 }
