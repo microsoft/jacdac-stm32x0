@@ -122,18 +122,12 @@ void clk_set_pll(int on) {
 #endif
 }
 
-uint8_t cpu_mhz;
-
-void SystemClock_Config(void) {
-    cpu_mhz = HSI_MHZ;
-
-    // LL_InitTick(cpu_mhz * 1000000, 1000U);
-    // LL_SYSTICK_SetClkSource(LL_SYSTICK_CLKSOURCE_HCLK);
-
-    enable_nrst_pin();
-}
+uint8_t cpu_mhz = HSI_MHZ;
 
 void SystemInit(void) {
+    // on G0 this is called before global variables are initialized
+    // also, they will be initialized after this is finished, so any writes to globals will be lost
+
 #ifdef STM32G0
     SCB->VTOR = FLASH_BASE; // needed?
     LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_SYSCFG);
@@ -150,6 +144,5 @@ void SystemInit(void) {
 #ifdef BOARD_INIT_CODE
     BOARD_INIT_CODE;
 #endif
-
-    SystemClock_Config();
+    enable_nrst_pin();
 }
