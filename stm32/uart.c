@@ -280,7 +280,11 @@ int uart_start_tx(const void *data, uint32_t numbytes) {
     // to here, it's about 1.3us
 
     // the USART takes a few us to start transmitting
-    target_wait_us(37);
+    target_wait_us(40);
+    // this works out to be:
+    // 57us on F0 at 8MHz
+    // 51us on G0 at 16MHz
+    // The spec requires min of 40us and max of 89us.
 
     LL_DMA_EnableChannel(DMA1, LL_DMA_CHANNEL_4);
 

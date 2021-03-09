@@ -138,7 +138,7 @@ int uart_start_tx(ctx_t *ctx, const void *data, uint32_t numbytes) {
     ctx->uart_bytesleft = numbytes;
     ctx->uart_mode = UART_MODE_TX;
 
-    target_wait_us(37);
+    target_wait_us(40);
 
     return 0;
 }
