@@ -3,6 +3,7 @@
 
 #define JD_CONFIG_TEMPERATURE 1
 
+#include "pinnames.h"
 #include "board.h"
 #include "dmesg.h"
 
