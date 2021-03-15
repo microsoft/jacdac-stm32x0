@@ -12,11 +12,12 @@ const buf = fs.readFileSync(fn)
 const flash_size = parseInt(process.argv[3])
 const bl_size = parseInt(process.argv[4])
 const profiles_path = process.argv[5]
+const page_size = parseInt(process.argv[6])
 
 const DEV_INFO_MAGIC = 0xf6a0e4b6
 
-if (isNaN(bl_size) || !profiles_path) {
-    throw "USAGE: node patch-bin.js file.elf flash_size_in_k bootloader_size_in_k profiles_path"
+if (isNaN(page_size) || !profiles_path) {
+    throw "USAGE: node patch-bin.js file.elf flash_size_in_k bootloader_size_in_k profiles_path page_size"
 }
 
 let pos = 0
@@ -89,7 +90,7 @@ if ((w0 & 0xff000000) == 0x20000000) {
 
     fs.writeFileSync(fn + ".json", JSON.stringify({
         "0xc8a729": dev_class,
-        "0x0be9f7": 1024,
+        "0x0be9f7": page_size,
         "0x650d9d": dev_class_name,
         "0x9fc7bc": fw_version
     }))
