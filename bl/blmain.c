@@ -51,7 +51,7 @@ int main(void) {
 #ifdef STM32G0
     LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_USART1);
 #else
-    LL_APB1_GRP1_EnableClock(LL_APB1_GRP2_PERIPH_USART1);
+    LL_APB1_GRP2_EnableClock(LL_APB1_GRP2_PERIPH_USART1);
 #endif
 #endif
 #if USART_IDX == 2
@@ -134,7 +134,6 @@ int main(void) {
 
         if (now >= ctx->app_start_time)
             start_app();
-
         if (ctx->led_off_time) {
             if (ctx->led_off_time < now) {
                 led_set(0);
