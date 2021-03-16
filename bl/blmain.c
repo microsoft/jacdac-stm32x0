@@ -128,7 +128,8 @@ int main(void) {
 
         LOG1_PULSE();
 
-        jd_process(ctx);
+        if (jd_process(ctx))
+            continue;
 
         if (now >= ctx->next_announce && !ctx->tx_full) {
             memcpy(ctx->txBuffer.data, announce_data, sizeof(announce_data));

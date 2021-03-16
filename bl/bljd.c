@@ -71,7 +71,7 @@ void jd_prep_send(ctx_t *ctx) {
     ctx->tx_full = 1;
 }
 
-void jd_process(ctx_t *ctx) {
+int jd_process(ctx_t *ctx) {
     int rx_status = uart_rx(ctx, &ctx->rxBuffer, sizeof(ctx->rxBuffer));
 
     if (rx_status == RX_RECEPTION_OK) {
@@ -82,13 +82,13 @@ void jd_process(ctx_t *ctx) {
         LOG0_PULSE();
         uart_post_rx(ctx);
         ctx->tx_start_time = 0;
-        return;
+        return 1;
     }
 
     if (rx_status == RX_LINE_BUSY) {
         LOG0_PULSE();
         ctx->tx_start_time = 0;
-        return;
+        return 1;
     }
 
     if (ctx->tx_full == 1 && !ctx->tx_start_time) {
@@ -98,10 +98,11 @@ void jd_process(ctx_t *ctx) {
         if (uart_tx(ctx, &ctx->txBuffer, JD_FRAME_SIZE(&ctx->txBuffer)) == 0) {
             // sent OK
             ctx->tx_full = 0;
-            return;
+            return 1;
         } else {
             // not sent because line was low
             // next loop iteration will pick it up as RX
+            return 1;
         }
     }
 
@@ -109,8 +110,10 @@ void jd_process(ctx_t *ctx) {
     if (!ctx->tx_full && ctx->rx_full) {
         process_frame(ctx, &ctx->rxBuffer);
         ctx->rx_full = 0;
+        return 1;
     } else {
         identify(ctx);
         bl_process(ctx);
+        return 0;
     }
 }

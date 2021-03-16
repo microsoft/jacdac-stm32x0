@@ -15,7 +15,7 @@
 #include "jd_control.h"
 
 #ifndef QUICK_LOG
-#define QUICK_LOG 1
+#define QUICK_LOG 0
 #endif
 
 #define CPU_MHZ HSI_MHZ
@@ -84,7 +84,7 @@ typedef struct ctx {
 
 extern ctx_t ctx_;
 
-void jd_process(ctx_t *ctx);
+int jd_process(ctx_t *ctx);
 void jd_prep_send(ctx_t *ctx);
 
 void tim_init(void);
