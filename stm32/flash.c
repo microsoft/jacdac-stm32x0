@@ -79,7 +79,7 @@ void flash_program(void *dst, const void *src, uint32_t len) {
 void flash_erase(void *page_addr) {
     unlock();
 #ifdef STM32G0
-    uint32_t addrmask = (((uint32_t)page_addr >> 11) << FLASH_CR_STRT_Pos) & FLASH_CR_PNB;
+    uint32_t addrmask = (((uint32_t)page_addr >> 11) << FLASH_CR_PNB_Pos) & FLASH_CR_PNB;
     FLASH->CR = (FLASH->CR & ~FLASH_CR_PNB) | FLASH_CR_PER | addrmask;
 #else
     FLASH->CR |= FLASH_CR_PER;
