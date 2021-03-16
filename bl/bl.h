@@ -14,19 +14,30 @@
 #include "jd_physical.h"
 #include "jd_control.h"
 
-#define CPU_MHZ PLL_MHZ
+#ifndef QUICK_LOG
+#define QUICK_LOG 1
+#endif
+
+#define CPU_MHZ HSI_MHZ
 
 typedef void (*cb_t)(void);
 
 typedef struct ctx {
     uint8_t jd_state;
 
-    uint8_t uart_mode;
-
     uint8_t tx_full, rx_full;
     uint8_t chunk_no;
     uint8_t bl_ad_queued;
     uint8_t id_counter;
+
+    uint16_t jd_status;
+    volatile uint16_t *jd_status_reg;
+
+#if QUICK_LOG == 1
+    volatile uint32_t *log_reg;
+    uint32_t log_p0;
+    uint32_t log_p1;
+#endif
 
     // these three fields are sent directly from here, so don't move them
     uint32_t session_id;
@@ -35,9 +46,6 @@ typedef struct ctx {
 
     uint32_t randomseed;
     uint32_t service_class_bl;
-
-    uint8_t *uart_data;
-    uint32_t uart_bytesleft;
 
     // timestamps
     uint32_t now;
@@ -55,6 +63,28 @@ typedef struct ctx {
     uint8_t pagedata[FLASH_PAGE_SIZE];
 } ctx_t;
 
+#if QUICK_LOG == 1
+#define LOG0_ON() *ctx->log_reg = ctx->log_p0
+#define LOG1_ON() *ctx->log_reg = ctx->log_p1
+#define LOG0_OFF() *ctx->log_reg = ctx->log_p0 << 16
+#define LOG1_OFF() *ctx->log_reg = ctx->log_p1 << 16
+#else
+#define LOG0_ON() ((void)0)
+#define LOG1_ON() ((void)0)
+#define LOG0_OFF() ((void)0)
+#define LOG1_OFF() ((void)0)
+#endif
+#define LOG0_PULSE()                                                                               \
+    do {                                                                                           \
+        LOG0_ON();                                                                                 \
+        LOG0_OFF();                                                                                \
+    } while (0)
+#define LOG1_PULSE()                                                                               \
+    do {                                                                                           \
+        LOG1_ON();                                                                                 \
+        LOG1_OFF();                                                                                \
+    } while (0)
+
 extern ctx_t ctx_;
 
 void jd_process(ctx_t *ctx);
@@ -68,11 +98,8 @@ uint32_t tim_get_micros(void);
 #define UART_MODE_TX 2
 
 void uart_init(ctx_t *ctx);
-int uart_start_tx(ctx_t *ctx, const void *data, uint32_t numbytes);
-void uart_start_rx(ctx_t *ctx, void *data, uint32_t maxbytes);
-#define UART_END_TX 1
-#define UART_END_RX 2
-int uart_process(ctx_t *ctx);
+int uart_tx(ctx_t *ctx, const void *data, uint32_t numbytes);
+void uart_rx(ctx_t *ctx, void *data, uint32_t maxbytes);
 
 uint16_t crc16(const void *data, uint32_t size);
 
