@@ -24,7 +24,8 @@ const familyID = dev_class
 // we flash it with the correct value.
 // This is so that bootloader will detect failed flash and don't try to
 // boot damaged application.
-const bootBlockSize = 1024
+let bootBlockSize = 1024
+const extTags = fetchExtensionTags()
 const app_reset_offset = 13 * 4
 
 const flags =
@@ -34,6 +35,8 @@ const len = (buf.length + bootBlockSize) & ~(bootBlockSize - 1)
 const numBlocks = (bootBlockSize + len) >> 8
 const outp = []
 
+
+
 function fetchExtensionTags() {
     let tags = {}
     try {
@@ -41,6 +44,8 @@ function fetchExtensionTags() {
     } catch {
         return Buffer.alloc(0)
     }
+    if (tags["0x0be9f7"])
+    bootBlockSize = tags["0x0be9f7"]
     const tagBuffers = []
     for (const ks of Object.keys(tags)) {
         const k = parseInt(ks)
@@ -65,7 +70,6 @@ function fetchExtensionTags() {
     return Buffer.concat(tagBuffers)
 }
 
-const extTags = fetchExtensionTags()
 
 function addBlock(pos, buf) {
     const bl = Buffer.alloc(512)
