@@ -114,7 +114,7 @@ int main(void) {
 
     bool app_valid = bl_fixup_app_handlers(ctx);
 
-#if 0
+#if 1
     if (app_valid)
         ctx->app_start_time = 512 * 1024;
     else
