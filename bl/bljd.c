@@ -72,42 +72,45 @@ void jd_prep_send(ctx_t *ctx) {
 }
 
 void jd_process(ctx_t *ctx) {
-    uint32_t now = ctx->now;
+    int rx_status = uart_rx(ctx, &ctx->rxBuffer, sizeof(ctx->rxBuffer));
 
-    if (pin_get(UART_PIN)) {
-        if (!ctx->rx_full && ctx->low_start && 9 <= now - ctx->low_start &&
-            now - ctx->low_start <= 50) {
+    if (rx_status == RX_RECEPTION_OK) {
+        if (valid_frame(ctx, &ctx->rxBuffer)) {
+            LOG0_PULSE();
             ctx->rx_full = 1;
-            uart_rx(ctx, &ctx->rxBuffer, sizeof(ctx->rxBuffer));
-            if (!valid_frame(ctx, &ctx->rxBuffer))
-                ctx->rx_full = 0;
-        } else if (ctx->tx_full == 1 && !ctx->tx_start_time) {
-            ctx->tx_start_time = now + 40 + (random(ctx) & 127);
-        } else if (ctx->tx_start_time && ctx->tx_start_time <= now) {
-            ctx->tx_start_time = 0;
-            if (uart_tx(ctx, &ctx->txBuffer, JD_FRAME_SIZE(&ctx->txBuffer)) == 0) {
-                // sent OK
-                ctx->tx_full = 0;
-            } else {
-                // not sent because line was low
-                // next loop iteration will pick it up as RX
-            }
         }
-        ctx->low_start = 0;
-    } else {
-        if (!ctx->low_start)
-            ctx->low_start = now;
+        LOG0_PULSE();
+        uart_post_rx(ctx);
         ctx->tx_start_time = 0;
+        return;
     }
 
-    now = ctx->now = tim_get_micros();
+    if (rx_status == RX_LINE_BUSY) {
+        LOG0_PULSE();
+        ctx->tx_start_time = 0;
+        return;
+    }
+
+    if (ctx->tx_full == 1 && !ctx->tx_start_time) {
+        ctx->tx_start_time = ctx->now + 40 + (random(ctx) & 127);
+    } else if (ctx->tx_start_time && ctx->tx_start_time <= ctx->now) {
+        ctx->tx_start_time = 0;
+        if (uart_tx(ctx, &ctx->txBuffer, JD_FRAME_SIZE(&ctx->txBuffer)) == 0) {
+            // sent OK
+            ctx->tx_full = 0;
+            return;
+        } else {
+            // not sent because line was low
+            // next loop iteration will pick it up as RX
+        }
+    }
 
     // only process frame when uart isn't busy
     if (!ctx->tx_full && ctx->rx_full) {
         process_frame(ctx, &ctx->rxBuffer);
         ctx->rx_full = 0;
+    } else {
+        identify(ctx);
+        bl_process(ctx);
     }
-
-    identify(ctx);
-    bl_process(ctx);
 }

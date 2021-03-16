@@ -1,11 +1,5 @@
 #include "bl.h"
 
-#define CHECK_UART()                                                                               \
-    do {                                                                                           \
-        ctx->jd_status &= *ctx->jd_status_reg;                                                     \
-        LOG0_PULSE();                                                                              \
-    } while (0)
-
 static void start_app(void) {
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Warray-bounds"
@@ -135,7 +129,6 @@ int main(void) {
         LOG1_PULSE();
 
         jd_process(ctx);
-        now = ctx->now;
 
         if (now >= ctx->next_announce && !ctx->tx_full) {
             memcpy(ctx->txBuffer.data, announce_data, sizeof(announce_data));
@@ -152,7 +145,7 @@ int main(void) {
                 ctx->led_off_time = 0;
             }
         } else {
-            led_set((now & 0xff) < ((now & 0x80000) ? 0x4 : 0xf));
+            led_set((now & 0x3f) < ((now & 0x80000) ? 0x1 : 0x4));
         }
     }
 }

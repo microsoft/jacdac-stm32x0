@@ -29,9 +29,7 @@ typedef struct ctx {
     uint8_t chunk_no;
     uint8_t bl_ad_queued;
     uint8_t id_counter;
-
-    uint16_t jd_status;
-    volatile uint16_t *jd_status_reg;
+    uint8_t low_detected;
 
 #if QUICK_LOG == 1
     volatile uint32_t *log_reg;
@@ -49,7 +47,6 @@ typedef struct ctx {
 
     // timestamps
     uint32_t now;
-    uint32_t low_start;
     uint32_t tx_start_time;
     uint32_t led_off_time;
     uint32_t next_announce;
@@ -93,13 +90,15 @@ void jd_prep_send(ctx_t *ctx);
 void tim_init(void);
 uint32_t tim_get_micros(void);
 
-#define UART_MODE_NONE 0
-#define UART_MODE_RX 1
-#define UART_MODE_TX 2
+
 
 void uart_init(ctx_t *ctx);
 int uart_tx(ctx_t *ctx, const void *data, uint32_t numbytes);
-void uart_rx(ctx_t *ctx, void *data, uint32_t maxbytes);
+#define RX_LINE_BUSY 1
+#define RX_LINE_IDLE 2
+#define RX_RECEPTION_OK 3
+int uart_rx(ctx_t *ctx, void *data, uint32_t maxbytes);
+void uart_post_rx(ctx_t *ctx);
 
 uint16_t crc16(const void *data, uint32_t size);
 

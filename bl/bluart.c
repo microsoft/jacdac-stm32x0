@@ -40,10 +40,17 @@ static void uartDoesntOwnPin(void) {
     LL_GPIO_SetPinMode(PIN_PORT, PIN_PIN, LL_GPIO_MODE_INPUT);
 }
 
-void uart_init(ctx_t *ctx) {
-    ctx->jd_status_reg = (volatile uint16_t *)&PORT(UART_PIN)->IDR;
-    ctx->jd_status--;
+static void rx_setup(void) {
+    uartOwnsPin();
+    LL_USART_DisableDirectionTx(USARTx);
+    LL_USART_EnableDirectionRx(USARTx);
+    USARTx->ICR = USART_ISR_FE | USART_ISR_NE | USART_ISR_ORE; // clear error flags before we start
+    LL_USART_Enable(USARTx);
+    while (!(LL_USART_IsActiveFlag_REACK(USARTx)))
+        ;
+}
 
+void uart_init(ctx_t *ctx) {
 #if QUICK_LOG == 1
     ctx->log_reg = (volatile uint32_t *)&PORT(PIN_X0)->BSRR;
     ctx->log_p0 = PIN(PIN_X0);
@@ -63,6 +70,8 @@ void uart_init(ctx_t *ctx) {
 #endif
 
     LL_USART_ConfigHalfDuplexMode(USARTx);
+
+    rx_setup();
 }
 
 void uart_disable(ctx_t *ctx) {
@@ -70,39 +79,61 @@ void uart_disable(ctx_t *ctx) {
     uartDoesntOwnPin();
 }
 
-void uart_rx(ctx_t *ctx, void *data, uint32_t maxbytes) {
-    uartOwnsPin();
-    LL_USART_DisableDirectionTx(USARTx);
-    LL_USART_EnableDirectionRx(USARTx);
-    USARTx->ICR = USART_ISR_FE | USART_ISR_NE | USART_ISR_ORE; // clear error flags before we start
-    LL_USART_Enable(USARTx);
-    while (!(LL_USART_IsActiveFlag_REACK(USARTx)))
-        ;
+int uart_rx(ctx_t *ctx, void *data, uint32_t maxbytes) {
+    uint32_t isr = USARTx->ISR;
+
+    if (ctx->low_detected || !(isr & USART_ISR_FE)) {
+        if (isr & USART_ISR_BUSY)
+            return RX_LINE_BUSY;
+        return RX_LINE_IDLE;
+    }
+
+    ctx->low_detected = 0;
+
+    // wait for BUSY to be cleared - ie the low pulse has ended
+    while (isr & USART_ISR_BUSY)
+        isr = USARTx->ISR;
+
+    uart_post_rx(ctx); // clear errors
 
     uint8_t *dp = data;
-    uint32_t delaycnt = 0;
+    int32_t delaycnt = -10 * CPU_MHZ; // allow a bit more delay at the start
+    LOG0_PULSE();
     while (maxbytes > 0) {
-        uint32_t isr = USARTx->ISR;
+        isr = USARTx->ISR;
         if (isr & USART_ISR_RXNE) {
             *dp++ = USARTx->RDR;
             maxbytes--;
             delaycnt = 0;
-        } else if (isr & USART_ISR_FE || delaycnt > 100000) {
+        } else if (isr & USART_ISR_FE || delaycnt > 4 * CPU_MHZ) {
             break;
         } else {
             delaycnt++;
         }
     }
+    LOG0_PULSE();
 
-    uart_disable(ctx);
+    return RX_RECEPTION_OK;
+}
+
+void uart_post_rx(ctx_t *ctx) {
+    (void)USARTx->RDR;
+    USARTx->ICR = USART_ISR_FE | USART_ISR_NE | USART_ISR_ORE;
+    (void)USARTx->RDR;
 }
 
 int uart_tx(ctx_t *ctx, const void *data, uint32_t numbytes) {
+    LL_USART_Disable(USARTx);
+    uartDoesntOwnPin();
+
     LL_GPIO_ResetOutputPin(PIN_PORT, PIN_PIN);
     gpio_probe_and_set(PIN_PORT, PIN_PIN, PIN_MODER | PIN_PORT->MODER);
     if (!(PIN_PORT->MODER & PIN_MODER)) {
+        ctx->low_detected = 1;
+        rx_setup();
         return -1;
     }
+
     target_wait_us(11);
     LL_GPIO_SetOutputPin(PIN_PORT, PIN_PIN);
 
@@ -133,7 +164,7 @@ int uart_tx(ctx_t *ctx, const void *data, uint32_t numbytes) {
     LL_GPIO_ResetOutputPin(PIN_PORT, PIN_PIN);
     target_wait_us(12);
     LL_GPIO_SetOutputPin(PIN_PORT, PIN_PIN);
-    uart_disable(ctx);
+    rx_setup();
 
     return 0;
 }
