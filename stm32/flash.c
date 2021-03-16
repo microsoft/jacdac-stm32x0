@@ -37,7 +37,7 @@ static void check_eop(void) {
 
 void flash_program(void *dst, const void *src, uint32_t len) {
 #ifdef STM32G0
-    if ((((uint32_t)dst) & 7) || (((uint32_t)src) & 7) || (len & 7))
+    if ((((uint32_t)dst) & 7) || (((uint32_t)src) & 3) || (len & 7))
         jd_panic();
 #else
     if ((((uint32_t)dst) & 1) || (((uint32_t)src) & 1) || (len & 1))
