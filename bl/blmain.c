@@ -13,6 +13,10 @@ ctx_t ctx_;
 void led_init(void) {
     pin_setup_output(PIN_LED);
     pin_setup_output(PIN_LED_GND);
+#if QUICK_LOG == 1
+    pin_setup_output(PIN_X0);
+    pin_setup_output(PIN_X1);
+#endif
     pin_set(PIN_LED_GND, 0);
 }
 
@@ -45,7 +49,7 @@ uint32_t bl_adc_random_seed(void);
 
 int main(void) {
     __disable_irq();
-    clk_setup_pll();
+    // clk_setup_pll();
 
 #if USART_IDX == 1
 #ifdef STM32G0
@@ -110,7 +114,7 @@ int main(void) {
 
     bool app_valid = bl_fixup_app_handlers(ctx);
 
-#if 1
+#if 0
     if (app_valid)
         ctx->app_start_time = 512 * 1024;
     else
@@ -122,9 +126,10 @@ int main(void) {
     while (1) {
         uint32_t now = ctx->now = tim_get_micros();
 
-        // pin_pulse(PIN_LOG0, 1);
+        LOG1_PULSE();
 
-        jd_process(ctx);
+        if (jd_process(ctx))
+            continue;
 
         if (now >= ctx->next_announce && !ctx->tx_full) {
             memcpy(ctx->txBuffer.data, announce_data, sizeof(announce_data));
@@ -134,13 +139,14 @@ int main(void) {
 
         if (now >= ctx->app_start_time)
             start_app();
+
         if (ctx->led_off_time) {
             if (ctx->led_off_time < now) {
                 led_set(0);
                 ctx->led_off_time = 0;
             }
         } else {
-            led_set((now & 0xff) < ((now & 0x80000) ? 0x4 : 0xf));
+            led_set((now & 0x3f) < ((now & 0x80000) ? 0x1 : 0x4));
         }
     }
 }
