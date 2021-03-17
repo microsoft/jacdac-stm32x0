@@ -106,12 +106,12 @@ LDFLAGS = -specs=nosys.specs -specs=nano.specs \
 	-T"$(LD_SCRIPT)" -Wl,--gc-sections
 
 all: refresh-version
+ifeq ($(BL)$(NOBL),)
 	$(V)node $(SCRIPTS)/check-fw-id.js targets
-	$(MAKE) $(MAKE_FLAGS) build
-ifeq ($(BL),)
-	$(MAKE) $(MAKE_FLAGS) BL=1 build
 endif
-ifeq ($(BL),)
+	$(MAKE) $(MAKE_FLAGS) build
+ifeq ($(BL)$(NOBL),)
+	$(MAKE) $(MAKE_FLAGS) BL=1 build
 	$(MAKE) combine
 endif
 	$(V)$(PREFIX)size $(BUILT_BIN)/*.elf
@@ -176,7 +176,7 @@ $(BUILT)/%.o: %.s
 	@echo BIN/HEX $<
 	$(V)$(PREFIX)objcopy -O binary $< $(@:.hex=.bin)
 	$(V)$(PREFIX)objcopy -O ihex $< $@
-ifeq ($(BL),)
+ifeq ($(BL)$(NOBL),)
 	@echo UF2 $<
 	$(V)node $(SCRIPTS)/bin2uf2.js $(@:.hex=.bin)
 endif
@@ -214,8 +214,10 @@ $(BUILT_BIN)/version.o: $(BUILT_BIN)/version.c
 $(BUILT_BIN)/$(PREF)-%.elf: $(BUILT)/jd/prof-%.o $(OBJ) Makefile $(LD_SCRIPT) $(SCRIPTS)/patch-bin.js $(FORCE)
 	@echo LD $@
 	$(V)$(CC) $(CFLAGS) $(LDFLAGS) -Wl,-Map=$@.map  -o $@ $(OBJ) $< -lm
+ifeq ($(NOBL),)
 	@echo BIN-PATCH $@
-	$(V)node $(SCRIPTS)/patch-bin.js -q $@ $(FLASH_SIZE) $(BL_SIZE) targets/$(TARGET)/profile
+	$(V)node $(SCRIPTS)/patch-bin.js -q $@ $(FLASH_SIZE) $(BL_SIZE) targets/$(TARGET)/profile $(PAGE_SIZE)
+endif
 
 build: $(addsuffix .hex,$(addprefix $(BUILT_BIN)/$(PREF)-,$(PROFILES)))
 
@@ -246,5 +248,7 @@ drop: $(addprefix targ-,$(DROP_TARGETS))
 ff: full-flash
 
 full-flash:
+ifeq ($(NOBL),)
 	$(MAKE) BL=1 r
+endif
 	$(MAKE) r

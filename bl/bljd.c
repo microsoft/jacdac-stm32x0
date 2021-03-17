@@ -71,53 +71,49 @@ void jd_prep_send(ctx_t *ctx) {
     ctx->tx_full = 1;
 }
 
-void jd_process(ctx_t *ctx) {
-    uint32_t now = ctx->now;
+int jd_process(ctx_t *ctx) {
+    int rx_status = uart_rx(ctx, &ctx->rxBuffer, sizeof(ctx->rxBuffer));
 
-    if (ctx->uart_mode == UART_MODE_NONE) {
-        if (pin_get(UART_PIN)) {
-            if (!ctx->rx_full && ctx->low_start && 9 <= now - ctx->low_start &&
-                now - ctx->low_start <= 50) {
-                ctx->rx_full = 1;
-                uart_start_rx(ctx, &ctx->rxBuffer, sizeof(ctx->rxBuffer));
-            } else if (ctx->tx_full == 1 && !ctx->tx_start_time) {
-                ctx->tx_start_time = now + 40 + (random(ctx) & 127);
-            } else if (ctx->tx_start_time && ctx->tx_start_time <= now) {
-                ctx->tx_start_time = 0;
-                if (uart_start_tx(ctx, &ctx->txBuffer, JD_FRAME_SIZE(&ctx->txBuffer)) == 0) {
-                    // sent OK
-                    ctx->tx_full = 2;
-                } else {
-                    // not sent because line was low
-                    // next loop iteration will pick it up as RX
-                }
-            }
-            ctx->low_start = 0;
-        } else {
-            if (!ctx->low_start)
-                ctx->low_start = now;
-            ctx->tx_start_time = 0;
+    if (rx_status == RX_RECEPTION_OK) {
+        if (valid_frame(ctx, &ctx->rxBuffer)) {
+            LOG0_PULSE();
+            ctx->rx_full = 1;
         }
+        LOG0_PULSE();
+        uart_post_rx(ctx);
+        ctx->tx_start_time = 0;
+        return 1;
+    }
 
-        // only process frame when uart isn't busy
-        if (!ctx->tx_full && ctx->rx_full == 2) {
-            process_frame(ctx, &ctx->rxBuffer);
-            ctx->rx_full = 0;
-        }
-    } else {
-        switch (uart_process(ctx)) {
-        case UART_END_RX:
-            if (valid_frame(ctx, &ctx->rxBuffer))
-                ctx->rx_full = 2;
-            else
-                ctx->rx_full = 0;
-            break;
-        case UART_END_TX:
+    if (rx_status == RX_LINE_BUSY) {
+        LOG0_PULSE();
+        ctx->tx_start_time = 0;
+        return 1;
+    }
+
+    if (ctx->tx_full == 1 && !ctx->tx_start_time) {
+        ctx->tx_start_time = ctx->now + 40 + (random(ctx) & 127);
+    } else if (ctx->tx_start_time && ctx->tx_start_time <= ctx->now) {
+        ctx->tx_start_time = 0;
+        if (uart_tx(ctx, &ctx->txBuffer, JD_FRAME_SIZE(&ctx->txBuffer)) == 0) {
+            // sent OK
             ctx->tx_full = 0;
-            break;
+            return 1;
+        } else {
+            // not sent because line was low
+            // next loop iteration will pick it up as RX
+            return 1;
         }
     }
 
-    identify(ctx);
-    bl_process(ctx);
+    // only process frame when uart isn't busy
+    if (!ctx->tx_full && ctx->rx_full) {
+        process_frame(ctx, &ctx->rxBuffer);
+        ctx->rx_full = 0;
+        return 1;
+    } else {
+        identify(ctx);
+        bl_process(ctx);
+        return 0;
+    }
 }

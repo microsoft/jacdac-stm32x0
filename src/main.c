@@ -1,6 +1,8 @@
 #include "lib.h"
 #include "services/interfaces/jd_hw_pwr.h"
 
+#ifndef JD_SKIP_MAIN
+
 uint32_t now;
 
 static const uint8_t output_pins[] = {
@@ -143,3 +145,5 @@ void hw_panic(void) {
     }
     target_reset();
 }
+
+#endif

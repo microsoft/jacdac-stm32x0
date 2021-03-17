@@ -21,6 +21,10 @@ void led_init(void) {
 #else
     pin_setup_output(PIN_LED);
     pin_setup_output(PIN_LED_GND);
+#if QUICK_LOG == 1
+    pin_setup_output(PIN_X0);
+    pin_setup_output(PIN_X1);
+#endif
     pin_set(PIN_LED_GND, 0);
 #endif
 #if QUICK_LOG == 1
@@ -59,13 +63,13 @@ uint32_t bl_adc_random_seed(void);
 
 int main(void) {
     __disable_irq();
-    clk_setup_pll();
+    // clk_setup_pll();
 
 #if USART_IDX == 1
 #ifdef STM32G0
     LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_USART1);
 #else
-    LL_APB1_GRP1_EnableClock(LL_APB1_GRP2_PERIPH_USART1);
+    LL_APB1_GRP2_EnableClock(LL_APB1_GRP2_PERIPH_USART1);
 #endif
 #endif
 #if USART_IDX == 2
@@ -138,9 +142,10 @@ int main(void) {
     while (1) {
         uint32_t now = ctx->now = tim_get_micros();
 
-        // pin_pulse(PIN_LOG0, 1);
+        LOG1_PULSE();
 
-        jd_process(ctx);
+        if (jd_process(ctx))
+            continue;
 
         if (now >= ctx->next_announce && !ctx->tx_full) {
             memcpy(ctx->txBuffer.data, announce_data, sizeof(announce_data));
