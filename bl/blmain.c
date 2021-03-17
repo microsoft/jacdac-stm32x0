@@ -10,19 +10,33 @@ static void start_app(void) {
 
 ctx_t ctx_;
 
+#define PWM_PERIOD 300
+// TODO change polarity if needed
+#define SET_LED(v) blled_set_duty(PWM_PERIOD - (v))
+
 void led_init(void) {
+#ifdef PIN_BL_LED
+    SET_LED(0);
+    blled_init(PWM_PERIOD);
+#else
     pin_setup_output(PIN_LED);
     pin_setup_output(PIN_LED_GND);
     pin_set(PIN_LED_GND, 0);
+#endif
+#if QUICK_LOG == 1
+    pin_setup_output(PIN_X0);
+    pin_setup_output(PIN_X1);
+#endif
 }
 
+#ifndef PIN_BL_LED
 void led_set(int state) {
     pin_set(PIN_LED, state);
 }
+#endif
 
 void led_blink(int us) {
     ctx_.led_off_time = tim_get_micros() + us;
-    led_set(1);
 }
 
 uint32_t random(ctx_t *ctx) {
@@ -67,7 +81,6 @@ int main(void) {
     ctx_t *ctx = &ctx_;
 
     led_init();
-    led_set(1);
     tim_init();
     uart_init(ctx);
 
@@ -118,6 +131,9 @@ int main(void) {
     (void)app_valid;
 #endif
     ctx->app_start_time = 0x80000000;
+    // we delay the first LED light up randomly, so it's not very likely to get synchronized with
+    // other bootloaders
+    uint32_t led_cnt_down = (ctx->randomseed & 0xff) + 10;
 
     while (1) {
         uint32_t now = ctx->now = tim_get_micros();
@@ -135,14 +151,34 @@ int main(void) {
         if (now >= ctx->app_start_time)
             start_app();
 
-        if (ctx->led_off_time) {
+        led_cnt_down--;
+#ifdef PIN_BL_LED
+        if (led_cnt_down == 0) {
+            led_cnt_down = 10;
             if (ctx->led_off_time < now) {
-                led_set(0);
-                ctx->led_off_time = 0;
+                if (now & 0x80000)
+                    SET_LED(10);
+                else
+                    SET_LED(20);
+            } else {
+                SET_LED(40);
             }
-        } else {
-            led_set((now & 0xff) < ((now & 0x80000) ? 0x4 : 0xf));
         }
+#else
+        if (led_cnt_down == 1) {
+            led_set(1);
+        } else if (led_cnt_down == 0) {
+            led_set(0);
+            if (ctx->led_off_time < now) {
+                if (now & 0x80000)
+                    led_cnt_down = 5;
+                else
+                    led_cnt_down = 10;
+            } else {
+                led_cnt_down = 2;
+            }
+        }
+#endif
     }
 }
 
@@ -153,10 +189,17 @@ static void busy_sleep(int ms) {
 }
 
 static void led_panic_blink(void) {
+#ifdef PIN_BL_LED
+    SET_LED(40);
+    busy_sleep(70);
+    SET_LED(0);
+    busy_sleep(70);
+#else
     led_set(1);
     busy_sleep(70);
     led_set(0);
     busy_sleep(70);
+#endif
 }
 
 void jd_panic(void) {

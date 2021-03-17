@@ -63,9 +63,9 @@ void jd_prep_send(ctx_t *ctx);
 void tim_init(void);
 uint32_t tim_get_micros(void);
 
-#define UART_MODE_NONE 0
-#define UART_MODE_RX 1
-#define UART_MODE_TX 2
+
+void blled_init(uint32_t period);
+void blled_set_duty(uint32_t duty);
 
 void uart_init(ctx_t *ctx);
 int uart_start_tx(ctx_t *ctx, const void *data, uint32_t numbytes);
