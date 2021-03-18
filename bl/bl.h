@@ -1,24 +1,6 @@
 #pragma once
 
-#include "jdprofile.h"
-#include "blproto.h"
-
-#if defined(STM32F0)
-#include "stm32f0.h"
-#elif defined(STM32G0)
-#include "stm32g0.h"
-#else
-#error "invalid CPU"
-#endif
-
-#include "jd_physical.h"
-#include "jd_control.h"
-
-#ifndef QUICK_LOG
-#define QUICK_LOG 0
-#endif
-
-#define CPU_MHZ HSI_MHZ
+#include "blutil.h"
 
 typedef void (*cb_t)(void);
 
@@ -91,10 +73,6 @@ void jd_prep_send(ctx_t *ctx);
 void tim_init(void);
 uint32_t tim_get_micros(void);
 
-
-void blled_init(uint32_t period);
-void blled_set_duty(uint32_t duty);
-
 void uart_init(ctx_t *ctx);
 int uart_tx(ctx_t *ctx, const void *data, uint32_t numbytes);
 #define RX_LINE_BUSY 1
@@ -102,8 +80,6 @@ int uart_tx(ctx_t *ctx, const void *data, uint32_t numbytes);
 #define RX_RECEPTION_OK 3
 int uart_rx(ctx_t *ctx, void *data, uint32_t maxbytes);
 void uart_post_rx(ctx_t *ctx);
-
-uint16_t crc16(const void *data, uint32_t size);
 
 uint32_t random(ctx_t *);
 uint16_t jd_crc16(const void *data, uint32_t size);

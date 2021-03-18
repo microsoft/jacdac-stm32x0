@@ -1,4 +1,4 @@
-#include "bl.h"
+#include "blutil.h"
 
 RAM_FUNC
 void target_wait_cycles(int n) {

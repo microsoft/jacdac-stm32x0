@@ -10,42 +10,6 @@ static void start_app(void) {
 
 ctx_t ctx_;
 
-// The LED_BL will be run at 10/BL_LED_PERIOD and 30/BL_LED_PERIOD
-#ifndef BL_LED_PERIOD
-#define BL_LED_PERIOD 300
-#endif
-
-#ifdef LED_RGB_COMMON_CATHODE
-#define SET_LED(v) blled_set_duty(v)
-#else
-#define SET_LED(v) blled_set_duty(BL_LED_PERIOD - (v))
-#endif
-
-void led_init(void) {
-#ifdef PIN_BL_LED
-    SET_LED(0);
-    blled_init(BL_LED_PERIOD);
-#else
-    pin_setup_output(PIN_LED);
-    pin_setup_output(PIN_LED_GND);
-#if QUICK_LOG == 1
-    pin_setup_output(PIN_X0);
-    pin_setup_output(PIN_X1);
-#endif
-    pin_set(PIN_LED_GND, 0);
-#endif
-#if QUICK_LOG == 1
-    pin_setup_output(PIN_X0);
-    pin_setup_output(PIN_X1);
-#endif
-}
-
-#ifndef PIN_BL_LED
-void led_set(int state) {
-    pin_set(PIN_LED, state);
-}
-#endif
-
 void led_blink(int us) {
     ctx_.led_on_time = tim_get_micros() + us;
 }
@@ -142,7 +106,7 @@ int main(void) {
 #else
     (void)app_valid;
 #endif
-    ctx->app_start_time = 0x80000000;
+        ctx->app_start_time = 0x80000000;
     // we delay the first LED light up randomly, so it's not very likely to get synchronized with
     // other bootloaders
     uint32_t led_cnt_down = (ctx->randomseed & 0xff) + 10;
@@ -178,52 +142,25 @@ int main(void) {
             led_cnt_down = 10;
             if (ctx->led_on_time < now) {
                 if (now & 0x80000)
-                    SET_LED(30);
+                    led_set_value(30);
                 else
-                    SET_LED(10);
+                    led_set_value(10);
             } else {
-                SET_LED(0);
+                led_set_value(0);
             }
         }
 #else
         if (led_cnt_down == 1) {
             if (ctx->led_on_time < now) {
-                led_set(1);
+                led_set_value(30);
             }
         } else if (led_cnt_down == 0) {
-            led_set(0);
+            led_set_value(0);
             if (now & 0x80000)
                 led_cnt_down = 5;
             else
                 led_cnt_down = 10;
         }
 #endif
-    }
-}
-
-static void busy_sleep(int ms) {
-    ms *= 1000; // check
-    while (ms--)
-        asm volatile("nop");
-}
-
-static void led_panic_blink(void) {
-#ifdef PIN_BL_LED
-    SET_LED(40);
-    busy_sleep(70);
-    SET_LED(0);
-    busy_sleep(70);
-#else
-    led_set(1);
-    busy_sleep(70);
-    led_set(0);
-    busy_sleep(70);
-#endif
-}
-
-void jd_panic(void) {
-    DMESG("PANIC!");
-    while (1) {
-        led_panic_blink();
     }
 }
