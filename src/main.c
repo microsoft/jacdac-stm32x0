@@ -120,6 +120,7 @@ int main(void) {
 
 static void led_panic_blink(void) {
 #ifdef PIN_LED_R
+    // TODO should we actually PWM?
     pin_setup_output(PIN_LED_R);
     // it doesn't actually matter if LED_RGB_COMMON_CATHODE is defined, as we're just blinking
     pin_set(PIN_LED_R, 0);

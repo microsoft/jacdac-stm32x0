@@ -15,10 +15,10 @@ ctx_t ctx_;
 #define BL_LED_PERIOD 300
 #endif
 
-#ifndef LED_RGB_COMMON_CATHODE
-#define SET_LED(v) blled_set_duty(BL_LED_PERIOD - (v))
-#else
+#ifdef LED_RGB_COMMON_CATHODE
 #define SET_LED(v) blled_set_duty(v)
+#else
+#define SET_LED(v) blled_set_duty(BL_LED_PERIOD - (v))
 #endif
 
 void led_init(void) {
