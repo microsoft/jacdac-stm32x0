@@ -30,6 +30,7 @@ typedef struct ctx {
     uint8_t bl_ad_queued;
     uint8_t id_counter;
     uint8_t low_detected;
+    uint16_t id_queued;
 
 #if QUICK_LOG == 1
     volatile uint32_t *log_reg;
@@ -48,7 +49,7 @@ typedef struct ctx {
     // timestamps
     uint32_t now;
     uint32_t tx_start_time;
-    uint32_t led_off_time;
+    uint32_t led_on_time;
     uint32_t next_announce;
     uint32_t next_id_blink;
     uint32_t app_start_time;
@@ -91,6 +92,8 @@ void tim_init(void);
 uint32_t tim_get_micros(void);
 
 
+void blled_init(uint32_t period);
+void blled_set_duty(uint32_t duty);
 
 void uart_init(ctx_t *ctx);
 int uart_tx(ctx_t *ctx, const void *data, uint32_t numbytes);

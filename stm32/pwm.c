@@ -49,7 +49,8 @@ static const struct PinPWM pins[] = {
     {PA_6, 1, LL_GPIO_AF_1, TIM3},  // SERVO on jdm-v2,3
     {PA_11, 4, LL_GPIO_AF_2, TIM1}, // POWER on jdm-v3
     {PB_0, 3, LL_GPIO_AF_1, TIM3},  // GLO0 on jdm-v3, also TIM1:2N
-    {PB_1, 1, LL_GPIO_AF_0, TIM14}, // GLO1 on jdm-v3; also TIM3:4, TIM1:3N
+    {PB_1, 4, LL_GPIO_AF_1, TIM3}, // GLO1 on jdm-v3; also TIM3:4, TIM1:3N
+    //{PB_1, 1, LL_GPIO_AF_0, TIM14}, // GLO1 on jdm-v3; also TIM3:4, TIM1:3N
     {PA_10, 3, LL_GPIO_AF_2, TIM1}, // SND
     {PA_4, 1, LL_GPIO_AF_4, TIM14}, // SND
     {PA_7, 1, LL_GPIO_AF_4, TIM14}, // servo

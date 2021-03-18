@@ -10,7 +10,22 @@ static void start_app(void) {
 
 ctx_t ctx_;
 
+// The LED_BL will be run at 10/BL_LED_PERIOD and 30/BL_LED_PERIOD
+#ifndef BL_LED_PERIOD
+#define BL_LED_PERIOD 300
+#endif
+
+#ifdef LED_RGB_COMMON_CATHODE
+#define SET_LED(v) blled_set_duty(v)
+#else
+#define SET_LED(v) blled_set_duty(BL_LED_PERIOD - (v))
+#endif
+
 void led_init(void) {
+#ifdef PIN_BL_LED
+    SET_LED(0);
+    blled_init(BL_LED_PERIOD);
+#else
     pin_setup_output(PIN_LED);
     pin_setup_output(PIN_LED_GND);
 #if QUICK_LOG == 1
@@ -18,15 +33,21 @@ void led_init(void) {
     pin_setup_output(PIN_X1);
 #endif
     pin_set(PIN_LED_GND, 0);
+#endif
+#if QUICK_LOG == 1
+    pin_setup_output(PIN_X0);
+    pin_setup_output(PIN_X1);
+#endif
 }
 
+#ifndef PIN_BL_LED
 void led_set(int state) {
     pin_set(PIN_LED, state);
 }
+#endif
 
 void led_blink(int us) {
-    ctx_.led_off_time = tim_get_micros() + us;
-    led_set(1);
+    ctx_.led_on_time = tim_get_micros() + us;
 }
 
 uint32_t random(ctx_t *ctx) {
@@ -71,11 +92,8 @@ int main(void) {
     ctx_t *ctx = &ctx_;
 
     led_init();
-    led_set(1);
     tim_init();
     uart_init(ctx);
-
-    led_blink(256 * 1024); // initial (on reset) blink
 
     uint32_t r0 = bl_adc_random_seed();
     ctx->randomseed = r0;
@@ -109,6 +127,9 @@ int main(void) {
 
     DMESG("ID: %x %x", (uint32_t)BL_DEVICE_ID, (uint32_t)(BL_DEVICE_ID >> 32));
 
+    // wait a tiny bit, to desynchronize various bootloaders (so that eg PWM don't fire in sync)
+    target_wait_us(random(ctx) & 0xff);
+
     ctx->service_class_bl = announce_data[2];
     ctx->next_announce = 1024 * 1024;
 
@@ -122,6 +143,9 @@ int main(void) {
     (void)app_valid;
 #endif
     ctx->app_start_time = 0x80000000;
+    // we delay the first LED light up randomly, so it's not very likely to get synchronized with
+    // other bootloaders
+    uint32_t led_cnt_down = (ctx->randomseed & 0xff) + 10;
 
     while (1) {
         uint32_t now = ctx->now = tim_get_micros();
@@ -131,23 +155,49 @@ int main(void) {
         if (jd_process(ctx))
             continue;
 
-        if (now >= ctx->next_announce && !ctx->tx_full) {
-            memcpy(ctx->txBuffer.data, announce_data, sizeof(announce_data));
-            jd_prep_send(ctx);
-            ctx->next_announce = now + 512 * 1024;
+        if (!ctx->tx_full) {
+            if (now >= ctx->next_announce) {
+                memcpy(ctx->txBuffer.data, announce_data, sizeof(announce_data));
+                jd_prep_send(ctx);
+                ctx->next_announce = now + 512 * 1024;
+            } else if (ctx->id_queued) {
+                ((uint32_t *)ctx->txBuffer.data)[0] =
+                    4 | (JD_SERVICE_NUMBER_CONTROL << 8) | (ctx->id_queued << 16);
+                ((uint32_t *)ctx->txBuffer.data)[1] = bl_dev_info.device_class;
+                ctx->id_queued = 0;
+                jd_prep_send(ctx);
+            }
         }
 
         if (now >= ctx->app_start_time)
             start_app();
 
-        if (ctx->led_off_time) {
-            if (ctx->led_off_time < now) {
-                led_set(0);
-                ctx->led_off_time = 0;
+        led_cnt_down--;
+#ifdef PIN_BL_LED
+        if (led_cnt_down == 0) {
+            led_cnt_down = 10;
+            if (ctx->led_on_time < now) {
+                if (now & 0x80000)
+                    SET_LED(30);
+                else
+                    SET_LED(10);
+            } else {
+                SET_LED(0);
             }
-        } else {
-            led_set((now & 0x3f) < ((now & 0x80000) ? 0x1 : 0x4));
         }
+#else
+        if (led_cnt_down == 1) {
+            if (ctx->led_on_time < now) {
+                led_set(1);
+            }
+        } else if (led_cnt_down == 0) {
+            led_set(0);
+            if (now & 0x80000)
+                led_cnt_down = 5;
+            else
+                led_cnt_down = 10;
+        }
+#endif
     }
 }
 
@@ -158,10 +208,17 @@ static void busy_sleep(int ms) {
 }
 
 static void led_panic_blink(void) {
+#ifdef PIN_BL_LED
+    SET_LED(40);
+    busy_sleep(70);
+    SET_LED(0);
+    busy_sleep(70);
+#else
     led_set(1);
     busy_sleep(70);
     led_set(0);
     busy_sleep(70);
+#endif
 }
 
 void jd_panic(void) {

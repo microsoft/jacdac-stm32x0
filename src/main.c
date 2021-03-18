@@ -54,8 +54,6 @@ void log_pin_set(int line, int v) {
 #endif
 }
 
-static uint64_t led_off_time;
-
 // AP2112
 // reg 85ua
 // reg back 79uA
@@ -64,7 +62,7 @@ static uint64_t led_off_time;
 static void do_nothing(void) {}
 void sleep_forever(void) {
     target_wait_us(500000);
-    led_set(0);
+    jd_status(JD_STATUS_OFF);
     int cnt = 0;
     for (;;) {
         pin_pulse(PIN_P0, 2);
@@ -80,18 +78,8 @@ void sleep_forever(void) {
     }
 }
 
-void led_set(int state) {
-    pin_set(PIN_LED, state);
-}
-
-void led_blink(int us) {
-    led_off_time = tim_get_micros() + us;
-    led_set(1);
-}
-
 int main(void) {
     led_init();
-    led_set(1);
 
     if ((jd_device_id() + 1) == 0)
         target_reset();
@@ -100,25 +88,13 @@ int main(void) {
     adc_init_random(); // 300b
     rtc_init();
     uart_init();
+
     jd_init();
-
-#if 0
-    while(1) {
-        led_set(1);
-        pwr_pin_enable(1);
-        target_wait_us(300000);
-        pwr_pin_enable(0);
-        target_wait_us(100000);
-        led_set(0);
-        target_wait_us(10 * 1000 * 1000);
-    }
-#endif
-
-    led_blink(200000); // initial (on reset) blink
 
     // When BMP attaches, and we're in deep sleep mode, it will scan us as generic Cortex-M0.
     // The flashing scripts scans once, resets the target (using NVIC), and scans again.
     // The delay is so that the second scan detects us as the right kind of chip.
+    // TODO this may no longer be the case with latest BMP
     uint32_t startup_wait = tim_get_micros() + 300000;
 
     while (1) {
@@ -130,16 +106,6 @@ int main(void) {
             jd_services_process_frame(fr);
 
         jd_services_tick();
-
-        if (led_off_time) {
-            int timeLeft = led_off_time - now_long;
-            if (timeLeft <= 0) {
-                led_off_time = 0;
-                led_set(0);
-            } else if (timeLeft < 1000) {
-                continue; // don't sleep
-            }
-        }
 
         if (startup_wait) {
             if (in_future(startup_wait))
@@ -153,13 +119,23 @@ int main(void) {
 }
 
 static void led_panic_blink(void) {
+#ifdef PIN_LED_R
+    // TODO should we actually PWM?
+    pin_setup_output(PIN_LED_R);
+    // it doesn't actually matter if LED_RGB_COMMON_CATHODE is defined, as we're just blinking
+    pin_set(PIN_LED_R, 0);
+    target_wait_us(70000);
+    pin_set(PIN_LED_R, 1);
+    target_wait_us(70000);
+#else
     pin_setup_output(PIN_LED);
     pin_setup_output(PIN_LED_GND);
     pin_set(PIN_LED_GND, 0);
-    led_set(1);
+    pin_set(PIN_LED, 1);
     target_wait_us(70000);
-    led_set(0);
+    pin_set(PIN_LED, 0);
     target_wait_us(70000);
+#endif
 }
 
 void hw_panic(void) {
