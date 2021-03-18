@@ -82,7 +82,7 @@ void uart_disable(ctx_t *ctx) {
 int uart_rx(ctx_t *ctx, void *data, uint32_t maxbytes) {
     uint32_t isr = USARTx->ISR;
 
-    if (ctx->low_detected || !(isr & USART_ISR_FE)) {
+    if (!ctx->low_detected && !(isr & USART_ISR_FE)) {
         if (isr & USART_ISR_BUSY)
             return RX_LINE_BUSY;
         return RX_LINE_IDLE;
