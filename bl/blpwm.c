@@ -8,10 +8,20 @@
 #define TIMx_CLK_ENABLE __HAL_RCC_TIM3_CLK_ENABLE
 #define CHANNEL 4
 #define AF LL_GPIO_AF_1
-#else
-#error "unsupported pin for PB_1"
+#endif
+#elif defined(STM32G0)
+#if PIN_BL_LED == PA_6
+#define TIMx TIM3
+#define TIMx_CLK_ENABLE __HAL_RCC_TIM3_CLK_ENABLE
+#define CHANNEL 1
+#define AF LL_GPIO_AF_1
 #endif
 #else
+#error "unsupported MCU"
+#endif
+
+#ifndef TIMx
+#error "unsupported PIN_BL_LED"
 #endif
 
 void blled_init(uint32_t period) {
