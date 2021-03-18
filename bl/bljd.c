@@ -53,6 +53,10 @@ static void ctrl_handle_packet(ctx_t *ctx, jd_packet_t *pkt) {
     case JD_CONTROL_CMD_RESET:
         target_reset();
         break;
+    case JD_GET(JD_CONTROL_REG_BOOTLOADER_FIRMWARE_IDENTIFIER):
+    case JD_GET(JD_CONTROL_REG_FIRMWARE_IDENTIFIER):
+        ctx->id_queued = pkt->service_command;
+        break;
     }
 }
 

@@ -30,6 +30,7 @@ typedef struct ctx {
     uint8_t bl_ad_queued;
     uint8_t id_counter;
     uint8_t low_detected;
+    uint16_t id_queued;
 
 #if QUICK_LOG == 1
     volatile uint32_t *log_reg;

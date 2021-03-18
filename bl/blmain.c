@@ -155,10 +155,18 @@ int main(void) {
         if (jd_process(ctx))
             continue;
 
-        if (now >= ctx->next_announce && !ctx->tx_full) {
-            memcpy(ctx->txBuffer.data, announce_data, sizeof(announce_data));
-            jd_prep_send(ctx);
-            ctx->next_announce = now + 512 * 1024;
+        if (!ctx->tx_full) {
+            if (now >= ctx->next_announce) {
+                memcpy(ctx->txBuffer.data, announce_data, sizeof(announce_data));
+                jd_prep_send(ctx);
+                ctx->next_announce = now + 512 * 1024;
+            } else if (ctx->id_queued) {
+                ((uint32_t *)ctx->txBuffer.data)[0] =
+                    4 | (JD_SERVICE_NUMBER_CONTROL << 8) | (ctx->id_queued << 16);
+                ((uint32_t *)ctx->txBuffer.data)[1] = bl_dev_info.device_class;
+                ctx->id_queued = 0;
+                jd_prep_send(ctx);
+            }
         }
 
         if (now >= ctx->app_start_time)
