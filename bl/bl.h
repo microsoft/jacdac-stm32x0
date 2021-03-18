@@ -48,7 +48,7 @@ typedef struct ctx {
     // timestamps
     uint32_t now;
     uint32_t tx_start_time;
-    uint32_t led_off_time;
+    uint32_t led_on_time;
     uint32_t next_announce;
     uint32_t next_id_blink;
     uint32_t app_start_time;

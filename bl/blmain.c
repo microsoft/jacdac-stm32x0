@@ -10,14 +10,21 @@ static void start_app(void) {
 
 ctx_t ctx_;
 
-#define PWM_PERIOD 300
-// TODO change polarity if needed
-#define SET_LED(v) blled_set_duty(PWM_PERIOD - (v))
+// The LED_BL will be run at 10/BL_LED_PERIOD and 30/BL_LED_PERIOD
+#ifndef BL_LED_PERIOD
+#define BL_LED_PERIOD 300
+#endif
+
+#ifndef LED_RGB_COMMON_CATHODE
+#define SET_LED(v) blled_set_duty(BL_LED_PERIOD - (v))
+#else
+#define SET_LED(v) blled_set_duty(v)
+#endif
 
 void led_init(void) {
 #ifdef PIN_BL_LED
     SET_LED(0);
-    blled_init(PWM_PERIOD);
+    blled_init(BL_LED_PERIOD);
 #else
     pin_setup_output(PIN_LED);
     pin_setup_output(PIN_LED_GND);
@@ -40,7 +47,7 @@ void led_set(int state) {
 #endif
 
 void led_blink(int us) {
-    ctx_.led_off_time = tim_get_micros() + us;
+    ctx_.led_on_time = tim_get_micros() + us;
 }
 
 uint32_t random(ctx_t *ctx) {
@@ -88,8 +95,6 @@ int main(void) {
     tim_init();
     uart_init(ctx);
 
-    led_blink(256 * 1024); // initial (on reset) blink
-
     uint32_t r0 = bl_adc_random_seed();
     ctx->randomseed = r0;
 
@@ -121,6 +126,9 @@ int main(void) {
     BL_DEVICE_ID ^= 1; // use different dev-id for application and bootloader
 
     DMESG("ID: %x %x", (uint32_t)BL_DEVICE_ID, (uint32_t)(BL_DEVICE_ID >> 32));
+
+    // wait a tiny bit, to desynchronize various bootloaders (so that eg PWM don't fire in sync)
+    target_wait_us(random(ctx) & 0xff);
 
     ctx->service_class_bl = announce_data[2];
     ctx->next_announce = 1024 * 1024;
@@ -160,28 +168,26 @@ int main(void) {
 #ifdef PIN_BL_LED
         if (led_cnt_down == 0) {
             led_cnt_down = 10;
-            if (ctx->led_off_time < now) {
+            if (ctx->led_on_time < now) {
                 if (now & 0x80000)
-                    SET_LED(10);
+                    SET_LED(30);
                 else
-                    SET_LED(20);
+                    SET_LED(10);
             } else {
-                SET_LED(40);
+                SET_LED(0);
             }
         }
 #else
         if (led_cnt_down == 1) {
-            led_set(1);
+            if (ctx->led_on_time < now) {
+                led_set(1);
+            }
         } else if (led_cnt_down == 0) {
             led_set(0);
-            if (ctx->led_off_time < now) {
-                if (now & 0x80000)
-                    led_cnt_down = 5;
-                else
-                    led_cnt_down = 10;
-            } else {
-                led_cnt_down = 2;
-            }
+            if (now & 0x80000)
+                led_cnt_down = 5;
+            else
+                led_cnt_down = 10;
         }
 #endif
     }
