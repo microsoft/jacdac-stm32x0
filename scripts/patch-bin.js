@@ -60,7 +60,7 @@ if ((w0 & 0xff000000) == 0x20000000) {
         throw "folder names cannot start with _"
 
     // figure out device class
-    const profile_name = basename.replace(/.*\/app-/, "")
+    const profile_name = basename.replace(/.*\/(app|blup)-/, "")
     const profile_fn = profiles_path + "/" + profile_name + ".c"
     const src = fs.readFileSync(profile_fn, "utf8")
     const m = /FIRMWARE_IDENTIFIER\((0x3[0-9a-f]+),\s*"([^"]+)"\)/.exec(src)

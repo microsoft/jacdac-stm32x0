@@ -39,11 +39,25 @@ CONFIG_DEPS = \
 	$(wildcard targets/$(TARGET)/*.h) \
 	targets/$(TARGET)/config.mk
 
-ifeq ($(BL),)
-PREF = app
-else
+ifneq ($(BL),)
 PREF = bl
+override APP =
+override BLUP =
 endif
+
+ifneq ($(BLUP),)
+PREF = blup
+override APP =
+override BL =
+endif
+
+ifeq ($(BL)$(BLUP),)
+PREF = app
+override APP = 1
+override BL =
+override BLUP =
+endif
+
 BUILT_BIN = built/$(TARGET)
 BUILT = $(BUILT_BIN)/$(PREF)
 
@@ -52,7 +66,7 @@ BASE_TARGET ?= $(TARGET)
 
 PROFILES = $(patsubst targets/$(TARGET)/profile/%.c,%,$(wildcard targets/$(TARGET)/profile/*.c))
 
-ifeq ($(BL),)
+ifneq ($(APP),)
 C_SRC += $(wildcard $(JD_CORE)/source/*.c)
 C_SRC += $(wildcard $(JD_CORE)/services/*.c)
 C_SRC += $(wildcard $(JD_CORE)/drivers/*.c)
@@ -67,17 +81,30 @@ endif
 C_SRC += $(wildcard $(JD_STM)/src/*.c)
 C_SRC += $(wildcard $(PLATFORM)/*.c)
 C_SRC += $(HALSRC)
-else
-DEFINES += -DDEVICE_DMESG_BUFFER_SIZE=0 -DBL
-CPPFLAGS += -Ibl
-C_SRC += $(wildcard $(JD_STM)/bl/*.c)
+endif
+
+ifneq ($(BL)$(BLUP),)
 C_SRC += $(PLATFORM)/pins.c
 C_SRC += $(PLATFORM)/init.c
 C_SRC += $(PLATFORM)/flash.c
 C_SRC += $(PLATFORM)/adc.c
 C_SRC += $(JD_STM)/src/dmesg.c
 C_SRC += $(JD_CORE)/source/jd_util.c
+endif
+
+ifneq ($(BL),)
+DEFINES += -DDEVICE_DMESG_BUFFER_SIZE=0 -DBL
+C_SRC += $(wildcard $(JD_STM)/bl/*.c)
 AS_SRC += $(JD_STM)/bl/boothandler.s
+endif
+
+ifneq ($(BLUP),)
+DEFINES += -DBLUP
+CPPFLAGS += -I$(JD_STM)/bl
+C_SRC += $(JD_STM)/bl/blutils.c
+C_SRC += $(JD_STM)/bl/blpwm.c
+C_SRC += $(JD_STM)/bl/blled.c
+C_SRC += $(wildcard $(JD_STM)/blup/*.c)
 endif
 
 ELF = $(BUILT_BIN)/$(PREF)-$(PROF).elf
@@ -108,10 +135,10 @@ LDFLAGS = -specs=nosys.specs -specs=nano.specs \
 all: refresh-version
 ifeq ($(BL)$(NOBL),)
 	$(V)node $(SCRIPTS)/check-fw-id.js targets
+	$(MAKE) $(MAKE_FLAGS) BL=1 build
 endif
 	$(MAKE) $(MAKE_FLAGS) build
 ifeq ($(BL)$(NOBL),)
-	$(MAKE) $(MAKE_FLAGS) BL=1 build
 	$(MAKE) combine
 endif
 	$(V)$(PREFIX)size $(BUILT_BIN)/*.elf
@@ -172,10 +199,13 @@ $(BUILT)/%.o: %.s
 	@echo AS $<
 	$(V)$(CC) $(CFLAGS) $(CPPFLAGS) -o $@ -c $<
 
-%.hex: %.elf $(SCRIPTS)/bin2uf2.js
+%.hex: %.elf $(SCRIPTS)/bin2uf2.js $(SCRIPTS)/bin2c.js
 	@echo BIN/HEX $<
 	$(V)$(PREFIX)objcopy -O binary $< $(@:.hex=.bin)
 	$(V)$(PREFIX)objcopy -O ihex $< $@
+ifneq ($(BL),)
+	$(V)node $(SCRIPTS)/bin2c.js $(@:.hex=.bin)
+endif
 ifeq ($(BL)$(NOBL),)
 	@echo UF2 $<
 	$(V)node $(SCRIPTS)/bin2uf2.js $(@:.hex=.bin)
@@ -207,11 +237,16 @@ refresh-version:
 	@mkdir -p $(BUILT_BIN)
 	echo 'const char app_fw_version[] = "$(FW_VERSION)";' > $(BUILT_BIN)/version.c
 
-$(BUILT_BIN)/version.o: $(BUILT_BIN)/version.c
+$(BUILT_BIN)/%.o: $(BUILT_BIN)/%.c
 	$(V)$(CC) $(CFLAGS) $(CPPFLAGS) -o $@ -c $<
 
+ifneq ($(BLUP),)
+PROF_DEP = $(BUILT_BIN)/bl
+else
+PROF_DEP = $(BUILT)/jd/prof
+endif
 
-$(BUILT_BIN)/$(PREF)-%.elf: $(BUILT)/jd/prof-%.o $(OBJ) Makefile $(LD_SCRIPT) $(SCRIPTS)/patch-bin.js $(FORCE)
+$(BUILT_BIN)/$(PREF)-%.elf: $(PROF_DEP)-%.o $(OBJ) Makefile $(LD_SCRIPT) $(SCRIPTS)/patch-bin.js $(FORCE)
 	@echo LD $@
 	$(V)$(CC) $(CFLAGS) $(LDFLAGS) -Wl,-Map=$@.map  -o $@ $(OBJ) $< -lm
 ifeq ($(NOBL),)
@@ -240,10 +275,12 @@ force:
 
 targ-%:
 	$(MAKE) TARGET=$(subst targ-,,$@)
+	$(MAKE) TARGET=$(subst targ-,,$@) BLUP=1
 
 drop: $(addprefix targ-,$(DROP_TARGETS))
-	cd built; cat $(addsuffix /*.uf2,$(DROP_TARGETS)) > drop.uf2
-	@ls -l built/drop.uf2
+	cd built; cat $(addsuffix /app-*.uf2,$(DROP_TARGETS)) > drop.uf2
+	cd built; cat $(addsuffix /blup-*.uf2,$(DROP_TARGETS)) > bootloader-update.uf2
+	@ls -l built/drop.uf2 built/bootloader-update.uf2
 
 ff: full-flash
 
