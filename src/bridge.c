@@ -17,7 +17,7 @@ struct srv_state {
 
 REG_DEFINITION(               //
     bridge_regs,              //
-    REG_SRV_BASE,             //
+    REG_SRV_COMMON,             //
     REG_U8(JD_REG_INTENSITY), //
 )
 
