@@ -15,6 +15,11 @@
 #define TIMx_CLK_ENABLE __HAL_RCC_TIM3_CLK_ENABLE
 #define CHANNEL 1
 #define AF LL_GPIO_AF_1
+#elif PIN_BL_LED == PB_8
+#define TIMx TIM16
+#define TIMx_CLK_ENABLE __HAL_RCC_TIM16_CLK_ENABLE
+#define CHANNEL 1
+#define AF LL_GPIO_AF_2
 #endif
 #else
 #error "unsupported MCU"
@@ -34,7 +39,7 @@ void blled_init(uint32_t period) {
     LL_TIM_GenerateEvent_UPDATE(TIMx);
     LL_TIM_EnableARRPreload(TIMx);
 
-    if (TIMx == TIM1)
+    if (TIMx == TIM1 || TIMx == TIM16)
         TIMx->BDTR |= TIM_BDTR_MOE;
 
 #define MODE (TIM_CCMR1_OC1M_2 | TIM_CCMR1_OC1M_1 | TIM_CCMR1_OC1PE)

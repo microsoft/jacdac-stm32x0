@@ -39,6 +39,7 @@ static const struct PinPWM pins[] = {
     {PA_6, 1, LL_GPIO_AF_1, TIM3},  // rgb led
     {PA_7, 2, LL_GPIO_AF_1, TIM3},  // rgb led
     {PB_0, 3, LL_GPIO_AF_1, TIM3},  // rgb led
+    {PB_8, 1, LL_GPIO_AF_2, TIM16}, // rgb led
 #else
 #ifdef TIM2
     {PA_1, 2, LL_GPIO_AF_2, TIM2},   // LED on jdm-v2
@@ -49,7 +50,7 @@ static const struct PinPWM pins[] = {
     {PA_6, 1, LL_GPIO_AF_1, TIM3},  // SERVO on jdm-v2,3
     {PA_11, 4, LL_GPIO_AF_2, TIM1}, // POWER on jdm-v3
     {PB_0, 3, LL_GPIO_AF_1, TIM3},  // GLO0 on jdm-v3, also TIM1:2N
-    {PB_1, 4, LL_GPIO_AF_1, TIM3}, // GLO1 on jdm-v3; also TIM3:4, TIM1:3N
+    {PB_1, 4, LL_GPIO_AF_1, TIM3},  // GLO1 on jdm-v3; also TIM3:4, TIM1:3N
     //{PB_1, 1, LL_GPIO_AF_0, TIM14}, // GLO1 on jdm-v3; also TIM3:4, TIM1:3N
     {PA_10, 3, LL_GPIO_AF_2, TIM1}, // SND
     {PA_4, 1, LL_GPIO_AF_4, TIM14}, // SND
@@ -117,7 +118,7 @@ uint8_t pwm_init(uint8_t pin, uint32_t period, uint32_t duty, uint8_t prescaler)
     tim_oc_initstruct.OCIdleState = LL_TIM_OCIDLESTATE_LOW;
     tim_oc_initstruct.OCNIdleState = LL_TIM_OCIDLESTATE_LOW;
 
-    if (TIMx == TIM1)
+    if (TIMx == TIM1 || TIMx == TIM16)
         TIMx->BDTR |= TIM_BDTR_MOE;
 
     // do a switch, so the compiler can optimize bodies of these inline functions
