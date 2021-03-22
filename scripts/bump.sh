@@ -24,7 +24,7 @@ fi
 node jacdac-stm32x0/scripts/git-sublog.js -u "$ver" CHANGES.md
 
 set -x
-get add CHANGES.md
+git add CHANGES.md
 git commit -m "Automatic changelog for $ver"
 git tag "$ver"
 git push --tags
