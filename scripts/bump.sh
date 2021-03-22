@@ -29,7 +29,11 @@ else
   exit 1
 fi
 
+echo
+echo
 node jacdac-stm32x0/scripts/git-sublog.js -u "$ver" CHANGES.md
+echo
+echo
 
 set -x
 git add CHANGES.md
