@@ -19,6 +19,14 @@ echo "Enter version [Enter = $defl; Ctrl-C to cancel]:"
 read ver
 if [ "X$ver" = "X" ] ; then
   ver="$defl"
+else
+  ver=$(echo "$ver" | sed -e 's/v//i')
+fi
+if echo "$ver" | grep -qE '^v[0-9]+\.[0-9]+\.[0-9]+$' ; then
+  :
+else
+  echo "Invalid version: $ver"
+  exit 1
 fi
 
 node jacdac-stm32x0/scripts/git-sublog.js -u "$ver" CHANGES.md
@@ -26,6 +34,6 @@ node jacdac-stm32x0/scripts/git-sublog.js -u "$ver" CHANGES.md
 set -x
 git add CHANGES.md
 git commit -m "Automatic changelog for $ver"
-git tag "$ver"
+git tag "v$ver"
 git push --tags
 git push
