@@ -240,10 +240,10 @@ refresh-version:
 	@mkdir -p $(BUILT_BIN)
 	echo 'const char app_fw_version[] = "$(FW_VERSION)";' > $(BUILT_BIN)/version.c
 
-check-release:
+check-release: drop
 	if [ "X`git describe --exact --tags --match 'v[0-9]*' 2>/dev/null`" != "X" ]; then $(MAKE) build-release ; fi
 
-build-release: drop
+build-release:
 	# avoid re-computing FW_VERSION many times
 	$(MAKE) do-build-release FW_VERSION=$(FW_VERSION)
 
