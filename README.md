@@ -148,6 +148,19 @@ This topic is [covered in jacdac-c](https://github.com/microsoft/jacdac-c#adding
 When adding services or drivers, you can put them in `addons/` folder of your modules repo,
 or submit them as PRs in `jacdac-c`.
 
+## Release process
+
+Use `make bump` to create a new release.
+This will ask you for a version number (providing a default that just updates the patch number),
+update `CHANGES.md`, create a git tag, and push it to the origin.
+
+If the `jacdac-acme-corp-modules` repo is public on github, the github action will create a new binary
+file and place it under `dist/fw-VERSION.uf2`, so there's nothing else to do.
+
+If you want to build by hand, run `make drop` after `make bump` and copy `built/fw-VERSION.uf2`
+to `dist/fw-VERSION.uf2` in your release repo.
+You should probably also copy over `CHANGES.md`, so your users have some idea of what it being updated.
+
 ## Contributing
 
 This project welcomes contributions and suggestions.  Most contributions require you to agree to a

@@ -2,10 +2,10 @@ const fs = require("fs")
 const path = require("path")
 const child_process = require("child_process")
 
-let markdown = 0
-
 async function logfor(dir, myurl, range) {
     if (!range) range = ""
+
+    // console.log(`log ${dir} / ${myurl} / ${range}`)
 
     const submoduleStart = {}
     const submoduleEnd = {}
@@ -26,7 +26,7 @@ async function logfor(dir, myurl, range) {
         myurl = m[1]
     }
 
-    let res = `## Changelog for ${myurl.replace(/.*github.com\//, "")}\n\n`
+    let res = `### ${myurl.replace(/.*github.com\//, "")}\n\n`
 
     await new Promise((resolve, reject) => child_process.exec(`git log --submodule=log --oneline --patch --decorate=full ${range}`, {
         maxBuffer: 100 * 1024 * 1024,
@@ -55,14 +55,10 @@ async function logfor(dir, myurl, range) {
                     break
 
                 // note that /pull/123 will redirect to /issue/123 if it's an issue
-                if (markdown)
-                    msg = msg.replace(/#(\d+)/g, (f, n) => `[${f}](${myurl}/pull/${n})`)
+                msg = msg.replace(/#(\d+)/g, (f, n) => `[${f}](${myurl}/pull/${n})`)
 
                 numcommits++
-                if (markdown)
-                    res += `* [${commit}](${myurl}/commit/${commit}) ${msg}\n`
-                else
-                    res += `${commit} ${msg}\n`
+                res += `* [${commit}](${myurl}/commit/${commit}) ${msg}\n`
             }
             m = /^Submodule (\S+) ([0-9a-f]+)\.\.([0-9a-f]+)/.exec(line)
             if (m) {
@@ -86,13 +82,29 @@ async function logfor(dir, myurl, range) {
     return res
 }
 
-async function main() {
+async function main(args) {
+    let header = ""
+    let chgpath = ""
+
+    if (args[0] == "-u") {
+        args.shift()
+        const v = args.shift()
+        header = `## Version ${v}\n\n`
+        chgpath = args.shift()
+    }
+
     try {
-        const res = await logfor(".")
-        console.log(res.trim())
+        const res = await logfor(".", null, args[0])
+        const md = header + res + "\n"
+        const plain = md.replace(/\[([^\]\n]+)\]\([^\(\)\n]+\)/g, (_, x) => x)
+        if (chgpath) {
+            const chg = fs.readFileSync(chgpath, "utf8")
+            fs.writeFileSync(chgpath, md + chg)
+        }
+        console.log(plain.trim())
     } catch (e) {
         console.error(e)
     }
 }
 
-main()
+main(process.argv.slice(2))
