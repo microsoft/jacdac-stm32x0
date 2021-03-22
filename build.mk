@@ -231,7 +231,7 @@ $(BUILT)/jd/prof-%.o: targets/$(TARGET)/profile/%.c
 	@mkdir -p $(BUILT)/jd
 	$(V)$(CC) $(CFLAGS) $(CPPFLAGS) -o $@ -c $<
 
-FW_VERSION = $(shell grep '"version":' package.json | sed -e 's/.*: "//; s/".*/-'"`date +%Y%m%d-%H%M`/")
+FW_VERSION = $(shell git describe --dirty --tags --match 'v[0-9]*' --always | sed -e 's/-dirty/-'"`date +%Y%m%d-%H%M`/")
 
 refresh-version:
 	@mkdir -p $(BUILT_BIN)
