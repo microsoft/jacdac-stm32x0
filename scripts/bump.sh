@@ -22,7 +22,7 @@ if [ "X$ver" = "X" ] ; then
 else
   ver=$(echo "$ver" | sed -e 's/v//i')
 fi
-if echo "$ver" | grep -qE '^v[0-9]+\.[0-9]+\.[0-9]+$' ; then
+if echo "$ver" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$' ; then
   :
 else
   echo "Invalid version: $ver"
