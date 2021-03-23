@@ -48,6 +48,7 @@ static const struct PinPWM pins[] = {
 #endif
     //{PA_6, 1, LL_GPIO_AF_5, TIM16}, // SERVO on jdm-v2,3 - doesn't seem to work, TIM3 works
     {PA_6, 1, LL_GPIO_AF_1, TIM3},  // SERVO on jdm-v2,3
+    {PA_9, 2, LL_GPIO_AF_2, TIM1},  // G of RGB LED on XAC module
     {PA_11, 4, LL_GPIO_AF_2, TIM1}, // POWER on jdm-v3
     {PB_0, 3, LL_GPIO_AF_1, TIM3},  // GLO0 on jdm-v3, also TIM1:2N
     {PB_1, 4, LL_GPIO_AF_1, TIM3},  // GLO1 on jdm-v3; also TIM3:4, TIM1:3N

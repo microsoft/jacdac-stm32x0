@@ -26,7 +26,7 @@
 #endif
 
 #ifndef TIMx
-#error "unsupported PIN_BL_LED"
+#error "please add a mapping to this file for PIN_BL_LED"
 #endif
 
 void blled_init(uint32_t period) {
