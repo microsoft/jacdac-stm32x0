@@ -92,7 +92,7 @@ int main(void) {
     DMESG("ID: %x %x", (uint32_t)BL_DEVICE_ID, (uint32_t)(BL_DEVICE_ID >> 32));
 
     // wait a tiny bit, to desynchronize various bootloaders (so that eg PWM don't fire in sync)
-    target_wait_us(random(ctx) & 0xff);
+    target_wait_us((random(ctx) & 0xff) + 1);
 
     ctx->service_class_bl = announce_data[2];
     ctx->next_announce = 1024 * 1024;
