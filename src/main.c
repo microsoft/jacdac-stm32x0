@@ -107,6 +107,10 @@ int main(void) {
 
         jd_services_tick();
 
+#if JD_CONFIG_APP_PROCESS_HOOK == 1
+        app_process();
+#endif
+
         if (startup_wait) {
             if (in_future(startup_wait))
                 continue; // no sleep
