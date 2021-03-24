@@ -231,14 +231,14 @@ $(BUILT)/jd/prof-%.o: targets/$(TARGET)/profile/%.c
 	@mkdir -p $(BUILT)/jd
 	$(V)$(CC) $(CFLAGS) $(CPPFLAGS) -o $@ -c $<
 
-FW_VERSION = $(shell git describe --dirty --tags --match 'v[0-9]*' --always | sed -e 's/-dirty/-'"`date +%Y%m%d-%H%M`/")
+FW_VERSION = $(shell git describe --dirty --tags --match 'v[0-9]*' --always | sed -e 's/^v//; s/-dirty/-'"`date +%Y%m%d-%H%M`/")
 
 bump:
 	sh $(SCRIPTS)/bump.sh
 
 refresh-version:
 	@mkdir -p $(BUILT_BIN)
-	echo 'const char app_fw_version[] = "$(FW_VERSION)";' > $(BUILT_BIN)/version.c
+	echo 'const char app_fw_version[] = "v$(FW_VERSION)";' > $(BUILT_BIN)/version.c
 
 check-release: drop
 	if [ "X`git describe --exact --tags --match 'v[0-9]*' 2>/dev/null`" != "X" ]; then $(MAKE) build-release ; fi
@@ -251,7 +251,7 @@ do-build-release:
 	cp built/drop.uf2 dist/fw-$(FW_VERSION).uf2
 	git add dist/fw-$(FW_VERSION).uf2
 	if [ "X$$GITHUB_WORKFLOW" != "X" ] ; then git config user.email "<>" && git config user.name "GitHub Bot" ; fi
-	git commit -m "[skip ci] firmware $(FW_VERSION) built"
+	git commit -m "[skip ci] firmware v$(FW_VERSION) built"
 	git push
 
 $(BUILT_BIN)/%.o: $(BUILT_BIN)/%.c
