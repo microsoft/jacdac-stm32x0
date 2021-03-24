@@ -38,10 +38,6 @@ uint8_t pwm_init(uint8_t pin, uint32_t period, uint32_t duty, uint8_t prescaler)
 void pwm_set_duty(uint8_t pwm_id, uint32_t duty);
 void pwm_enable(uint8_t pwm_id, bool enabled);
 
-// bitbang_spi.c
-void bspi_send(const void *src, uint32_t len);
-void bspi_recv(void *dst, uint32_t len);
-
 // display.c
 void disp_show(uint8_t *img);
 void disp_refresh(void);

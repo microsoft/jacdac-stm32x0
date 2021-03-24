@@ -10,6 +10,11 @@
 #define LP_NOP1 asm volatile("nop \n nop \n nop")
 #define PLL_NOP0 target_wait_cycles(1)
 #define PLL_NOP1 target_wait_cycles(7)
+#elif defined(STM32G0)
+#define LP_NOP0 target_wait_cycles(1)
+#define LP_NOP1 target_wait_cycles(1)
+#define PLL_NOP0 target_wait_cycles(3)
+#define PLL_NOP1 target_wait_cycles(10)
 #else
 #error "todo"
 #endif
@@ -58,6 +63,14 @@ void bspi_recv(void *dst, uint32_t len) {
             }
         ((uint8_t *)dst)[i] = b;
     }
+}
+
+void bspi_init() {
+    pin_setup_output(PIN_ACC_MOSI);
+    pin_setup_output(PIN_ACC_SCK);
+    pin_setup_input(PIN_ACC_MISO, -1);
+    pin_setup_output(PIN_ACC_CS);
+    pin_set(PIN_ACC_CS, 1);
 }
 
 #endif
