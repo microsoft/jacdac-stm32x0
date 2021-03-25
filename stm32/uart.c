@@ -211,10 +211,10 @@ void uart_init() {
     USART_UART_Init();
 }
 
-static void check_idle(void) {
-    if (LL_USART_IsEnabled(USARTx))
-        jd_panic();
-}
+// static void check_idle(void) {
+//    if (LL_USART_IsEnabled(USARTx))
+//        jd_panic();
+//}
 
 int uart_wait_high() {
     int timeout = 5000;
@@ -282,10 +282,7 @@ int uart_start_tx(const void *data, uint32_t numbytes) {
 
 void uart_start_rx(void *data, uint32_t maxbytes) {
     // DMESG("start rx");
-    check_idle();
-
-    exti_disable(PIN_MASK(UART_PIN));
-    exti_clear(PIN_MASK(UART_PIN));
+    // check_idle();
 
     uartOwnsPin(1);
     LL_USART_DisableDirectionTx(USARTx);
@@ -300,6 +297,9 @@ void uart_start_rx(void *data, uint32_t maxbytes) {
     LL_DMA_SetDataLength(DMA1, LL_DMA_CHANNEL_5, maxbytes);
     LL_USART_EnableDMAReq_RX(USARTx);
     LL_DMA_EnableChannel(DMA1, LL_DMA_CHANNEL_5);
+
+    exti_disable(PIN_MASK(UART_PIN));
+    exti_clear(PIN_MASK(UART_PIN));
 }
 
 // this is only enabled for error events

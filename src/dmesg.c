@@ -46,6 +46,8 @@ void codal_dmesgf(const char *format, ...) {
 }
 
 void codal_vdmesg(const char *format, va_list ap) {
+    // if (format[0] == '!')
+    //    pin_pulse(PIN_X0, 1);
     char tmp[80];
     codal_vsprintf(tmp, sizeof(tmp) - 1, format, ap);
     int len = strlen(tmp);
@@ -135,4 +137,3 @@ int codal_sprintf(char *dst, unsigned dstsize, const char *format, ...) {
     va_end(arg);
     return r;
 }
-

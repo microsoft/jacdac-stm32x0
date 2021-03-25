@@ -51,7 +51,7 @@ void rtc_sync_time() {
 
     if (!ctx->needsSync)
         return;
-    pin_set(PIN_PWR_STATE, 1);
+
     target_disable_irq();
     uint16_t subsecond;
     uint8_t newSecond;
@@ -65,6 +65,7 @@ void rtc_sync_time() {
     }
     subsecond = ctx->presc - subsecond;
     if (newSecond != ctx->lastSecond) {
+        // this branch adds ~4us
         int diff = 60 + BCD(newSecond, 3) - BCD(ctx->lastSecond, 3);
         if (diff >= 60)
             diff -= 60;
