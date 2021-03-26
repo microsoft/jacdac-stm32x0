@@ -13,6 +13,7 @@ const flash_size = parseInt(process.argv[3])
 const bl_size = parseInt(process.argv[4])
 const profiles_path = process.argv[5]
 const page_size = parseInt(process.argv[6])
+const isBLU = process.argv[7] == "blup=1"
 
 const DEV_INFO_MAGIC = 0xf6a0e4b6
 
@@ -67,7 +68,9 @@ if ((w0 & 0xff000000) == 0x20000000) {
     if (!m)
         throw "FIRMWARE_IDENTIFIER(0x3..., \"...\") missing"
     let dev_class = parseInt(m[1])
-    const dev_class_name = m[2]
+    let dev_class_name = m[2]
+    if (isBLU)
+        dev_class_name = "BOOTLOADER: " + dev_class_name
     log(`device class: 0x${dev_class.toString(16)} "${dev_class_name}"`)
 
     const reset = buf.readUInt32LE(pos + 4)

@@ -45,7 +45,7 @@ function fetchExtensionTags() {
         return Buffer.alloc(0)
     }
     if (tags["0x0be9f7"])
-    bootBlockSize = tags["0x0be9f7"]
+        bootBlockSize = tags["0x0be9f7"]
     const tagBuffers = []
     for (const ks of Object.keys(tags)) {
         const k = parseInt(ks)

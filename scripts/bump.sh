@@ -37,7 +37,7 @@ echo
 
 set -x
 git add CHANGES.md
-git commit -m "Automatic changelog for $ver"
+git commit -m "v$ver"
 git tag "v$ver"
 git push --tags
 git push
