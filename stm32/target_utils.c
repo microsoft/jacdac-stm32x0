@@ -5,18 +5,19 @@ void target_wait_cycles(int n) {
     __asm__ __volatile__(".syntax unified\n"
                          "1:              \n"
                          "   subs %0, #1   \n" // subtract 1 from %0 (n)
-                         "   bne 1b       \n"  // if result is not 0 jump to 1
-                         : "+r"(n)             // '%0' is n variable with RW constraints
-                         :                     // no input
-                         :                     // no clobber
+#ifdef STM32G0
+                         "  nop  \n"
+#endif
+                         "   bne 1b       \n" // if result is not 0 jump to 1
+                         : "+r"(n)            // '%0' is n variable with RW constraints
+                         :                    // no input
+                         :                    // no clobber
     );
 }
 
 void target_wait_us(uint32_t n) {
-#ifdef STM32G0
-    n = n * cpu_mhz / 3;
-#elif defined(STM32F0)
-    n = n * cpu_mhz / 4;
+#if defined(STM32G0) || defined(STM32F0)
+    n = n * cpu_mhz >> 2;
 #else
 #error "define clock rate"
 #endif
