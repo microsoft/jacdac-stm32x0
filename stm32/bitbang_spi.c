@@ -11,8 +11,15 @@
 #define PLL_NOP0 target_wait_cycles(1)
 #define PLL_NOP1 target_wait_cycles(7)
 #elif defined(STM32G0)
+#ifdef FAST_BSPI
+// this is 1-1.5MHz
+#define LP_NOP0 ((void)0)
+#define LP_NOP1 asm volatile("nop \n nop \n nop")
+#else
+// this is about 0.5MHz
 #define LP_NOP0 target_wait_cycles(1)
 #define LP_NOP1 target_wait_cycles(1)
+#endif
 #define PLL_NOP0 target_wait_cycles(3)
 #define PLL_NOP1 target_wait_cycles(10)
 #else
