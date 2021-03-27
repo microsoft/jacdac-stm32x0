@@ -48,7 +48,7 @@ static void uartOwnsPin(int doesIt) {
             LL_GPIO_SetAFPin_8_15(PIN_PORT(UART_PIN), PIN_MASK(UART_PIN), UART_PIN_AF);
     } else {
         LL_GPIO_SetPinMode(PIN_PORT(UART_PIN), PIN_MASK(UART_PIN), LL_GPIO_MODE_INPUT);
-        exti_clear(PIN_MASK(UART_PIN));
+        exti_clear_falling(PIN_MASK(UART_PIN));
         exti_enable(PIN_MASK(UART_PIN));
     }
 }
@@ -228,7 +228,7 @@ int uart_wait_high() {
 
 int uart_start_tx(const void *data, uint32_t numbytes) {
     exti_disable(PIN_MASK(UART_PIN));
-    exti_clear(PIN_MASK(UART_PIN));
+    exti_clear_falling(PIN_MASK(UART_PIN));
     // We assume EXTI runs at higher priority than us
     // If we got hit by EXTI, before we managed to disable it,
     // the reception routine would have enabled UART in RX mode
@@ -299,7 +299,7 @@ void uart_start_rx(void *data, uint32_t maxbytes) {
     LL_DMA_EnableChannel(DMA1, LL_DMA_CHANNEL_5);
 
     exti_disable(PIN_MASK(UART_PIN));
-    exti_clear(PIN_MASK(UART_PIN));
+    exti_clear_falling(PIN_MASK(UART_PIN));
 }
 
 // this is only enabled for error events

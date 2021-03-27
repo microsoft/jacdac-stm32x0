@@ -3,12 +3,19 @@
 static cb_t callbacks[16];
 
 static void _check_line(int ln) {
+#ifdef STM32F0
+    LL_EXTI_ClearFlag_0_31(1 << ln);
+#else
+    LL_EXTI_ClearRisingFlag_0_31(1 << ln);
     LL_EXTI_ClearFallingFlag_0_31(1 << ln);
+#endif
     callbacks[ln]();
 }
 
 #ifdef STM32G0
-#define PR FPR1
+#define EXTI_LINES() (EXTI->FPR1 | EXTI->RPR1)
+#else
+#define EXTI_LINES() (EXTI->PR)
 #endif
 
 #define check_line(ln)                                                                             \
@@ -17,14 +24,14 @@ static void _check_line(int ln) {
 
 void EXTI0_1_IRQHandler(void) {
     rtc_sync_time();
-    uint32_t lines = EXTI->PR;
+    uint32_t lines = EXTI_LINES();
     check_line(0);
     check_line(1);
 }
 
 void EXTI2_3_IRQHandler(void) {
     rtc_sync_time();
-    uint32_t lines = EXTI->PR;
+    uint32_t lines = EXTI_LINES();
     check_line(2);
     check_line(3);
 }
@@ -32,13 +39,13 @@ void EXTI2_3_IRQHandler(void) {
 void EXTI4_15_IRQHandler(void) {
     rtc_sync_time();
 
-    uint32_t lines = EXTI->PR;
+    uint32_t lines = EXTI_LINES();
 
 #ifdef UART_PIN
     // first check UART line, to speed up handling
     if (lines & (1 << (UART_PIN & 0xf))) {
         _check_line(UART_PIN & 0xf);
-        lines = EXTI->PR;
+        lines = EXTI_LINES();
     }
 #endif
 

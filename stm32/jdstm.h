@@ -20,7 +20,7 @@ extern uint8_t cpu_mhz;
 #define exti_disable(pin) LL_EXTI_DisableIT_0_31(pin)
 #define exti_enable(pin) LL_EXTI_EnableIT_0_31(pin)
 #define exti_enable(pin) LL_EXTI_EnableIT_0_31(pin)
-#define exti_clear(pin) LL_EXTI_ClearFallingFlag_0_31(pin)
+#define exti_clear_falling(pin) LL_EXTI_ClearFallingFlag_0_31(pin)
 
 void tim_set_micros(uint64_t us);
 cb_t tim_steal_callback(uint32_t *usec);
