@@ -291,7 +291,9 @@ force:
 
 targ-%:
 	$(MAKE) TARGET=$(subst targ-,,$@)
+ifeq ($(NOBL),)
 	$(MAKE) TARGET=$(subst targ-,,$@) BLUP=1
+endif
 
 drop: $(addprefix targ-,$(DROP_TARGETS))
 	cd built; cat $(addsuffix /app-*.uf2,$(DROP_TARGETS)) > drop.uf2
