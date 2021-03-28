@@ -253,6 +253,10 @@ void rtc_set_to_seconds_and_standby() {
     }
 
     //    pin_setup_input(PA_0, -1);
+#ifdef STM32G0
+    LL_PWR_EnableGPIOPullDown(LL_PWR_GPIO_A, LL_PWR_GPIO_BIT_0);
+    LL_PWR_EnablePUPDCfg();
+#endif
     LL_PWR_EnableWakeUpPin(LL_PWR_WAKEUP_PIN1);
     LL_PWR_ClearFlag_SB();
     LL_PWR_ClearFlag_WU();
@@ -263,6 +267,10 @@ void rtc_set_to_seconds_and_standby() {
 }
 
 bool rtc_check_standby(void) {
+#ifdef STM32G0
+    LL_PWR_DisablePUPDCfg();
+#endif
+
     if (LL_PWR_IsActiveFlag_SB()) {
         LL_PWR_ClearFlag_SB();
         LL_PWR_ClearFlag_WU();
