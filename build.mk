@@ -159,7 +159,6 @@ ifeq ($(ONCE),)
 	echo "detach" >> built/debug.gdb
 	echo "monitor swdp_scan" >> built/debug.gdb
 	echo "attach 1" >> built/debug.gdb
-	echo "bt" >> built/debug.gdb
 endif
 	echo "load" >> built/debug.gdb
 	echo "quit" >> built/debug.gdb
