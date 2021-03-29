@@ -17,7 +17,7 @@ void target_wait_cycles(int n) {
 
 void target_wait_us(uint32_t n) {
 #if defined(STM32G0) || defined(STM32F0)
-    n = n * cpu_mhz >> 2;
+    n = n * CPU_MHZ >> 2;
 #else
 #error "define clock rate"
 #endif
