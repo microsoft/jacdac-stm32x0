@@ -25,10 +25,10 @@ uint32_t random(ctx_t *ctx) {
 }
 
 static const uint32_t announce_data[] = {
-    8 | (JD_SERVICE_NUMBER_CONTROL << 8) | (JD_CMD_ANNOUNCE << 16), //
-    JD_SERVICE_CLASS_CONTROL,                                       //
-    JD_SERVICE_CLASS_BOOTLOADER                                     //
-};
+    8 | (JD_SERVICE_NUMBER_CONTROL << 8) | (JD_CMD_ANNOUNCE << 16),
+    JD_SERVICE_CLASS_CONTROL | JD_ADVERTISEMENT_0_IDENTIFIER_IS_SERVICE_CLASS_SUPPORTED |
+        JD_ADVERTISEMENT_0_STATUS_LIGHT_NONE, // we may have a light, but it's not user-controllable
+    JD_SERVICE_CLASS_BOOTLOADER};
 
 uint32_t bl_adc_random_seed(void);
 
