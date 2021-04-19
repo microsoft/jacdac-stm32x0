@@ -3,6 +3,8 @@
 
 #define STM32F0 1
 
+#include "board.h"
+
 #include "stm32f0xx_ll_crc.h"
 #include "stm32f0xx_ll_bus.h"
 #include "stm32f0xx_ll_gpio.h"
