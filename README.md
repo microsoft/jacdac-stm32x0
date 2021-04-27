@@ -135,12 +135,11 @@ Other than the building/deployment targets, the following might be of note:
 
 * [create a new repo](https://github.com/microsoft/jacdac-msr-modules/generate) from `jacdac-msr-modules`;
   let's say the new repo is called `jacdac-acme-corp-modules`
-* replace string `jacdac-msr-modules` with `jacdac-acme-corp-modules` in `package.json`
-note: there is no package.json
 * copy `targets/_example/` to `targets/acme-corp/` (replaceing `acme-corp` with the name of the series of modules)
 * edit [targets/acme-corp/board.h](targets/_example/board.h) to match your module
 * you likely do not need to edit [targets/acme-corp/config.mk](targets/_example/config.mk), even if using
-  a beefier MCU from the F03x family - they should be backward-compatible
+  a beefier MCU from the F03x family - they should be backward-compatible;
+  you do need to update it when using G0 series chip!
 * edit [targets/acme-corp/profile/module.c](targets/_example/profile/module.c) 
   to include your module name and used services (follow comments in `module.c`);
   see [jd_services.h](https://github.com/microsoft/jacdac-c/blob/master/services/jd_services.h)
