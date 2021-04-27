@@ -143,6 +143,9 @@ ifeq ($(BL)$(NOBL),)
 	$(MAKE) combine
 endif
 	$(V)$(PREFIX)size $(BUILT_BIN)/*.elf
+	@echo
+	@echo "*** Build OK"
+	@echo
 
 r: run
 l: flash-loop
@@ -164,8 +167,11 @@ endif
 	echo "load" >> built/debug.gdb
 	echo "quit" >> built/debug.gdb
 	arm-none-eabi-gdb --command=built/debug.gdb < /dev/null 2>&1 | tee built/flash.log
-	grep -q "Start address" built/flash.log
+	$(V)grep -q "Start address" built/flash.log
 endif
+	@echo
+	@echo "*** Flash OK"
+	@echo
 
 flash-loop: all
 	while : ; do make ff && say done ; sleep 2 ; done
