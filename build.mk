@@ -124,6 +124,7 @@ CPPFLAGS += \
 	-Itargets/$(BASE_TARGET) \
 	-I$(PLATFORM) \
 	-I$(JD_CORE)/inc \
+	-I$(JD_CORE)/services \
 	-I$(JD_STM)/src \
 	-I$(JD_CORE) \
 	-I$(BUILT) \
