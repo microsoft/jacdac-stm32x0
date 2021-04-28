@@ -1,6 +1,8 @@
 #ifndef __STM_H
 #define __STM_H
 
+#include "board.h"
+
 #define STM32G0 1
 
 #include "stm32g0xx_ll_crc.h"

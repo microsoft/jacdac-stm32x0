@@ -7,7 +7,7 @@
 
 #ifdef PIN_ASCK
 
-#if defined(STM32F031x6) || !defined(SPI2)
+#if defined(STM32F031x6) || defined(STM32F030x4) || !defined(SPI2)
 #define SPI_IDX 1
 #else
 #define SPI_IDX 2
