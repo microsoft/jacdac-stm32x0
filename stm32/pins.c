@@ -1,7 +1,7 @@
 #include "jdstm.h"
 
 void pin_set(int pin, int v) {
-    if ((uint8_t)pin == 0xff)
+    if ((uint8_t)pin == NO_PIN)
         return;
     if (v)
         LL_GPIO_SetOutputPin(PIN_PORT(pin), PIN_MASK(pin));
@@ -10,7 +10,7 @@ void pin_set(int pin, int v) {
 }
 
 void pin_setup_output(int pin) {
-    if ((uint8_t)pin == 0xff)
+    if ((uint8_t)pin == NO_PIN)
         return;
 
     GPIO_TypeDef *GPIOx = PIN_PORT(pin);
@@ -23,13 +23,13 @@ void pin_setup_output(int pin) {
 }
 
 void pin_set_opendrain(int pin) {
-    if ((uint8_t)pin == 0xff)
+    if ((uint8_t)pin == NO_PIN)
         return;
     LL_GPIO_SetPinOutputType(PIN_PORT(pin), PIN_MASK(pin), LL_GPIO_OUTPUT_OPENDRAIN);
 }
 
 void pin_setup_input(int pin, int pull) {
-    if ((uint8_t)pin == 0xff)
+    if ((uint8_t)pin == NO_PIN)
         return;
     GPIO_TypeDef *GPIOx = PIN_PORT(pin);
     uint32_t currentpin = PIN_MASK(pin);
@@ -42,7 +42,7 @@ void pin_setup_input(int pin, int pull) {
 }
 
 void pin_setup_analog_input(int pin) {
-    if ((uint8_t)pin == 0xff)
+    if ((uint8_t)pin == NO_PIN)
         return;
 
     GPIO_TypeDef *GPIOx = PIN_PORT(pin);
@@ -53,7 +53,7 @@ void pin_setup_analog_input(int pin) {
 
 // TODO use this everywhere
 void pin_setup_output_af(int pin, int af) {
-    if ((uint8_t)pin == 0xff)
+    if ((uint8_t)pin == NO_PIN)
         return;
 
     GPIO_TypeDef *GPIOx = PIN_PORT(pin);
@@ -72,7 +72,7 @@ void pin_setup_output_af(int pin, int af) {
 }
 
 void pin_pulse(int pin, int times) {
-    if ((uint8_t)pin == 0xff)
+    if ((uint8_t)pin == NO_PIN)
         return;
     while (times--) {
         LL_GPIO_SetOutputPin(PIN_PORT(pin), PIN_MASK(pin));
@@ -85,7 +85,7 @@ void pin_toggle(int pin) {
 }
 
 int pin_get(int pin) {
-    if ((uint8_t)pin == 0xff)
+    if ((uint8_t)pin == NO_PIN)
         return -1;
     return LL_GPIO_IsInputPinSet(PIN_PORT(pin), PIN_MASK(pin));
 }
