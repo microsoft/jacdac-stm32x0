@@ -153,7 +153,7 @@ void bridge_init(uint8_t pin_cs, uint8_t pin_txrq) {
     pin_set(pin_cs, 1);
     pin_setup_output(pin_cs);
     state->pin_txrq = pin_txrq;
-    pin_setup_input(pin_txrq, 1);
+    pin_setup_input(pin_txrq, PIN_PULL_UP);
     state->rx_q = queue_alloc(512);
     _state = state;
 }

@@ -16,6 +16,6 @@ void power_pin_enable(int en) {
         pin_setup_output(PIN_PWR);
         pin_set(PIN_PWR, 0);
     } else {
-        pin_setup_input(PIN_PWR, 0);
+        pin_setup_input(PIN_PWR, PIN_PULL_NONE);
     }
 }
