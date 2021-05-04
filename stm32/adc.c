@@ -22,7 +22,7 @@ uint16_t adc_convert(void) {
         ;
     LL_ADC_ClearFlag_EOC(ADC1);
 
-    return LL_ADC_REG_ReadConversionData12(ADC1);
+    return LL_ADC_REG_ReadConversionData12(ADC1) << 4;
 }
 
 static void set_channel(uint32_t chan) {
@@ -140,7 +140,7 @@ void adc_init_random(void) {
 
     uint32_t h = 0x811c9dc5;
     for (int i = 0; i < 1000; ++i) {
-        int v = adc_convert();
+        int v = adc_convert() >> 4;
         h = (h * 0x1000193) ^ (v & 0xff);
     }
     jd_seed_random(h);
@@ -190,7 +190,7 @@ uint16_t adc_read_temp(void) {
     set_temp_ref(1);
     set_channel(LL_ADC_CHANNEL_TEMPSENSOR);
 
-    uint16_t r = adc_convert();
+    uint16_t r = adc_convert() >> 4;
 
     LL_ADC_Disable(ADC1);
     set_temp_ref(0);

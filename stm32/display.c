@@ -86,7 +86,7 @@ static void measure_light(ctx_t *ctx) {
     pin_setup_output(pin);
     pin_setup_analog_input(pin);
     target_wait_us(2000);
-    ctx->reading = adc_read_pin(pin);
+    ctx->reading = adc_read_pin(pin) >> 4;
     //int lux = (ctx->reading - 73) * 10 / 3;500
 #else
 #if 0
@@ -96,7 +96,7 @@ static void measure_light(ctx_t *ctx) {
     uint8_t pin = row_pins[i];
     pin_setup_analog_input(pin);
     target_wait_us(1000);
-    res[i] = adc_read_pin(pin);
+    res[i] = adc_read_pin(pin) >> 4;
     if(res[i]>ctx->reading)
     ctx->reading=res[i];
     pin_setup_output(pin);
@@ -110,7 +110,7 @@ static void measure_light(ctx_t *ctx) {
     uint8_t pin = row_pins[2];
     pin_setup_analog_input(pin);
     target_wait_us(1000);
-    ctx->reading = adc_read_pin(pin);
+    ctx->reading = adc_read_pin(pin) >> 4;
     pin_setup_output(pin);
 #endif
 #endif
