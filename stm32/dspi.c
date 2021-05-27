@@ -7,7 +7,7 @@
 
 #ifdef PIN_ASCK
 
-#if defined(STM32F031x6) || defined(STM32F030x4) || !defined(SPI2)
+#if defined(STM32F031x6) || defined(STM32F030x4) || defined(STM32G031xx) || !defined(SPI2)
 #define SPI_IDX 1
 #else
 #define SPI_IDX 2
@@ -79,6 +79,15 @@ STATIC_ASSERT(PIN_AMISO == PA_6);
 #define DMA_FLAG_HT DMA_ISR_HTIF1
 #define DMA_FLAG_TE DMA_ISR_TEIF1
 
+#ifdef STM32G0
+static inline void dma_clear_flag(int flag) {
+    WRITE_REG(DMA1->IFCR, flag << ((DMA_CH) * 4));
+}
+
+static inline bool dma_has_flag(int flag) {
+    return (READ_BIT(DMA1->ISR, flag << ((DMA_CH) * 4)) != 0);
+}
+#else
 static inline void dma_clear_flag(int flag) {
     WRITE_REG(DMA1->IFCR, flag << ((DMA_CH - 1) * 4));
 }
@@ -86,6 +95,7 @@ static inline void dma_clear_flag(int flag) {
 static inline bool dma_has_flag(int flag) {
     return (READ_BIT(DMA1->ISR, flag << ((DMA_CH - 1) * 4)) != 0);
 }
+#endif
 
 typedef struct px_state {
     uint16_t pxlookup[16];
@@ -381,6 +391,10 @@ void px_init(int light_type) {
 #endif
 
 #if PLL_MHZ == 48
+    SPIx->CR1 = LL_SPI_HALF_DUPLEX_TX | LL_SPI_MODE_MASTER | LL_SPI_NSS_SOFT |
+                LL_SPI_BAUDRATEPRESCALER_DIV16; // 3MHz
+    SPIx->CR2 = LL_SPI_DATAWIDTH_8BIT | LL_SPI_RX_FIFO_TH_QUARTER;
+#elif PLL_MHZ == 64
     SPIx->CR1 = LL_SPI_HALF_DUPLEX_TX | LL_SPI_MODE_MASTER | LL_SPI_NSS_SOFT |
                 LL_SPI_BAUDRATEPRESCALER_DIV16; // 3MHz
     SPIx->CR2 = LL_SPI_DATAWIDTH_8BIT | LL_SPI_RX_FIFO_TH_QUARTER;

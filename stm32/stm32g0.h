@@ -25,7 +25,7 @@
 #include "stm32g0xx_hal_rcc.h"
 
 #define HSI_MHZ 16
-#define PLL_MHZ 64
+#define PLL_MHZ 48
 
 // USART2 on lower end G0 can't be set to run from HSI
 // we're not currently setup to handle clock freq switching at that time
