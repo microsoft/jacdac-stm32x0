@@ -70,6 +70,7 @@ bool clk_is_pll(void) {
 
 void clk_setup_pll(void) {
 #if defined(STM32G0)
+    // run at 48 MHz for compatibility with F0
     LL_FLASH_SetLatency(LL_FLASH_LATENCY_2);
     LL_RCC_PLL_ConfigDomain_SYS(LL_RCC_PLLSOURCE_HSI, LL_RCC_PLLM_DIV_1, 6, LL_RCC_PLLR_DIV_2);
 #elif defined(STM32F0)
