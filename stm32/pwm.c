@@ -14,6 +14,7 @@ static const struct TimDesc tims[] = {
     {TIM14, 2, RCC_APBENR2_TIM14EN}, //
     {TIM16, 2, RCC_APBENR2_TIM16EN}, //
     {TIM3, 1, RCC_APBENR1_TIM3EN},   //
+    {TIM2, 1, RCC_APBENR1_TIM2EN},
 #else
     {TIM1, 2, RCC_APB2ENR_TIM1EN}, //
 #ifdef TIM2
@@ -35,6 +36,9 @@ struct PinPWM {
 
 static const struct PinPWM pins[] = {
 #ifdef STM32G0
+    {PA_0, 1, LL_GPIO_AF_2, TIM2},  // rgb led
+    {PA_1, 2, LL_GPIO_AF_2, TIM2},  // rgb led
+    {PA_2, 3, LL_GPIO_AF_2, TIM2},  // rgb led
     {PA_4, 1, LL_GPIO_AF_4, TIM14}, // PWM mikrobus
     {PA_6, 1, LL_GPIO_AF_1, TIM3},  // rgb led
     {PA_7, 2, LL_GPIO_AF_1, TIM3},  // rgb led
