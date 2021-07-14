@@ -10,7 +10,12 @@
 #define AF LL_GPIO_AF_1
 #endif
 #elif defined(STM32G0)
-#if PIN_BL_LED == PA_2
+#if PIN_BL_LED == PA_1
+#define TIMx TIM2
+#define TIMx_CLK_ENABLE __HAL_RCC_TIM2_CLK_ENABLE
+#define CHANNEL 1
+#define AF LL_GPIO_AF_2
+#elif PIN_BL_LED == PA_2
 #define TIMx TIM2
 #define TIMx_CLK_ENABLE __HAL_RCC_TIM2_CLK_ENABLE
 #define CHANNEL 3
