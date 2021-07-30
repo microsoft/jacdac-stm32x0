@@ -1,7 +1,8 @@
 let fs = require("fs")
-let sums = { TOTAL: 0, "RAM.TOTAL": 0 }
+let sums = { }
 let inprog = false
 let inram = false
+let indata = false
 let fun = ""
 let dofun = process.argv[3] == "-fun"
 for (let line of fs.readFileSync(process.argv[2], "utf8").split(/\r?\n/)) {
@@ -17,6 +18,10 @@ for (let line of fs.readFileSync(process.argv[2], "utf8").split(/\r?\n/)) {
       inram = true
     else
       inram = false
+    if (m[1] == "data" || m[1] == "rodata")
+      indata = true
+    else
+      indata = false
     fun = line.slice(m[1].length + 2).replace(/\s.*/, "")
   }
   if (!inprog && !inram) continue
@@ -33,6 +38,25 @@ for (let line of fs.readFileSync(process.argv[2], "utf8").split(/\r?\n/)) {
 
   if (dofun) name += fun
 
+  function doSum(pref) {
+      const n = pref + "." + name
+      if (!sums[n]) sums[n] = 0
+      sums[n] += size
+      if (!sums[pref + ".TOTAL"]) sums[pref + ".TOTAL"] = 0
+      sums[pref + ".TOTAL"] += size
+  }
+
+  if (indata)
+    doSum("DATA")
+  else if (inprog)
+    doSum("TEXT")
+
+  if (inprog)
+    doSum("FLASH")
+
+  if (inram)
+    doSum("RAM")
+
   let pref = inram ? "RAM." : ""
 
   //if (!inram && size > 100) console.log(line)
@@ -41,23 +65,19 @@ for (let line of fs.readFileSync(process.argv[2], "utf8").split(/\r?\n/)) {
 
   //console.log(name, size, line)
 
-  if (!sums[name]) sums[name] = 0
-  sums[name] += size
-  sums[pref + "TOTAL"] += size
 }
 
-function order(isram) {
-  const k = Object.keys(sums).filter(s => /RAM/.test(s) == isram)
+function order(pref) {
+  const k = Object.keys(sums).filter(s => s.startsWith(pref + "."))
   k.sort((a, b) => sums[a] - sums[b])
-  return k
+  for (let kk of k) {
+    console.log(kk, sums[kk])
+  }
+  console.log("\n")
 }
 
-for (let k of order(true)) {
-  console.log(k, sums[k])
-}
+order("RAM")
+order("DATA")
+order("TEXT")
+order("FLASH")
 
-console.log("\n")
-
-for (let k of order(false)) {
-  console.log(k, sums[k])
-}
