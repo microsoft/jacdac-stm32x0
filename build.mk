@@ -29,6 +29,7 @@ CFLAGS = $(DEFINES) \
 CONFIG_DEPS = \
 	$(wildcard $(JD_CORE)/inc/*.h) \
 	$(wildcard $(JD_CORE)/inc/interfaces/*.h) \
+	$(wildcard $(JD_CORE)/inc/click/*.h) \
 	$(wildcard $(JD_CORE)/services/*.h) \
 	$(wildcard $(JD_CORE)/services/interfaces/*.h) \
 	$(wildcard $(JD_STM)/src/*.h) \
@@ -70,6 +71,7 @@ ifneq ($(APP),)
 C_SRC += $(wildcard $(JD_CORE)/source/*.c)
 C_SRC += $(wildcard $(JD_CORE)/services/*.c)
 C_SRC += $(wildcard $(JD_CORE)/drivers/*.c)
+C_SRC += $(wildcard $(JD_CORE)/click/*.c)
 C_SRC += $(wildcard addons/*.c)
 C_SRC += $(wildcard $(JD_CORE)/source/interfaces/simple_alloc.c)
 C_SRC += $(wildcard $(JD_CORE)/source/interfaces/sensor.c)
@@ -124,6 +126,7 @@ CPPFLAGS += \
 	-Itargets/$(BASE_TARGET) \
 	-I$(PLATFORM) \
 	-I$(JD_CORE)/inc \
+	-I$(JD_CORE)/inc/click \
 	-I$(JD_CORE)/services \
 	-I$(JD_STM)/src \
 	-I$(JD_CORE) \
