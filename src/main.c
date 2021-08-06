@@ -98,18 +98,7 @@ int main(void) {
     uint32_t startup_wait = tim_get_micros() + 300000;
 
     while (1) {
-        uint64_t now_long = tim_get_micros();
-        now = (uint32_t)now_long;
-
-        jd_frame_t *fr = jd_rx_get_frame();
-        if (fr)
-            jd_services_process_frame(fr);
-
-        jd_services_tick();
-
-#if JD_CONFIG_APP_PROCESS_HOOK == 1
-        app_process();
-#endif
+        jd_process_everything();
 
         if (startup_wait) {
             if (in_future(startup_wait))
