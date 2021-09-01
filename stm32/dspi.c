@@ -30,13 +30,25 @@
 #endif
 
 #if SPI_IDX == 1
+#define SPI_CLK_ENABLE __HAL_RCC_SPI1_CLK_ENABLE
+#if PIN_ASCK == PA_5
 #define PIN_AF LL_GPIO_AF_0
 STATIC_ASSERT(PIN_ASCK == PA_5);
-STATIC_ASSERT(PIN_AMOSI == PA_7);
+
+STATIC_ASSERT(PIN_AMOSI == PA_7 || PIN_AMOSI == PA_2);
 #if SPI_RX
 STATIC_ASSERT(PIN_AMISO == PA_6);
 #endif
-#define SPI_CLK_ENABLE __HAL_RCC_SPI1_CLK_ENABLE
+#elif PIN_ASCK == PA_1
+#define PIN_AF LL_GPIO_AF_0
+STATIC_ASSERT(PIN_ASCK == PA_1);
+STATIC_ASSERT(PIN_AMOSI == PA_2);
+#if SPI_RX
+STATIC_ASSERT(PIN_AMISO == PA_6);
+#endif
+#else 
+#error "not supported"
+#endif
 #elif SPI_IDX == 2
 #error "not supported"
 #define SPI_CLK_ENABLE __HAL_RCC_SPI2_CLK_ENABLE
@@ -57,6 +69,11 @@ STATIC_ASSERT(PIN_AMISO == PA_6);
 #define DMA_CH LL_DMA_CHANNEL_1
 #define DMA_IRQn DMA1_Channel1_IRQn
 #define DMA_Handler DMA1_Channel1_IRQHandler
+
+// #define DMA_CH LL_DMA_CHANNEL_2
+// #define DMA_CH_RX LL_DMA_CHANNEL_3
+// #define DMA_IRQn DMA1_Channel2_3_IRQn
+// #define DMA_Handler DMA1_Channel2_3_IRQHandler
 #else
 
 #if SPI_IDX == 1

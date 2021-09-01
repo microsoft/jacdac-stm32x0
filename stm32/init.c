@@ -45,13 +45,10 @@ static void enable_nrst_pin(void) {
     /* Unlock flash */
     FLASH->KEYR = FLASH_KEY1;
     FLASH->KEYR = FLASH_KEY2;
-    while ((FLASH->CR & FLASH_CR_LOCK) != 0x00)
-        ;
 
     /* unlock option byte registers */
     FLASH->OPTKEYR = 0x08192A3B;
     FLASH->OPTKEYR = 0x4C5D6E7F;
-    while ((FLASH->CR & FLASH_CR_OPTLOCK) == FLASH_CR_OPTLOCK);
 
     /* get current user option bytes */
     nrstmode = (FLASH->OPTR & ~FLASH_OPTR_NRST_MODE);
@@ -64,10 +61,6 @@ static void enable_nrst_pin(void) {
 
     /* Program option bytes */
     FLASH->OPTR = nrstmode;
-
-    // check no flash op is ongoing
-    while ((FLASH->SR & FLASH_SR_BSY1) != 0)
-        ;
     // store options via options start
     FLASH->CR |= FLASH_CR_OPTSTRT;
     // wait for complete
