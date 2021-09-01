@@ -16,6 +16,9 @@ void PendSV_Handler(void) {}
 void SysTick_Handler(void) {}
 #endif
 
+#define OPTR_MODE0 0x1
+#define OPTR_MODE1 0x2
+
 static void enable_nrst_pin(void) {
 #ifdef FLASH_OPTR_NRST_MODE
 #define FLASH_KEY1 0x45670123U
@@ -23,13 +26,15 @@ static void enable_nrst_pin(void) {
     //print ((FLASH_TypeDef *)0x40022000UL)
     DMESG("check NRST %x", FLASH->OPTR & FLASH_OPTR_NRST_MODE);
 
+    int msk = (FLASH->OPTR & FLASH_OPTR_NRST_MODE) >> FLASH_OPTR_NRST_MODE_Pos;
+
 #ifdef RESET_AS_GPIO
-    if (FLASH->OPTR & FLASH_OPTR_NRST_MODE_1) {
+    // Reset as normal GPIO
+    if (msk == OPTR_MODE1)
         return;
-    }
-#else
-    // this is default production value, but we check it anyways
-    if (FLASH->OPTR & FLASH_OPTR_NRST_MODE_0)
+#else 
+    // Reset as conventional reset line
+    if (msk == OPTR_MODE0)
         return;
 #endif
 
@@ -45,10 +50,13 @@ static void enable_nrst_pin(void) {
     /* Unlock flash */
     FLASH->KEYR = FLASH_KEY1;
     FLASH->KEYR = FLASH_KEY2;
+    while ((FLASH->CR & FLASH_CR_LOCK) != 0x00)
+        ;
 
     /* unlock option byte registers */
     FLASH->OPTKEYR = 0x08192A3B;
     FLASH->OPTKEYR = 0x4C5D6E7F;
+    while ((FLASH->CR & FLASH_CR_OPTLOCK) == FLASH_CR_OPTLOCK);
 
     /* get current user option bytes */
     nrstmode = (FLASH->OPTR & ~FLASH_OPTR_NRST_MODE);
@@ -61,6 +69,8 @@ static void enable_nrst_pin(void) {
 
     /* Program option bytes */
     FLASH->OPTR = nrstmode;
+    while ((FLASH->SR & FLASH_SR_BSY1) != 0)
+        ;
     // store options via options start
     FLASH->CR |= FLASH_CR_OPTSTRT;
     // wait for complete
