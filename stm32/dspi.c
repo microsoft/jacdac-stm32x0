@@ -7,7 +7,15 @@
 
 #ifdef PIN_ASCK
 
-#if defined(STM32F031x6) || defined(STM32F030x4) || defined(STM32G031xx) || !defined(SPI2)
+#if defined(STM32G031xx)
+#if PIN_ASCK == PA_5 || PIN_ASCK == PA_1
+#define SPI_IDX 1
+#elif PIN_ASCK == PA_0
+#define SPI_IDX 2
+#else
+    #error "Please add pin mapping for STM32G0 SPI"
+#endif
+#elif defined(STM32F031x6) || defined(STM32F030x4) || !defined(SPI2)
 #define SPI_IDX 1
 #else
 #define SPI_IDX 2
@@ -30,14 +38,41 @@
 #endif
 
 #if SPI_IDX == 1
+#define SPI_CLK_ENABLE __HAL_RCC_SPI1_CLK_ENABLE
+#if PIN_ASCK == PA_5
 #define PIN_AF LL_GPIO_AF_0
 STATIC_ASSERT(PIN_ASCK == PA_5);
-STATIC_ASSERT(PIN_AMOSI == PA_7);
+
+STATIC_ASSERT(PIN_AMOSI == PA_7 || PIN_AMOSI == PA_2);
 #if SPI_RX
 STATIC_ASSERT(PIN_AMISO == PA_6);
 #endif
-#define SPI_CLK_ENABLE __HAL_RCC_SPI1_CLK_ENABLE
+#elif PIN_ASCK == PA_1
+#define PIN_AF LL_GPIO_AF_0
+STATIC_ASSERT(PIN_ASCK == PA_1);
+STATIC_ASSERT(PIN_AMOSI == PA_2);
+#if SPI_RX
+STATIC_ASSERT(PIN_AMISO == PA_6);
+#endif
+#else
+#error "not supported"
+#endif
 #elif SPI_IDX == 2
+#define SPI_CLK_ENABLE __HAL_RCC_SPI2_CLK_ENABLE
+#if defined(STM32G031xx)
+#if PIN_ASCK == PA_0
+#define PIN_AF LL_GPIO_AF_0
+#define PIN_AF_MOSI LL_GPIO_AF_1
+STATIC_ASSERT(PIN_ASCK == PA_0);
+STATIC_ASSERT(PIN_AMOSI == PB_7);
+#if SPI_RX
+// not implemented
+STATIC_ASSERT(PIN_AMISO == -1);
+#endif
+#else
+#error "not supported"
+#endif
+#else
 #error "not supported"
 #define SPI_CLK_ENABLE __HAL_RCC_SPI2_CLK_ENABLE
 #ifdef STM32G0
@@ -49,6 +84,7 @@ STATIC_ASSERT(PIN_AMISO == PA_6);
 #define PIN_MOSI LL_GPIO_PIN_15
 #define PIN_AF LL_GPIO_AF_0
 #endif
+#endif
 #else
 #error "bad spi"
 #endif
@@ -57,6 +93,11 @@ STATIC_ASSERT(PIN_AMISO == PA_6);
 #define DMA_CH LL_DMA_CHANNEL_1
 #define DMA_IRQn DMA1_Channel1_IRQn
 #define DMA_Handler DMA1_Channel1_IRQHandler
+
+// #define DMA_CH LL_DMA_CHANNEL_2
+// #define DMA_CH_RX LL_DMA_CHANNEL_3
+// #define DMA_IRQn DMA1_Channel2_3_IRQn
+// #define DMA_Handler DMA1_Channel2_3_IRQHandler
 #else
 
 #if SPI_IDX == 1
@@ -115,7 +156,14 @@ void dspi_init() {
     __HAL_RCC_DMA1_CLK_ENABLE();
 
     pin_setup_output_af(PIN_ASCK, PIN_AF);
+
+// some pins require an alternate AF enum for specific pins.
+#ifdef PIN_AF_MOSI
+    pin_setup_output_af(PIN_AMOSI, PIN_AF_MOSI);
+#else
     pin_setup_output_af(PIN_AMOSI, PIN_AF);
+#endif
+
 #if SPI_RX
     pin_setup_output_af(PIN_AMISO, PIN_AF);
 #endif
@@ -382,7 +430,13 @@ void px_init(int light_type) {
 
     px_state.type = light_type;
 
+    // some pins require an alternate AF enum for specific pins.
+#ifdef PIN_AF_MOSI
+    pin_setup_output_af(PIN_AMOSI, PIN_AF_MOSI);
+#else
     pin_setup_output_af(PIN_AMOSI, PIN_AF);
+#endif
+
     if (light_type & LIGHT_TYPE_APA_MASK)
         pin_setup_output_af(PIN_ASCK, PIN_AF);
 
