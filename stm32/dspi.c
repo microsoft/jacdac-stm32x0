@@ -90,14 +90,16 @@ STATIC_ASSERT(PIN_AMISO == -1);
 #endif
 
 #ifdef STM32G0
+#if SPI_RX
+#define DMA_CH LL_DMA_CHANNEL_2
+#define DMA_CH_RX LL_DMA_CHANNEL_3
+#define DMA_IRQn DMA1_Channel2_3_IRQn
+#define DMA_Handler DMA1_Channel2_3_IRQHandler
+#else
 #define DMA_CH LL_DMA_CHANNEL_1
 #define DMA_IRQn DMA1_Channel1_IRQn
 #define DMA_Handler DMA1_Channel1_IRQHandler
-
-// #define DMA_CH LL_DMA_CHANNEL_2
-// #define DMA_CH_RX LL_DMA_CHANNEL_3
-// #define DMA_IRQn DMA1_Channel2_3_IRQn
-// #define DMA_Handler DMA1_Channel2_3_IRQHandler
+#endif
 #else
 
 #if SPI_IDX == 1
@@ -113,6 +115,10 @@ STATIC_ASSERT(PIN_AMISO == -1);
 #error "bad spi"
 #endif
 
+#endif
+
+#ifndef SPI_MODE
+#define SPI_MODE LL_SPI_MODE_MASTER
 #endif
 
 #define DMA_FLAG_G DMA_ISR_GIF1
@@ -168,7 +174,7 @@ void dspi_init() {
     pin_setup_output_af(PIN_AMISO, PIN_AF);
 #endif
 
-    SPIx->CR1 = LL_SPI_MODE_MASTER | LL_SPI_NSS_SOFT |
+    SPIx->CR1 = SPI_MODE | LL_SPI_NSS_SOFT |
 #if SPI_RX
                 LL_SPI_BAUDRATEPRESCALER_DIV4 | LL_SPI_FULL_DUPLEX
 #else
