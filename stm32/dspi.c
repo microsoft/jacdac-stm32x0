@@ -7,7 +7,7 @@
 
 #ifdef PIN_ASCK
 
-#if defined(STM32G031xx)
+#if defined(STM32G031xx) || defined(STM32G030xx)
 #if PIN_ASCK == PA_5 || PIN_ASCK == PA_1
 #define SPI_IDX 1
 #elif PIN_ASCK == PA_0
@@ -90,14 +90,16 @@ STATIC_ASSERT(PIN_AMISO == -1);
 #endif
 
 #ifdef STM32G0
+#if SPI_RX
+#define DMA_CH LL_DMA_CHANNEL_2
+#define DMA_CH_RX LL_DMA_CHANNEL_3
+#define DMA_IRQn DMA1_Channel2_3_IRQn
+#define DMA_Handler DMA1_Channel2_3_IRQHandler
+#else
 #define DMA_CH LL_DMA_CHANNEL_1
 #define DMA_IRQn DMA1_Channel1_IRQn
 #define DMA_Handler DMA1_Channel1_IRQHandler
-
-// #define DMA_CH LL_DMA_CHANNEL_2
-// #define DMA_CH_RX LL_DMA_CHANNEL_3
-// #define DMA_IRQn DMA1_Channel2_3_IRQn
-// #define DMA_Handler DMA1_Channel2_3_IRQHandler
+#endif
 #else
 
 #if SPI_IDX == 1
