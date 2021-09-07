@@ -25,6 +25,12 @@ void tim_set_timer(int delta, cb_t cb);
 int itoa(int n, char *s);
 int string_reverse(char *s);
 uint32_t random_int(uint32_t max);
+inline int max(int v1, int v2) {
+    return (v1 > v2) ? v1 : v2;
+}
+inline int min(int v1, int v2) {
+    return (v1 < v2) ? v1 : v2;
+}
 
 #define CHECK(cond)                                                                                \
     if (!(cond))                                                                                   \
