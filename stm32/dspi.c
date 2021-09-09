@@ -91,8 +91,8 @@ STATIC_ASSERT(PIN_AMISO == -1);
 
 #ifdef STM32G0
 #if SPI_RX
-#define DMA_CH LL_DMA_CHANNEL_2
-#define DMA_CH_RX LL_DMA_CHANNEL_3
+#define DMA_CH LL_DMA_CHANNEL_3
+#define DMA_CH_RX LL_DMA_CHANNEL_2
 #define DMA_IRQn DMA1_Channel2_3_IRQn
 #define DMA_Handler DMA1_Channel2_3_IRQHandler
 #else
@@ -402,7 +402,7 @@ static void init_lookup(void) {
 
 // this is only enabled for error events
 void IRQHandler(void) {
-    ERROR("SPI");
+    ERROR("SPI %x %x", SPIx->DR, SPIx->SR);
 }
 
 void DMA_Handler(void) {
@@ -410,7 +410,6 @@ void DMA_Handler(void) {
         dma_handler();
         return;
     }
-
     dma_clear_flag(DMA_FLAG_G);
     stop_dma();
 }
