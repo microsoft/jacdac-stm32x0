@@ -154,17 +154,19 @@ void adc_init_random(void) {
     set_temp_ref(0);
 }
 
+#define NO_CHANNEL 0xffffffff
+
 static const uint32_t channels_PA[] = {
     LL_ADC_CHANNEL_0, LL_ADC_CHANNEL_1, LL_ADC_CHANNEL_2, LL_ADC_CHANNEL_3,
     LL_ADC_CHANNEL_4, LL_ADC_CHANNEL_5, LL_ADC_CHANNEL_6, LL_ADC_CHANNEL_7,
+    NO_CHANNEL, NO_CHANNEL, NO_CHANNEL, LL_ADC_CHANNEL_15, 
+    LL_ADC_CHANNEL_16, 
 };
 
 static const uint32_t channels_PB[] = {
     LL_ADC_CHANNEL_8,
     LL_ADC_CHANNEL_9,
 };
-
-#define NO_CHANNEL 0xffffffff
 
 #ifdef STM32F0
 #define TS_CAL1 *(uint16_t *)0x1FFFF7B8
@@ -210,9 +212,12 @@ uint16_t adc_read_temp(void) {
 
 
 static uint32_t pin_channel(uint8_t pin) {
+
+    return LL_ADC_CHANNEL_16;
     if (pin >> 4 == 0) {
         if ((pin & 0xf) >= sizeof(channels_PA) / sizeof(channels_PA[0]))
             return NO_CHANNEL;
+        // DMESG("PIN %d CHAN %d", pin & 0xf, channels_PA[pin & 0xf]);
         return channels_PA[pin & 0xf];
     } else if (pin >> 4 == 1) {
         if ((pin & 0xf) >= sizeof(channels_PB) / sizeof(channels_PB[0]))
