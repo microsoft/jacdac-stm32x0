@@ -2,7 +2,10 @@
 #include "dmesg.h"
 
 static bool adc_calibrated;
+
+#ifdef STM32G0
 static bool configured_fixed = false;
+#endif 
 
 static void set_sampling_time(uint32_t time) {
 #ifdef STM32G0
