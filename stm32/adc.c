@@ -2,6 +2,7 @@
 #include "dmesg.h"
 
 static bool adc_calibrated;
+static bool configured_fixed = false;
 
 static void set_sampling_time(uint32_t time) {
 #ifdef STM32G0
@@ -31,7 +32,28 @@ static void set_channel(uint32_t chan) {
         ;
 
 #ifdef STM32G0
-    LL_ADC_REG_SetSequencerRanks(ADC1, LL_ADC_REG_RANK_1, chan);
+    if (chan == LL_ADC_CHANNEL_15 || chan == LL_ADC_CHANNEL_16 || chan == LL_ADC_CHANNEL_17)
+    {
+        if (!configured_fixed) {
+            LL_ADC_REG_SetSequencerConfigurable(ADC1, LL_ADC_REG_SEQ_FIXED);
+            configured_fixed = true;
+        }
+        // one rank (DISABLE is equivalent to one rank)
+        LL_ADC_REG_SetSequencerLength(ADC1, LL_ADC_REG_SEQ_SCAN_DISABLE);
+        LL_ADC_REG_SetSequencerScanDirection(ADC1, LL_ADC_REG_SEQ_SCAN_DIR_BACKWARD);
+        LL_ADC_REG_SetSequencerChannels(ADC1, chan);
+        LL_ADC_REG_SetSequencerDiscont(ADC1, LL_ADC_REG_SEQ_DISCONT_1RANK);
+        while(LL_ADC_IsActiveFlag_CCRDY(ADC1) == 0);
+    }
+    else {
+        if (configured_fixed) {
+            LL_ADC_REG_SetSequencerConfigurable(ADC1, LL_ADC_REG_SEQ_CONFIGURABLE);
+            while(LL_ADC_IsActiveFlag_CCRDY(ADC1) == 0);
+            configured_fixed = false;
+        }
+        LL_ADC_REG_SetSequencerRanks(ADC1, LL_ADC_REG_RANK_1, chan);
+    }
+
     LL_ADC_SetChannelSamplingTime(ADC1, chan, LL_ADC_SAMPLINGTIME_COMMON_1);
 
     LL_ADC_EnableInternalRegulator(ADC1);
@@ -212,12 +234,9 @@ uint16_t adc_read_temp(void) {
 
 
 static uint32_t pin_channel(uint8_t pin) {
-
-    return LL_ADC_CHANNEL_16;
     if (pin >> 4 == 0) {
         if ((pin & 0xf) >= sizeof(channels_PA) / sizeof(channels_PA[0]))
             return NO_CHANNEL;
-        // DMESG("PIN %d CHAN %d", pin & 0xf, channels_PA[pin & 0xf]);
         return channels_PA[pin & 0xf];
     } else if (pin >> 4 == 1) {
         if ((pin & 0xf) >= sizeof(channels_PB) / sizeof(channels_PB[0]))
