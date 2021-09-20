@@ -18,13 +18,12 @@ void SysTick_Handler(void) {}
 
 #define OPTR_MODE0 0x1
 #define OPTR_MODE1 0x2
+#define OPTR_MODE_LEGACY 0x3
 
 static void enable_nrst_pin(void) {
 #ifdef FLASH_OPTR_NRST_MODE
 #define FLASH_KEY1 0x45670123U
 #define FLASH_KEY2 0xCDEF89ABU
-    //print ((FLASH_TypeDef *)0x40022000UL)
-    DMESG("check NRST %x", FLASH->OPTR & FLASH_OPTR_NRST_MODE);
 
     int msk = (FLASH->OPTR & FLASH_OPTR_NRST_MODE) >> FLASH_OPTR_NRST_MODE_Pos;
 
@@ -34,7 +33,7 @@ static void enable_nrst_pin(void) {
         return;
 #else 
     // Reset as conventional reset line
-    if (msk == OPTR_MODE0)
+    if (msk == OPTR_MODE0 || msk == OPTR_MODE_LEGACY)
         return;
 #endif
 
