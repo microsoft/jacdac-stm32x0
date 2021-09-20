@@ -3,6 +3,10 @@
 
 static bool adc_calibrated;
 
+#ifdef STM32G0
+static bool configured_fixed = false;
+#endif 
+
 static void set_sampling_time(uint32_t time) {
 #ifdef STM32G0
     LL_ADC_SetSamplingTimeCommonChannels(ADC1, LL_ADC_SAMPLINGTIME_COMMON_1, time);
@@ -31,7 +35,28 @@ static void set_channel(uint32_t chan) {
         ;
 
 #ifdef STM32G0
-    LL_ADC_REG_SetSequencerRanks(ADC1, LL_ADC_REG_RANK_1, chan);
+    if (chan == LL_ADC_CHANNEL_15 || chan == LL_ADC_CHANNEL_16 || chan == LL_ADC_CHANNEL_17)
+    {
+        if (!configured_fixed) {
+            LL_ADC_REG_SetSequencerConfigurable(ADC1, LL_ADC_REG_SEQ_FIXED);
+            configured_fixed = true;
+        }
+        // one rank (DISABLE is equivalent to one rank)
+        LL_ADC_REG_SetSequencerLength(ADC1, LL_ADC_REG_SEQ_SCAN_DISABLE);
+        LL_ADC_REG_SetSequencerScanDirection(ADC1, LL_ADC_REG_SEQ_SCAN_DIR_BACKWARD);
+        LL_ADC_REG_SetSequencerChannels(ADC1, chan);
+        LL_ADC_REG_SetSequencerDiscont(ADC1, LL_ADC_REG_SEQ_DISCONT_1RANK);
+        while(LL_ADC_IsActiveFlag_CCRDY(ADC1) == 0);
+    }
+    else {
+        if (configured_fixed) {
+            LL_ADC_REG_SetSequencerConfigurable(ADC1, LL_ADC_REG_SEQ_CONFIGURABLE);
+            while(LL_ADC_IsActiveFlag_CCRDY(ADC1) == 0);
+            configured_fixed = false;
+        }
+        LL_ADC_REG_SetSequencerRanks(ADC1, LL_ADC_REG_RANK_1, chan);
+    }
+
     LL_ADC_SetChannelSamplingTime(ADC1, chan, LL_ADC_SAMPLINGTIME_COMMON_1);
 
     LL_ADC_EnableInternalRegulator(ADC1);
@@ -154,17 +179,19 @@ void adc_init_random(void) {
     set_temp_ref(0);
 }
 
+#define NO_CHANNEL 0xffffffff
+
 static const uint32_t channels_PA[] = {
     LL_ADC_CHANNEL_0, LL_ADC_CHANNEL_1, LL_ADC_CHANNEL_2, LL_ADC_CHANNEL_3,
     LL_ADC_CHANNEL_4, LL_ADC_CHANNEL_5, LL_ADC_CHANNEL_6, LL_ADC_CHANNEL_7,
+    NO_CHANNEL, NO_CHANNEL, NO_CHANNEL, LL_ADC_CHANNEL_15, 
+    LL_ADC_CHANNEL_16, 
 };
 
 static const uint32_t channels_PB[] = {
     LL_ADC_CHANNEL_8,
     LL_ADC_CHANNEL_9,
 };
-
-#define NO_CHANNEL 0xffffffff
 
 #ifdef STM32F0
 #define TS_CAL1 *(uint16_t *)0x1FFFF7B8
