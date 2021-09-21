@@ -30,6 +30,14 @@ void led_init(void) {
     for (unsigned i = 0; i < sizeof(output_pins); ++i)
         pin_setup_output(output_pins[i]);
 
+#ifdef DISABLE_SWCLK_FUNC
+    pin_setup_analog_input(PA_14);
+#endif
+
+#ifdef DISABLE_SWD_FUNC
+    pin_setup_analog_input(PA_13);
+#endif
+
     pin_set(PIN_LED_GND, 0);
 }
 
