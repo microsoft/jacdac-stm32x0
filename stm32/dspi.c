@@ -157,6 +157,9 @@ void dspi_init() {
     SPI_CLK_ENABLE();
     __HAL_RCC_DMA1_CLK_ENABLE();
 
+    LL_SPI_Disable(SPIx);
+    while(LL_SPI_IsEnabled(SPIx) == 1);
+
     pin_setup_output_af(PIN_ASCK, PIN_AF);
 
 // some pins require an alternate AF enum for specific pins.
@@ -172,7 +175,7 @@ void dspi_init() {
 
     SPIx->CR1 = LL_SPI_MODE_MASTER | LL_SPI_NSS_SOFT | LL_SPI_PHASE_2EDGE |
 #if SPI_RX
-                LL_SPI_BAUDRATEPRESCALER_DIV256 | LL_SPI_FULL_DUPLEX
+                LL_SPI_BAUDRATEPRESCALER_DIV64 | LL_SPI_FULL_DUPLEX
 #else
                 LL_SPI_BAUDRATEPRESCALER_DIV2 | LL_SPI_HALF_DUPLEX_TX
 #endif
@@ -218,6 +221,8 @@ void dspi_init() {
 
     NVIC_SetPriority(IRQn, 1);
     NVIC_EnableIRQ(IRQn);
+
+    LL_SPI_Enable(SPIx);
 }
 
 static void stop_dma(void) {
