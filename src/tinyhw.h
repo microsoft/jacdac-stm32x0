@@ -51,6 +51,32 @@ int disp_light_level(void);
 void disp_set_dark_level(int v);
 int disp_get_dark_level(void);
 
+// Things below are only required by drivers/*.c
+
+// i2c.c
+// addr are always 7bit
+void i2c_init(void);
+int i2c_setup_write(uint8_t addr, unsigned len, bool repeated);
+int i2c_write(uint8_t c);
+int i2c_finish_write(bool repeated);
+
+// utilities, 8-bit register addresses
+int i2c_write_reg_buf(uint8_t addr, uint8_t reg, const void *src, unsigned len);
+int i2c_read_reg_buf(uint8_t addr, uint8_t reg, void *dst, unsigned len);
+int i2c_write_reg(uint8_t addr, uint8_t reg, uint8_t val);
+int i2c_read_reg(uint8_t addr, uint8_t reg);
+
+// 16-bit reg addresses
+int i2c_write_reg16_buf(uint8_t addr, uint16_t reg, const void *src, unsigned len);
+int i2c_read_reg16_buf(uint8_t addr, uint16_t reg, void *dst, unsigned len);
+// note that this still reads/writes a single byte, from a 16 bit address
+int i2c_write_reg16(uint8_t addr, uint16_t reg, uint8_t val);
+int i2c_read_reg16(uint8_t addr, uint16_t reg);
+
+// mbed-style
+int i2c_write_ex(uint8_t addr, const void *src, unsigned len, bool repeated);
+int i2c_read_ex(uint8_t addr, void *dst, unsigned len);
+
 // target_utils.c
 void target_reset(void);
 RAM_FUNC
