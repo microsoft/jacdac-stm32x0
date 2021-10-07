@@ -153,7 +153,7 @@ static px_state_t px_state;
 
 static cb_t doneH, dma_handler;
 
-void dspi_init() {
+void dspi_init(bool slow, int cpol, int cpha) {
     SPI_CLK_ENABLE();
     __HAL_RCC_DMA1_CLK_ENABLE();
 
@@ -169,15 +169,29 @@ void dspi_init() {
     pin_setup_output_af(PIN_AMOSI, PIN_AF);
 #endif
 
+    uint32_t cpol_cpha = 0;
+
+    if (cpol)
+        cpol_cpha |= LL_SPI_POLARITY_HIGH;
+    
+    if (cpha)
+        cpol_cpha |= LL_SPI_PHASE_2EDGE;
+
 #if SPI_RX
     pin_setup_output_af(PIN_AMISO, PIN_AF);
+    uint32_t baud = LL_SPI_BAUDRATEPRESCALER_DIV4;
+#else 
+    uint32_t baud = LL_SPI_BAUDRATEPRESCALER_DIV2;
 #endif
 
-    SPIx->CR1 = LL_SPI_MODE_MASTER | LL_SPI_NSS_SOFT | LL_SPI_PHASE_2EDGE |
+    if (slow)
+        baud = LL_SPI_BAUDRATEPRESCALER_DIV64;
+
+    SPIx->CR1 = LL_SPI_MODE_MASTER | LL_SPI_NSS_SOFT | cpol_cpha |
 #if SPI_RX
-                LL_SPI_BAUDRATEPRESCALER_DIV64 | LL_SPI_FULL_DUPLEX
+                baud | LL_SPI_FULL_DUPLEX
 #else
-                LL_SPI_BAUDRATEPRESCALER_DIV2 | LL_SPI_HALF_DUPLEX_TX
+                baud | LL_SPI_HALF_DUPLEX_TX
 #endif
         ;
     SPIx->CR2 = LL_SPI_DATAWIDTH_8BIT | LL_SPI_RX_FIFO_TH_QUARTER;
