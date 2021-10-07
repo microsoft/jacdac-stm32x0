@@ -148,7 +148,7 @@ SRV_DEF(bridge, JD_SERVICE_CLASS_BRIDGE);
 void bridge_init(uint8_t pin_cs, uint8_t pin_txrq) {
     SRV_ALLOC(bridge);
     ns_init();
-    dspi_init();
+    dspi_init(false, 0 , 0);
     state->pin_cs = pin_cs;
     pin_set(pin_cs, 1);
     pin_setup_output(pin_cs);
