@@ -179,6 +179,12 @@ endif
 flash-loop: all
 	while : ; do make ff && say done ; sleep 2 ; done
 
+flash-loop-bl: all
+	while : ; do make BL=1 r && sleep 2 && say done ; done
+
+flash-loop-app: all
+	while : ; do make r && say done ; sleep 2 ; done
+
 prep-built-gdb:
 	echo "file $(ELF)" > built/debug.gdb
 ifeq ($(BMP),)
