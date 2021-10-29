@@ -26,10 +26,6 @@ void led_init(void) {
     // The effects of the pins shutdown above is quite dramatic - without the MCU can draw
     // ~100uA (but with wide random variation) in STOP; with shutdown we get a stable 4.3uA
 
-    // setup all our output pins
-    for (unsigned i = 0; i < sizeof(output_pins); ++i)
-        pin_setup_output(output_pins[i]);
-
 #ifdef DISABLE_SWCLK_FUNC
     pin_setup_analog_input(PA_14);
 #endif
@@ -37,6 +33,10 @@ void led_init(void) {
 #ifdef DISABLE_SWD_FUNC
     pin_setup_analog_input(PA_13);
 #endif
+
+    // setup all our output pins
+    for (unsigned i = 0; i < sizeof(output_pins); ++i)
+        pin_setup_output(output_pins[i]);
 
     pin_set(PIN_LED_GND, 0);
 }
