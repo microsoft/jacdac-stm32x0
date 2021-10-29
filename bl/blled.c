@@ -5,6 +5,12 @@
 #define BL_LED_PERIOD 300
 #endif
 
+// if LED is on SWDIO/SWCLK pin, disable it - otherwise it's hard to re-program the board
+#if PIN_LED == PA_13 || PIN_LED == PA_14
+#undef PIN_LED
+#define PIN_LED NO_PIN
+#endif
+
 void led_init(void) {
     led_set_value(0);
 #ifdef PIN_BL_LED
