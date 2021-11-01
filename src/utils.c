@@ -69,18 +69,19 @@ void *memcpy(void *dst, const void *src, size_t sz) {
     void *dst0 = dst;
     if (sz >= 4 && !((uintptr_t)dst & 3) && !((uintptr_t)src & 3)) {
         size_t cnt = sz >> 2;
-        uint32_t *d = (uint32_t *)dst;
+        volatile uint32_t *d = (uint32_t *)dst;
         const uint32_t *s = (const uint32_t *)src;
         while (cnt--) {
             *d++ = *s++;
         }
         sz &= 3;
-        dst = d;
+        dst = (void *)d;
         src = s;
     }
 
-    uint8_t *dd = (uint8_t *)dst;
-    uint8_t *ss = (uint8_t *)src;
+    // see comment in memset() below (have not seen optimization here, but better safe than sorry)
+    volatile uint8_t *dd = (uint8_t *)dst;
+    volatile uint8_t *ss = (uint8_t *)src;
 
     while (sz--) {
         *dd++ = *ss++;
@@ -102,7 +103,9 @@ void *memset(void *dst, int v, size_t sz) {
         dst = d;
     }
 
-    uint8_t *dd = (uint8_t *)dst;
+    // without volatile here, GCC may optimize the loop to memset() call which is obviously not
+    // great
+    volatile uint8_t *dd = (uint8_t *)dst;
 
     while (sz--) {
         *dd++ = v;
@@ -123,5 +126,3 @@ uint32_t random_int(uint32_t max) {
             return v;
     }
 }
-
-
