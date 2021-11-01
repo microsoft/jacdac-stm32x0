@@ -84,12 +84,12 @@ STATIC_ASSERT(PIN_AMISO == -1);
 
 #ifdef STM32G0
 #if SPI_RX
-#define DMA_CH LL_DMA_CHANNEL_3
+#define DMA_CH_TX LL_DMA_CHANNEL_3
 #define DMA_CH_RX LL_DMA_CHANNEL_2
 #define DMA_IRQn DMA1_Channel2_3_IRQn
 #define DMA_Handler DMA1_Channel2_3_IRQHandler
 #else
-#define DMA_CH LL_DMA_CHANNEL_1
+#define DMA_CH_TX LL_DMA_CHANNEL_1
 #define DMA_IRQn DMA1_Channel1_IRQn
 #define DMA_Handler DMA1_Channel1_IRQHandler
 #endif
@@ -97,11 +97,11 @@ STATIC_ASSERT(PIN_AMISO == -1);
 
 #if SPI_IDX == 1
 #define DMA_CH_RX LL_DMA_CHANNEL_2
-#define DMA_CH LL_DMA_CHANNEL_3
+#define DMA_CH_TX LL_DMA_CHANNEL_3
 #define DMA_IRQn DMA1_Channel2_3_IRQn
 #define DMA_Handler DMA1_Channel2_3_IRQHandler
 #elif SPI_IDX == 2
-#define DMA_CH LL_DMA_CHANNEL_5
+#define DMA_CH_TX LL_DMA_CHANNEL_5
 #define DMA_IRQn DMA1_Channel4_5_IRQn
 #define DMA_Handler DMA1_Channel4_5_IRQHandler
 #else
@@ -117,19 +117,19 @@ STATIC_ASSERT(PIN_AMISO == -1);
 
 #ifdef STM32G0
 static inline void dma_clear_flag(int flag) {
-    WRITE_REG(DMA1->IFCR, flag << ((DMA_CH) * 4));
+    WRITE_REG(DMA1->IFCR, flag << ((DMA_CH_TX) * 4));
 }
 
 static inline bool dma_has_flag(int flag) {
-    return (READ_BIT(DMA1->ISR, flag << ((DMA_CH) * 4)) != 0);
+    return (READ_BIT(DMA1->ISR, flag << ((DMA_CH_TX) * 4)) != 0);
 }
 #else
 static inline void dma_clear_flag(int flag) {
-    WRITE_REG(DMA1->IFCR, flag << ((DMA_CH - 1) * 4));
+    WRITE_REG(DMA1->IFCR, flag << ((DMA_CH_TX - 1) * 4));
 }
 
 static inline bool dma_has_flag(int flag) {
-    return (READ_BIT(DMA1->ISR, flag << ((DMA_CH - 1) * 4)) != 0);
+    return (READ_BIT(DMA1->ISR, flag << ((DMA_CH_TX - 1) * 4)) != 0);
 }
 #endif
 
@@ -156,9 +156,9 @@ static inline void spi_init1(void) {
     LL_SPI_EnableIT_ERR(SPIx);
 
 #ifdef STM32G0
-    LL_DMA_SetPeriphRequest(DMA1, DMA_CH, LL_DMAMUX_REQ_SPIx_TX);
+    LL_DMA_SetPeriphRequest(DMA1, DMA_CH_TX, LL_DMAMUX_REQ_SPIx_TX);
 #endif
-    LL_DMA_ConfigTransfer(DMA1, DMA_CH,
+    LL_DMA_ConfigTransfer(DMA1, DMA_CH_TX,
                           LL_DMA_DIRECTION_MEMORY_TO_PERIPH | //
                               LL_DMA_PRIORITY_LOW |           //
                               LL_DMA_MODE_NORMAL |            //
@@ -182,15 +182,13 @@ static inline void spi_init1(void) {
 #endif
 
     /* Enable DMA transfer complete/error interrupts  */
-    LL_DMA_EnableIT_TC(DMA1, DMA_CH);
-    LL_DMA_EnableIT_TE(DMA1, DMA_CH);
+    LL_DMA_EnableIT_TC(DMA1, DMA_CH_TX);
+    LL_DMA_EnableIT_TE(DMA1, DMA_CH_TX);
 
     NVIC_SetPriority(DMA_IRQn, 1);
     NVIC_EnableIRQ(DMA_IRQn);
 
     NVIC_SetPriority(IRQn, 1);
     NVIC_EnableIRQ(IRQn);
-
-    LL_SPI_Enable(SPIx);
 }
 

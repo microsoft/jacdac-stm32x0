@@ -5,7 +5,7 @@
 #define CHUNK_LEN 3 * 4 * 2
 #define PX_SCRATCH_LEN (6 * CHUNK_LEN) // 144 bytes
 
-#ifdef PIN_ASCK
+#if defined(PIN_ASCK) && !defined(USE_SPIS)
 
 #include "spidef.h"
 
@@ -53,10 +53,12 @@ void dspi_init(bool slow, int cpol, int cpha) {
     SPIx->CR2 = LL_SPI_DATAWIDTH_8BIT | LL_SPI_RX_FIFO_TH_QUARTER;
 
     spi_init1();
+
+    LL_SPI_Enable(SPIx);
 }
 
 static void stop_dma(void) {
-    LL_DMA_DisableChannel(DMA1, DMA_CH);
+    LL_DMA_DisableChannel(DMA1, DMA_CH_TX);
 
     while (LL_SPI_GetTxFIFOLevel(SPIx))
         ;
@@ -84,9 +86,9 @@ static void tx_core(const void *data, uint32_t numbytes, cb_t doneHandler) {
     /* Reset the threshold bit */
     CLEAR_BIT(SPIx->CR2, SPI_CR2_LDMATX | SPI_CR2_LDMARX);
 
-    LL_DMA_ConfigAddresses(DMA1, DMA_CH, (uint32_t)data, (uint32_t) & (SPIx->DR),
+    LL_DMA_ConfigAddresses(DMA1, DMA_CH_TX, (uint32_t)data, (uint32_t) & (SPIx->DR),
                            LL_DMA_DIRECTION_MEMORY_TO_PERIPH);
-    LL_DMA_SetDataLength(DMA1, DMA_CH, numbytes);
+    LL_DMA_SetDataLength(DMA1, DMA_CH_TX, numbytes);
 
     LL_SPI_EnableDMAReq_TX(SPIx);
 }
@@ -94,7 +96,7 @@ static void tx_core(const void *data, uint32_t numbytes, cb_t doneHandler) {
 void dspi_tx(const void *data, uint32_t numbytes, cb_t doneHandler) {
     tx_core(data, numbytes, doneHandler);
     LL_SPI_Enable(SPIx);
-    LL_DMA_EnableChannel(DMA1, DMA_CH);
+    LL_DMA_EnableChannel(DMA1, DMA_CH_TX);
 }
 
 #if SPI_RX
@@ -111,7 +113,7 @@ void dspi_xfer(const void *data, void *rx, uint32_t numbytes, cb_t doneHandler) 
     LL_SPI_EnableDMAReq_RX(SPIx);
 
     LL_DMA_EnableChannel(DMA1, DMA_CH_RX);
-    LL_DMA_EnableChannel(DMA1, DMA_CH);
+    LL_DMA_EnableChannel(DMA1, DMA_CH_TX);
     LL_SPI_Enable(SPIx);
 }
 #endif
@@ -218,7 +220,7 @@ void px_tx(const void *data, uint32_t numbytes, uint8_t intensity, cb_t doneHand
 
     tx_core(px_state.pxscratch, PX_SCRATCH_LEN, doneHandler);
     LL_SPI_Enable(SPIx);
-    LL_DMA_EnableChannel(DMA1, DMA_CH);
+    LL_DMA_EnableChannel(DMA1, DMA_CH_TX);
 }
 
 static void init_lookup(void) {
@@ -277,7 +279,7 @@ void px_init(int light_type) {
         pin_setup_output_af(PIN_ASCK, PIN_AF);
 
 #ifdef STM32G0
-    LL_DMA_SetPeriphRequest(DMA1, DMA_CH, LL_DMAMUX_REQ_SPIx_TX);
+    LL_DMA_SetPeriphRequest(DMA1, DMA_CH_TX, LL_DMAMUX_REQ_SPIx_TX);
 #endif
 
 #if PLL_MHZ == 48
@@ -287,7 +289,7 @@ void px_init(int light_type) {
 #else
 #error "define prescaler"
 #endif
-    LL_DMA_ConfigTransfer(DMA1, DMA_CH,
+    LL_DMA_ConfigTransfer(DMA1, DMA_CH_TX,
                           LL_DMA_DIRECTION_MEMORY_TO_PERIPH | //
                               LL_DMA_PRIORITY_LOW |           //
                               LL_DMA_MODE_CIRCULAR |          //
@@ -301,9 +303,9 @@ void px_init(int light_type) {
     LL_SPI_EnableIT_ERR(SPIx);
 
     /* Enable DMA transfer complete/error interrupts  */
-    LL_DMA_EnableIT_TC(DMA1, DMA_CH);
-    LL_DMA_EnableIT_TE(DMA1, DMA_CH);
-    LL_DMA_EnableIT_HT(DMA1, DMA_CH);
+    LL_DMA_EnableIT_TC(DMA1, DMA_CH_TX);
+    LL_DMA_EnableIT_TE(DMA1, DMA_CH_TX);
+    LL_DMA_EnableIT_HT(DMA1, DMA_CH_TX);
 
     NVIC_SetPriority(DMA_IRQn, 1);
     NVIC_EnableIRQ(DMA_IRQn);
