@@ -38,10 +38,4 @@ void rtc_cancel_cb(void);
 #define SPI_RX 0
 #endif
 
-bool spis_seems_connected(void);
-void spis_init(void);
-void spis_xfer(const void *txdata, void *rxdata, uint32_t numbytes, cb_t doneHandler);
-void spis_log(void);
-void spis_abort(void);
-
 #endif

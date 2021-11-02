@@ -14,12 +14,12 @@
 #define EXTI_RISING 0x02
 void exti_set_callback(uint8_t pin, cb_t callback, uint32_t flags);
 
-// dspi.c
+// dspi.c (display SPI (for screen and neopixels; with DMA))
 void dspi_init(bool slow, int cpol, int cpha);
 void dspi_tx(const void *data, uint32_t numbytes, cb_t doneHandler);
 void dspi_xfer(const void *txdata, void *rxdata, uint32_t numbytes, cb_t doneHandler);
 
-// sspic.c
+// sspi.c (sync-SPI)
 void sspi_init(void);
 void sspi_tx(uint8_t *data, uint32_t numbytes);
 void sspi_rx(uint8_t *buf, uint32_t numbytes);
@@ -28,6 +28,15 @@ void sspi_rx(uint8_t *buf, uint32_t numbytes);
 #define LIGHT_TYPE_WS2812B_GRB 0x00
 #define LIGHT_TYPE_APA102 0x10
 #define LIGHT_TYPE_SK9822 0x11
+
+// spis.c (slave SPI)
+bool spis_seems_connected(void);
+void spis_init(void);
+void spis_xfer(const void *txdata, void *rxdata, uint32_t numbytes, cb_t doneHandler);
+void spis_log(void);
+void spis_abort(void);
+extern cb_t spis_halftransfer_cb;
+extern cb_t spis_error_cb;
 
 // rtc.c
 void rtc_init(void);

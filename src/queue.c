@@ -14,6 +14,18 @@ struct _queue {
 
 #define FRM_SIZE(f) ((JD_FRAME_SIZE(f) + 3) & ~3)
 
+int queue_will_fit(queue_t q, unsigned size) {
+    int ret;
+    target_disable_irq();
+    if (q->front <= q->back) {
+        ret = (q->back + size <= q->size || q->front > size);
+    } else {
+        ret = q->back + size < q->front;
+    }
+    target_enable_irq();
+    return ret;
+}
+
 int queue_push(queue_t q, jd_frame_t *pkt) {
     if (pkt->size == 0)
         jd_panic();
