@@ -16,11 +16,11 @@ static void pulse_log_pin(void) {}
 #define DMA_FLAG_ERROR DMA_ISR_TEIF1_Pos
 
 static inline bool DMA_HasFlag(DMA_TypeDef *DMAx, uint8_t ch, uint8_t flag) {
-    return (DMAx->ISR & (1 << (4 * (ch - 1) + flag))) != 0;
+    return (DMAx->ISR & (1 << (4 * ch + flag))) != 0;
 }
 
 static inline void DMA_ClearFlag(DMA_TypeDef *DMAx, uint8_t ch) {
-    DMAx->IFCR = 1 << (4 * (ch - 1) + DMA_FLAG_GLOBAL);
+    DMAx->IFCR = 1 << (4 * ch + DMA_FLAG_GLOBAL);
 }
 
 static void spi_core_init(void) {

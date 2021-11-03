@@ -112,6 +112,8 @@ void bridge_forward_frame(jd_frame_t *frame) {
         sz = (sz + 3) & ~3;
         memcpy(&state->spi_bridge[state->rx_dst], frame, sz);
         state->rx_dst += sz;
+        if (state->rx_dst < XFER_SIZE)
+            *(uint32_t *)&state->spi_bridge[state->rx_dst] = 0;
         pin_set(PIN_BR_RX_READY, 1);
     }
     target_enable_irq();
