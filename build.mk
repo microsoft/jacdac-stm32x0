@@ -13,8 +13,8 @@ SCRIPTS = $(JD_STM)/scripts
 PLATFORM = $(JD_STM)/stm32
 
 PREFIX = arm-none-eabi-
-CC = $(PREFIX)gcc
-AS = $(PREFIX)as
+CC = $(CCACHE) $(PREFIX)gcc
+AS = $(CCACHE) $(PREFIX)as
 
 MAKE_FLAGS ?= -j8
 
