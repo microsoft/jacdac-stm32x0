@@ -89,8 +89,8 @@ uint8_t one_read(void) {
         while (!LL_USART_IsActiveFlag_RXNE(USARTx))
             ;
         uint8_t v = LL_USART_ReceiveData8(USARTx);
-        if (v)
-            r |= (1 << 8);
+        if (v == 0xff)
+            r |= (1 << i);
     }
     LL_USART_Disable(USARTx);
     return r;
