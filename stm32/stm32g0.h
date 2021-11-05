@@ -31,7 +31,7 @@
 
 // USART2 on lower end G0 can't be set to run from HSI
 // we're not currently setup to handle clock freq switching at that time
-#if USART_IDX != 1
+#if USART_IDX != 1 || defined(ONE_WIRE)
 #define DISABLE_PLL 1
 #endif
 
