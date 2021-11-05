@@ -28,6 +28,16 @@ void pin_set_opendrain(int pin) {
     LL_GPIO_SetPinOutputType(PIN_PORT(pin), PIN_MASK(pin), LL_GPIO_OUTPUT_OPENDRAIN);
 }
 
+void pin_set_pull(int pin, int pull) {
+    if ((uint8_t)pin == NO_PIN)
+        return;
+    LL_GPIO_SetPinPull(PIN_PORT(pin), PIN_MASK(pin),
+                       pull == -1  ? LL_GPIO_PULL_DOWN
+                       : pull == 1 ? LL_GPIO_PULL_UP
+                       : pull == 0 ? LL_GPIO_PULL_NO
+                                   : (jd_panic(), 0));
+}
+
 void pin_setup_input(int pin, int pull) {
     if ((uint8_t)pin == NO_PIN)
         return;
