@@ -122,7 +122,7 @@ void bridge_forward_frame(jd_frame_t *frame) {
 void bridge_process(srv_t *state) {}
 
 void bridge_handle_packet(srv_t *state, jd_packet_t *pkt) {
-    service_handle_register(state, pkt, bridge_regs);
+    service_handle_register_final(state, pkt, bridge_regs);
 }
 
 static void halftransfer(void) {
