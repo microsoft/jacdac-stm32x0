@@ -108,7 +108,7 @@ void bridge_forward_frame(jd_frame_t *frame) {
     if (frame != &_state->spi_rx) {
         // for announce packets
         jd_packet_t *pkt = (jd_packet_t *)frame;
-        if (pkt->service_command == JD_SERVICE_NUMBER_CONTROL &&
+        if (pkt->service_command == JD_SERVICE_INDEX_CONTROL &&
             pkt->service_index == JD_CONTROL_CMD_SERVICES &&
             !(frame->flags & JD_FRAME_FLAG_COMMAND)) {
             // we check if we have name for the source device

@@ -25,7 +25,7 @@ uint32_t random(ctx_t *ctx) {
 }
 
 static const uint32_t announce_data[] = {
-    8 | (JD_SERVICE_NUMBER_CONTROL << 8) | (JD_CMD_ANNOUNCE << 16),
+    8 | (JD_SERVICE_INDEX_CONTROL << 8) | (JD_CMD_ANNOUNCE << 16),
     JD_SERVICE_CLASS_CONTROL | (JD_CONTROL_ANNOUNCE_FLAGS_SUPPORTS_BROADCAST << 8),
     JD_SERVICE_CLASS_BOOTLOADER};
 
@@ -125,7 +125,7 @@ int main(void) {
                 ctx->next_announce = now + 512 * 1024;
             } else if (ctx->id_queued) {
                 ((uint32_t *)ctx->txBuffer.data)[0] =
-                    4 | (JD_SERVICE_NUMBER_CONTROL << 8) | (ctx->id_queued << 16);
+                    4 | (JD_SERVICE_INDEX_CONTROL << 8) | (ctx->id_queued << 16);
                 ((uint32_t *)ctx->txBuffer.data)[1] = bl_dev_info.device_class;
                 ctx->id_queued = 0;
                 jd_prep_send(ctx);
