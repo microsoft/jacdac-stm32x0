@@ -56,7 +56,7 @@ static void spi_done_handler(void) {
         if (4 <= state->spi_rx.size && state->spi_rx.size <= 240) {
             if (state->spi_rx.flags & JD_FRAME_FLAG_LOOPBACK) {
                 jd_packet_t *pkt = (jd_packet_t *)&state->spi_rx;
-                if (pkt->service_number == 0)
+                if (pkt->service_index == 0)
                     switch (pkt->service_command) {
                     case 0xf0:
                         ns_set(pkt->device_identifier, (const char *)pkt->data);
@@ -109,7 +109,7 @@ void bridge_forward_frame(jd_frame_t *frame) {
         // for announce packets
         jd_packet_t *pkt = (jd_packet_t *)frame;
         if (pkt->service_command == JD_SERVICE_NUMBER_CONTROL &&
-            pkt->service_number == JD_CONTROL_CMD_SERVICES &&
+            pkt->service_index == JD_CONTROL_CMD_SERVICES &&
             !(frame->flags & JD_FRAME_FLAG_COMMAND)) {
             // we check if we have name for the source device
             const char *name = ns_get(pkt->device_identifier);
@@ -202,7 +202,7 @@ void jd_send_event_ext(srv_t *srv, uint32_t eventid, uint32_t arg) {
     if (eventid >> 16)
         jd_panic();
     uint32_t data[] = {eventid, arg};
-    jd_send(state->service_number, JD_CMD_EVENT, data, 8);
+    jd_send(state->service_index, JD_CMD_EVENT, data, 8);
 }
 
 // bridge between phys and queue imp, phys calls this to get the next frame.

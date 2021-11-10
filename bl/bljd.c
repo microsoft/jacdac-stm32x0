@@ -18,11 +18,11 @@ static bool valid_frame(ctx_t *ctx, jd_frame_t *frame) {
 
     if (pkt->flags & JD_FRAME_FLAG_IDENTIFIER_IS_SERVICE_CLASS) {
         if (pkt->device_identifier == JD_SERVICE_CLASS_CONTROL) {
-            pkt->service_number = 0;
+            pkt->service_index = 0;
             return true;
         }
         if (pkt->device_identifier == ctx->service_class_bl) {
-            pkt->service_number = 1;
+            pkt->service_index = 1;
             return true;
         }
     }
@@ -62,9 +62,9 @@ static void ctrl_handle_packet(ctx_t *ctx, jd_packet_t *pkt) {
 
 static void process_frame(ctx_t *ctx, jd_frame_t *frame) {
     jd_packet_t *pkt = (jd_packet_t *)frame;
-    if (pkt->service_number == 0)
+    if (pkt->service_index == 0)
         ctrl_handle_packet(ctx, pkt);
-    else if (pkt->service_number == 1)
+    else if (pkt->service_index == 1)
         bl_handle_packet(ctx, pkt);
 }
 

@@ -7,7 +7,7 @@ static int setup_tx(ctx_t *ctx, int cmd, const void *data, int size) {
     jd_packet_t *pkt = (jd_packet_t *)&ctx->txBuffer;
     pkt->service_command = cmd;
     pkt->service_size = size;
-    pkt->service_number = 1;
+    pkt->service_index = 1;
     memcpy(pkt->data, data, size);
     jd_prep_send(ctx);
 
