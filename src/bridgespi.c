@@ -131,7 +131,7 @@ static void halftransfer(void) {
 }
 
 SRV_DEF(bridge, JD_SERVICE_CLASS_BRIDGE);
-void bridge_init(uint8_t pin_cs, uint8_t pin_txrq) {
+void bridge_init(void) {
     SRV_ALLOC(bridge);
 
     pwr_enter_pll(); // full speed ahead!

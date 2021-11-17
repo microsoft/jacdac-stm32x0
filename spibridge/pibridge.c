@@ -20,7 +20,7 @@ int spi_fd;
 
 #define PIN_TX_READY 24   // RST; G0 is ready for data from Pi
 #define PIN_RX_READY 25   // AN; G0 has data for Pi
-#define PIN_BRIDGE_RST 27 // nRST of the bridge G0 MCU
+#define PIN_BRIDGE_RST 22 // nRST of the bridge G0 MCU
 
 uint8_t emptyqueue[XFER_SIZE];
 uint8_t txqueue[XFER_SIZE + 4];
@@ -172,11 +172,13 @@ int main(void) {
   // uint8_t spiMode = SPI_NO_CS;
   uint8_t spiMode = 0;
   int r = ioctl(spi_fd, SPI_IOC_WR_MODE, &spiMode);
+  if (r != 0)
+    fatal("can't WR_MODE on SPI");
 
   wiringPiISR(PIN_TX_READY, INT_EDGE_RISING, xfer);
   wiringPiISR(PIN_RX_READY, INT_EDGE_RISING, xfer);
 
-  fprintf(stderr, "staring... %d\n", r);
+  fprintf(stderr, "starting...\n");
 
   xfer();
 
