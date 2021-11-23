@@ -10,6 +10,11 @@
 
 static queue_t tx_q;
 
+#if JD_RAW_FRAME
+uint8_t rawFrameSending;
+jd_frame_t *rawFrame;
+#endif
+
 #define JD_SERVICE_CLASS_BRIDGE 0x1fe5b46f
 
 struct srv_state {
@@ -187,6 +192,14 @@ int jd_send(unsigned service_num, unsigned service_cmd, const void *data, unsign
 
 // bridge between phys and queue imp, phys calls this to get the next frame.
 jd_frame_t *jd_tx_get_frame(void) {
+#if JD_RAW_FRAME
+    if (rawFrame) {
+        jd_frame_t *r = rawFrame;
+        rawFrame = NULL;
+        rawFrameSending = true;
+        return r;
+    }
+#endif
     jd_frame_t *f = queue_front(tx_q);
     if (f)
         isSending = true;
@@ -195,6 +208,12 @@ jd_frame_t *jd_tx_get_frame(void) {
 
 // bridge between phys and queue imp, marks as sent.
 void jd_tx_frame_sent(jd_frame_t *pkt) {
+#if JD_RAW_FRAME
+    if (rawFrameSending) {
+        rawFrameSending = false;
+        return;
+    }
+#endif
     isSending = false;
     queue_shift(tx_q);
     if (queue_front(tx_q))
