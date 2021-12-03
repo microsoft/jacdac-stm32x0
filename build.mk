@@ -253,7 +253,9 @@ bump:
 
 refresh-version:
 	@mkdir -p $(BUILT_BIN)
-	echo 'const char app_fw_version[] = "v$(FW_VERSION)";' > $(BUILT_BIN)/version.c
+	echo 'const char app_fw_version[] = "v$(FW_VERSION)";' > $(BUILT_BIN)/version-tmp.c
+	@diff $(BUILT_BIN)/version.c $(BUILT_BIN)/version-tmp.c >/dev/null 2>/dev/null || \
+		(echo "refresh version"; cp $(BUILT_BIN)/version-tmp.c $(BUILT_BIN)/version.c)
 
 check-release: drop
 	if [ "X`git describe --exact --tags --match 'v[0-9]*' 2>/dev/null`" != "X" ]; then $(MAKE) build-release ; fi
