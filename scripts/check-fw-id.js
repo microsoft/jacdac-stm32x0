@@ -52,7 +52,7 @@ for (const dn of fs.readdirSync(profiles_path)) {
             console.log(`Patching ${profile_fn}: dev_class ${m[1]} -> ${trg}`)
         }
 
-        log(`${profile_fn} -> 0x${dev_class.toString(16)} "${dev_class_name}"`)
+        // log(`${profile_fn} -> 0x${dev_class.toString(16)} "${dev_class_name}"`)
 
         if ((dev_class >> 28) != 3)
             error("invalid FIRMWARE_IDENTIFIER() format")
