@@ -171,7 +171,7 @@ void jd_send_low(jd_frame_t *f) {
 }
 
 int jd_send(unsigned service_num, unsigned service_cmd, const void *data, unsigned service_size) {
-    if (service_size > 32)
+    if (service_size > 64)
         jd_panic();
 
     uint32_t buf[(service_size + 16 + 3) / 4];
