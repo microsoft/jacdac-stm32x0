@@ -5,12 +5,30 @@ The packets are read from stdin and then printed out to stdout, so it should be 
 
 This is an early prototype.
 
+## Installation
+
+Run `make` in this folder.
+Put `pibridge` executable somewhere.
+
+Enable SPI from `sudo raspi-config`.
+
+When you run `./pibridge`, it should print some packets in hex.
+
+Create (or update) `~/.jacdac/config.ini` with the following:
+
+```ini
+[jacdac]
+transport_cmd = /path/to/pibridge
+```
+
 ## RPi Zero USB
 
 https://www.thepolyglotdeveloper.com/2016/06/connect-raspberry-pi-zero-usb-cable-ssh/
 https://www.thepolyglotdeveloper.com/2019/07/share-internet-between-macos-raspberry-pi-zero-over-usb/
 
 ## Install node.js
+
+(this is if you're not using our Python SDK)
 
 ```bash
 wget https://nodejs.org/download/release/v10.24.1/node-v10.24.1-linux-armv6l.tar.xz
@@ -23,9 +41,3 @@ node from nodejs package from raspbian takes ~16s to startup (!!!)
 
 install:
 * git
-
-
-## SPI
-
-enable SPI from `sudo raspi-config`
-
