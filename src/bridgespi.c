@@ -23,6 +23,9 @@ struct srv_state {
 
     uint16_t rx_dst; // points to spi_bridge (or past it)
 
+    uint32_t connected_blink;
+    uint32_t connected_blink_end;
+
     // uint8_t rx_size, shift, skip_one;
     queue_t rx_q;
 
@@ -47,6 +50,11 @@ static inline bool is_host_frame(jd_frame_t *f) {
 static void setup_xfer(srv_t *state);
 static void spi_done_handler(void) {
     srv_t *state = _state;
+
+    if (jd_should_sample(&state->connected_blink, 2 * 512 * 1024)) {
+        jd_status_set_ch(2, 150);
+        state->connected_blink_end = tim_get_micros() + 50 * 1024;
+    }
 
     jd_frame_t *frame = (jd_frame_t *)state->spi_host;
 
@@ -124,7 +132,12 @@ void bridge_forward_frame(jd_frame_t *frame) {
     target_enable_irq();
 }
 
-void bridge_process(srv_t *state) {}
+void bridge_process(srv_t *state) {
+    if (state->connected_blink_end && in_past(state->connected_blink_end)) {
+        state->connected_blink_end = 0;
+        jd_status_set_ch(2, 0);
+    }
+}
 
 void bridge_handle_packet(srv_t *state, jd_packet_t *pkt) {
     service_handle_register_final(state, pkt, bridge_regs);
