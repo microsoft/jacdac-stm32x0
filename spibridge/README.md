@@ -1,9 +1,14 @@
 # SPI<->Jacdac bridge; RPi side
 
 The executable in this folder talks via SPI to a STM32G0 MCU that handles real-time Jacdac communications.
-The packets are read from stdin and then printed out to stdout, so it should be easy to interface node.js to it.
+The packets are read from stdin and then printed out to stdout, so it is easy to interface Python or Node.js to it.
 
-This is an early prototype.
+
+Refer to [schematics.pdf](./schematics.pdf) file in this folder about how to build the hardware bridge.
+Note that you'll likely want to use a different current limiter, with 0.9A limit or less.
+You may also need additional ESD protection, please refer to [Jacdac module reference designs](https://github.com/microsoft/jacdac-ddk/tree/main/electronics/altium/reference-designs)
+
+This is a prototype and has not been EMI-tested.
 
 ## Installation
 
