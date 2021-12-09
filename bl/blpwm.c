@@ -20,6 +20,11 @@
 #define TIMx_CLK_ENABLE __HAL_RCC_TIM2_CLK_ENABLE
 #define CHANNEL 3
 #define AF LL_GPIO_AF_3
+#elif PIN_BL_LED == PA_3
+#define TIMx TIM2
+#define TIMx_CLK_ENABLE __HAL_RCC_TIM2_CLK_ENABLE
+#define CHANNEL 4
+#define AF LL_GPIO_AF_2
 #elif PIN_BL_LED == PA_6
 #define TIMx TIM3
 #define TIMx_CLK_ENABLE __HAL_RCC_TIM3_CLK_ENABLE

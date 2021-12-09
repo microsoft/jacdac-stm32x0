@@ -42,6 +42,7 @@ static const struct PinPWM pins[] = {
     {PA_0, 1, LL_GPIO_AF_2, TIM2},  // rgb led
     {PA_1, 2, LL_GPIO_AF_2, TIM2},  // rgb led
     {PA_2, 3, LL_GPIO_AF_2, TIM2},  // rgb led
+    {PA_3, 4, LL_GPIO_AF_2, TIM2},  // rgb led
 #endif
     {PA_4, 1, LL_GPIO_AF_4, TIM14}, // PWM mikrobus
     {PA_6, 1, LL_GPIO_AF_1, TIM3},  // rgb led
