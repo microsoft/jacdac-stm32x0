@@ -135,6 +135,7 @@ void sspi_tx(uint8_t *data, uint32_t numbytes) {
 
 void sspi_rx(uint8_t *buf, uint32_t numbytes) {
     while(numbytes--) {
+        LL_SPI_TransmitData8(SPIx, 0);
         while (LL_SPI_IsActiveFlag_RXNE(SPIx) == 0);
         // while (LL_SPI_GetRxFIFOLevel(SPIx) == LL_SPI_RX_FIFO_EMPTY);
         *(buf++) = LL_SPI_ReceiveData8(SPIx);
