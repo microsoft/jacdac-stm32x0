@@ -115,6 +115,10 @@ void bridge_forward_frame(jd_frame_t *frame) {
         return; // ignore stuff we sent ourselves
 
     srv_t *state = _state;
+
+    if (!state->enabled)
+        return;
+
     int sz = JD_FRAME_SIZE(frame);
 
     target_disable_irq();
@@ -161,6 +165,7 @@ void bridge_init(void) {
     pin_setup_output(PIN_BR_RX_READY);
 
     state->rx_q = queue_alloc(RXQ_SIZE);
+    state->enabled = 1;
     _state = state;
 
     setup_xfer(state);
