@@ -23,6 +23,8 @@ int spi_fd;
 #define PIN_RX_READY 25   // AN; G0 has data for Pi
 #define PIN_BRIDGE_RST 22 // nRST of the bridge G0 MCU
 
+#define GPIOD_OK(v) if (0 != (v)) return 1;
+
 struct gpiod_chip *chip;
 struct gpiod_line_bulk rxtx_lines;
 struct gpiod_line_bulk rxtx_events;
@@ -184,7 +186,7 @@ void *detect_rxtx_ready(){
   return NULL;
 }
 
-int main(void) {
+int guarded_main(void) {
   unsigned int rxtx_offsets[] = { PIN_RX_READY, PIN_TX_READY };
  
   pthread_mutex_init(&sendmut, NULL);
@@ -193,16 +195,20 @@ int main(void) {
 
   // request rx, tx
   chip = gpiod_chip_open(GPIO_CHIP);
-  gpiod_chip_get_lines(chip, rxtx_offsets, 2, &rxtx_lines);
-  gpiod_line_request_bulk_rising_edge_events(&rxtx_lines, CONSUMER);
+  if (!chip) {
+    printf("error opening chip %s\n", GPIO_CHIP);
+    return 1;
+  }
+  GPIOD_OK(gpiod_chip_get_lines(chip, rxtx_offsets, 2, &rxtx_lines));
+  GPIOD_OK(gpiod_line_request_bulk_rising_edge_events(&rxtx_lines, CONSUMER));
 
   // reset spi bridge
   rst = gpiod_chip_get_line(chip, PIN_BRIDGE_RST);
-  gpiod_line_request_output(rst, CONSUMER, 0);
-  gpiod_line_set_value(rst, 0);
+  GPIOD_OK(gpiod_line_request_output(rst, CONSUMER, 0));
+  GPIOD_OK(gpiod_line_set_value(rst, 0));
   delay(10);
-  gpiod_line_set_value(rst, 1);
-  gpiod_line_set_direction_input(rst);
+  GPIOD_OK(gpiod_line_set_value(rst, 1));
+  GPIOD_OK(gpiod_line_set_direction_input(rst));
 
   spi_fd = open(SPI_DEV, O_RDWR);
   if (spi_fd < 0) {
@@ -258,11 +264,17 @@ int main(void) {
     if (ptr)
       queuetx(pkt, ptr);
   }
+  return 0;
+}
+
+int main(void) {
+  int res = guarded_main();
 
   detecting_rxtx = false;
   pthread_join(detect_rxtx_ready_thread, NULL);
   gpiod_line_release_bulk(&rxtx_lines);
   gpiod_line_release(rst);
   gpiod_chip_close(chip);
-  return 0;
+
+  return res;
 }
