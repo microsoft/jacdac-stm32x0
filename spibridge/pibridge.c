@@ -195,7 +195,7 @@ int guarded_main(void) {
 
   // request rx, tx
   chip = gpiod_chip_open(GPIO_CHIP);
-  if (!chip) {
+  if (NULL == chip) {
     printf("error opening gpio chip %s\n", GPIO_CHIP);
     return 1;
   }
@@ -270,11 +270,14 @@ int guarded_main(void) {
 int main(void) {
   int res = guarded_main();
 
-  detecting_rxtx = false;
-  pthread_join(detect_rxtx_ready_thread, NULL);
-  gpiod_line_release_bulk(&rxtx_lines);
-  gpiod_line_release(rst);
-  gpiod_chip_close(chip);
-
+  if (detecting_rxtx) {
+    detecting_rxtx = false;
+    pthread_join(detect_rxtx_ready_thread, NULL);
+  }
+  if (NULL != chip) {
+    gpiod_line_release_bulk(&rxtx_lines);
+    gpiod_line_release(rst);
+    gpiod_chip_close(chip);
+  }
   return res;
 }
