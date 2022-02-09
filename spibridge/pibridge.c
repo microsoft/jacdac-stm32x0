@@ -25,10 +25,10 @@ int spi_fd;
 
 #define GPIOD_OK(v) if (0 != (v)) return 1;
 
+volatile sig_atomic_t sigint_received = 0;
 struct gpiod_chip *chip;
 struct gpiod_line_bulk rxtx_lines;
 struct gpiod_line_bulk rxtx_events;
-struct gpiod_line *rst;
 struct timespec start_time;
 uint8_t emptyqueue[XFER_SIZE];
 uint8_t txqueue[XFER_SIZE + 4];
@@ -104,15 +104,18 @@ static void queuetx(const uint8_t *ptr, int len) {
 }
 
 void xfer() {
+  fprintf(stderr, "xfer\n");
   pthread_mutex_lock(&sendmut);
 
   int rxtx[2];
   gpiod_line_get_value_bulk(&rxtx_lines, rxtx);
   int rx_value = rxtx[0];
   int tx_value = rxtx[1];
+  fprintf(stderr, "rx %d, tx %d\n", rx_value, tx_value);
 
   int sendtx = txq_ptr && tx_value;
   if (rx_value || sendtx) {
+    fprintf(stderr, "ioctl\n");
     struct spi_ioc_transfer spi;
     if (sendtx)
       memset(txqueue + txq_ptr, 0, 4);
@@ -166,6 +169,7 @@ void xfer() {
     }
   }
   pthread_mutex_unlock(&sendmut);
+  fprintf(stderr, "xfer done\n");
 }
 
 int hexdig(char c) {
@@ -177,16 +181,39 @@ int hexdig(char c) {
   return -1;
 }
 
-void *detect_rxtx_ready(){
-  while (detecting_rxtx) {
+void* detect_rxtx_ready(){
+  fprintf(stderr, "starting edge detection\n");
+  while (detecting_rxtx && !sigint_received) {
+    fprintf(stderr, "wait for edges\n");
     struct gpiod_line_bulk rxtx_events;
-		if (1 == gpiod_line_event_wait_bulk(&rxtx_lines, NULL, &rxtx_events))
-      xfer();
+    int ret = gpiod_line_event_wait_bulk(&rxtx_lines, NULL, &rxtx_events);
+    fprintf(stderr, "edge detect: %d\n", ret);
+    xfer();
   }
+  fprintf(stderr, "end edge detection\n");
   return NULL;
 }
 
-int guarded_main(void) {
+void sigint_handler() {
+  sigint_received = 1;
+}
+
+void cleanup(void) {
+  fprintf(stderr, "starting transfer\n");
+  if (detecting_rxtx) {
+    printf("cancelling spi edge thread\n");
+    detecting_rxtx = false;
+    pthread_join(detect_rxtx_ready_thread, NULL);
+  }
+  if (NULL != chip) {
+    printf("closing chip\n");
+    gpiod_line_release_bulk(&rxtx_lines);
+    gpiod_chip_close(chip);
+  }
+}
+
+int work(void) {
+
   unsigned int rxtx_offsets[] = { PIN_RX_READY, PIN_TX_READY };
  
   pthread_mutex_init(&sendmut, NULL);
@@ -203,16 +230,19 @@ int guarded_main(void) {
   fprintf(stderr, "opening rx, tx\n");
   GPIOD_OK(gpiod_chip_get_lines(chip, rxtx_offsets, 2, &rxtx_lines));
   fprintf(stderr, "requesting rx, tx edge events\n");
-  GPIOD_OK(gpiod_line_request_bulk_rising_edge_events(&rxtx_lines, CONSUMER));
+  GPIOD_OK(gpiod_line_request_bulk_rising_edge_events_flags(&rxtx_lines, CONSUMER, GPIOD_LINE_BIAS_PULL_DOWN));
 
   // reset spi bridge
   fprintf(stderr, "reseting bridge\n");
-  rst = gpiod_chip_get_line(chip, PIN_BRIDGE_RST);
-  GPIOD_OK(gpiod_line_request_output(rst, CONSUMER, 0));
-  GPIOD_OK(gpiod_line_set_value(rst, 0));
-  delay(10);
-  GPIOD_OK(gpiod_line_set_value(rst, 1));
-  GPIOD_OK(gpiod_line_set_direction_input(rst));
+  {
+    struct gpiod_line *rst = gpiod_chip_get_line(chip, PIN_BRIDGE_RST);
+    GPIOD_OK(gpiod_line_request_output(rst, CONSUMER, 0));
+    GPIOD_OK(gpiod_line_set_value(rst, 0));
+    delay(100);
+    GPIOD_OK(gpiod_line_set_value(rst, 1));
+    GPIOD_OK(gpiod_line_set_direction_input(rst));
+    gpiod_line_release(rst);
+  }
 
   fprintf(stderr, "starting spi\n");
   spi_fd = open(SPI_DEV, O_RDWR);
@@ -227,15 +257,14 @@ int guarded_main(void) {
   if (r != 0)
     fatal("can't WR_MODE on SPI");
 
-  fprintf(stderr, "starting edge detection\n");
+  fprintf(stderr, "starting edge detection thread\n");
   detecting_rxtx = true;
   pthread_create(&detect_rxtx_ready_thread, NULL, detect_rxtx_ready, NULL);
-  fprintf(stderr, "starting...\n");
 
   fprintf(stderr, "starting transfer\n");
   xfer();
 
-  for (;;) {
+  while (!sigint_received) {
     uint8_t pkt[XFER_SIZE];
     int ptr = 0;
     for (;;) {
@@ -269,17 +298,8 @@ int guarded_main(void) {
 }
 
 int main(void) {
-  int res = guarded_main();
-  if (detecting_rxtx) {
-    printf("cancelling spi edge thread\n");
-    detecting_rxtx = false;
-    pthread_join(detect_rxtx_ready_thread, NULL);
-  }
-  if (NULL != chip) {
-    printf("closing chip\n");
-    gpiod_line_release_bulk(&rxtx_lines);
-    gpiod_line_release(rst);
-    gpiod_chip_close(chip);
-  }
-  return res;
+    signal(SIGINT, sigint_handler);
+    int res = work();
+    cleanup();
+    return res;
 }
