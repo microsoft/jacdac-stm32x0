@@ -12,12 +12,16 @@ This is a prototype and has not been EMI-tested.
 
 ## Installation
 
-Run `make` in this folder.
-Put `pibridge` executable somewhere.
+* install [libgpio-dev](https://packages.debian.org/sid/libgpiod-dev)
 
-Enable SPI from `sudo raspi-config`.
+    sudo apt install libgpiod-dev
 
-When you run `./pibridge`, it should print some packets in hex.
+* run `make` in this folder.
+* put `pibridge` executable somewhere.
+
+* enable SPI from `sudo raspi-config`.
+
+* When you run `./pibridge`, it should print some packets in hex.
 
 Create (or update) `~/.jacdac/config.ini` with the following:
 

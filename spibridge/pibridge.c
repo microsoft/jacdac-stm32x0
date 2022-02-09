@@ -10,24 +10,32 @@
 #include <errno.h>
 #include <sys/ioctl.h>
 #include <linux/spi/spidev.h>
-
-#include <wiringPi.h>
+#include <gpiod.h> // https://git.kernel.org/pub/scm/libs/libgpiod/libgpiod.git/
 
 int spi_fd;
 
 #define SPI_DEV "/dev/spidev0.0"
+#define GPIO_CHIP "gpiochip0"
+#define CONSUMER "jacdac"
 #define XFER_SIZE 256
 
 #define PIN_TX_READY 24   // RST; G0 is ready for data from Pi
 #define PIN_RX_READY 25   // AN; G0 has data for Pi
 #define PIN_BRIDGE_RST 22 // nRST of the bridge G0 MCU
 
+struct gpiod_chip *chip;
+struct gpiod_line_bulk rxtx_lines;
+struct gpiod_line_bulk rxtx_events;
+struct gpiod_line *rst;
+struct timespec start_time;
 uint8_t emptyqueue[XFER_SIZE];
 uint8_t txqueue[XFER_SIZE + 4];
 uint8_t rxqueue[XFER_SIZE];
 int txq_ptr;
 pthread_mutex_t sendmut;
 pthread_cond_t txfree;
+pthread_t detect_rxtx_ready_thread;
+volatile bool detecting_rxtx;
 
 // https://wiki.nicksoft.info/mcu:pic16:crc-16:home
 uint16_t jd_crc16(const void *data, uint32_t size) {
@@ -40,6 +48,21 @@ uint16_t jd_crc16(const void *data, uint32_t size) {
     crc = (crc << 8) ^ (x << 12) ^ (x << 5) ^ x;
   }
   return crc;
+}
+
+void delay(unsigned long ms)
+{
+    struct timespec ts;
+    ts.tv_sec = ms / 1000ul;            // whole seconds
+    ts.tv_nsec = (ms % 1000ul) * 1000000ul;  // remainder, in nanoseconds
+    nanosleep(&ts, NULL);
+}
+
+unsigned long millis() {
+    struct timespec now_time;
+    clock_gettime(CLOCK_MONOTONIC, &now_time);
+
+    return (now_time.tv_sec - start_time.tv_sec) * 1000 + (now_time.tv_nsec - start_time.tv_nsec) / 1000000L;
 }
 
 void warning(const char *msg) { fprintf(stderr, "warning: %s\n", msg); }
@@ -56,7 +79,7 @@ static void printpkt(int ts, const uint8_t *ptr, int len) {
   printf("\n");
 }
 
-void xfer(void);
+void xfer();
 
 static void queuetx(const uint8_t *ptr, int len) {
   if (len < 12) {
@@ -80,8 +103,14 @@ static void queuetx(const uint8_t *ptr, int len) {
 
 void xfer() {
   pthread_mutex_lock(&sendmut);
-  int sendtx = txq_ptr && digitalRead(PIN_TX_READY);
-  if (digitalRead(PIN_RX_READY) || sendtx) {
+
+  int rxtx[2];
+  gpiod_line_get_value_bulk(&rxtx_lines, rxtx);
+  int rx_value = rxtx[0];
+  int tx_value = rxtx[1];
+
+  int sendtx = txq_ptr && tx_value;
+  if (rx_value || sendtx) {
     struct spi_ioc_transfer spi;
     if (sendtx)
       memset(txqueue + txq_ptr, 0, 4);
@@ -146,22 +175,34 @@ int hexdig(char c) {
   return -1;
 }
 
+void *detect_rxtx_ready(){
+  while (detecting_rxtx) {
+    struct gpiod_line_bulk rxtx_events;
+		if (1 == gpiod_line_event_wait_bulk(&rxtx_lines, NULL, &rxtx_events))
+      xfer();
+  }
+  return NULL;
+}
+
 int main(void) {
+  unsigned int rxtx_offsets[] = { PIN_RX_READY, PIN_TX_READY };
+ 
   pthread_mutex_init(&sendmut, NULL);
   pthread_cond_init(&txfree, NULL);
+  clock_gettime(CLOCK_MONOTONIC, &start_time);  
 
-  wiringPiSetupGpio();
+  // request rx, tx
+  chip = gpiod_chip_open(GPIO_CHIP);
+  gpiod_chip_get_lines(chip, rxtx_offsets, 2, &rxtx_lines);
+  gpiod_line_request_bulk_rising_edge_events(&rxtx_lines, CONSUMER);
 
-  pullUpDnControl(PIN_RX_READY, PUD_DOWN);
-  pullUpDnControl(PIN_TX_READY, PUD_DOWN);
-  pinMode(PIN_RX_READY, INPUT);
-  pinMode(PIN_TX_READY, INPUT);
-
-  pinMode(PIN_BRIDGE_RST, OUTPUT);
-  digitalWrite(PIN_BRIDGE_RST, 0);
+  // reset spi bridge
+  rst = gpiod_chip_get_line(chip, PIN_BRIDGE_RST);
+  gpiod_line_request_output(rst, CONSUMER, 0);
+  gpiod_line_set_value(rst, 0);
   delay(10);
-  digitalWrite(PIN_BRIDGE_RST, 1);
-  pinMode(PIN_BRIDGE_RST, INPUT);
+  gpiod_line_set_value(rst, 1);
+  gpiod_line_set_direction_input(rst);
 
   spi_fd = open(SPI_DEV, O_RDWR);
   if (spi_fd < 0) {
@@ -175,9 +216,14 @@ int main(void) {
   if (r != 0)
     fatal("can't WR_MODE on SPI");
 
-  wiringPiISR(PIN_TX_READY, INT_EDGE_RISING, xfer);
-  wiringPiISR(PIN_RX_READY, INT_EDGE_RISING, xfer);
+  while (1) {
+    struct gpiod_line_bulk rxtx_events;
+		if (1 == gpiod_line_event_wait_bulk(&rxtx_lines, NULL, &rxtx_events))
+      xfer();
+  }
 
+  detecting_rxtx = true;
+  pthread_create(&detect_rxtx_ready_thread, NULL, detect_rxtx_ready, NULL);
   fprintf(stderr, "starting...\n");
 
   xfer();
@@ -213,5 +259,10 @@ int main(void) {
       queuetx(pkt, ptr);
   }
 
+  detecting_rxtx = false;
+  pthread_join(detect_rxtx_ready_thread, NULL);
+  gpiod_line_release_bulk(&rxtx_lines);
+  gpiod_line_release(rst);
+  gpiod_chip_close(chip);
   return 0;
 }
