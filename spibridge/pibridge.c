@@ -196,7 +196,7 @@ int guarded_main(void) {
   // request rx, tx
   chip = gpiod_chip_open(GPIO_CHIP);
   if (!chip) {
-    printf("error opening chip %s\n", GPIO_CHIP);
+    printf("error opening gpio chip %s\n", GPIO_CHIP);
     return 1;
   }
   GPIOD_OK(gpiod_chip_get_lines(chip, rxtx_offsets, 2, &rxtx_lines));
