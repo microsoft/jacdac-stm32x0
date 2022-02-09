@@ -15,7 +15,7 @@
 int spi_fd;
 
 #define SPI_DEV "/dev/spidev0.0"
-#define GPIO_CHIP "gpiochip0"
+#define GPIO_CHIP "/dev/gpiochip0"
 #define CONSUMER "jacdac"
 #define XFER_SIZE 256
 
@@ -199,10 +199,14 @@ int guarded_main(void) {
     printf("error opening gpio chip %s\n", GPIO_CHIP);
     return 1;
   }
+
+  fprintf(stderr, "opening rx, tx\n");
   GPIOD_OK(gpiod_chip_get_lines(chip, rxtx_offsets, 2, &rxtx_lines));
+  fprintf(stderr, "requesting rx, tx edge events\n");
   GPIOD_OK(gpiod_line_request_bulk_rising_edge_events(&rxtx_lines, CONSUMER));
 
   // reset spi bridge
+  fprintf(stderr, "reseting bridge\n");
   rst = gpiod_chip_get_line(chip, PIN_BRIDGE_RST);
   GPIOD_OK(gpiod_line_request_output(rst, CONSUMER, 0));
   GPIOD_OK(gpiod_line_set_value(rst, 0));
@@ -210,6 +214,7 @@ int guarded_main(void) {
   GPIOD_OK(gpiod_line_set_value(rst, 1));
   GPIOD_OK(gpiod_line_set_direction_input(rst));
 
+  fprintf(stderr, "starting spi\n");
   spi_fd = open(SPI_DEV, O_RDWR);
   if (spi_fd < 0) {
     printf("error opening %s: %s\n", SPI_DEV, strerror(errno));
@@ -222,16 +227,12 @@ int guarded_main(void) {
   if (r != 0)
     fatal("can't WR_MODE on SPI");
 
-  while (1) {
-    struct gpiod_line_bulk rxtx_events;
-		if (1 == gpiod_line_event_wait_bulk(&rxtx_lines, NULL, &rxtx_events))
-      xfer();
-  }
-
+  fprintf(stderr, "starting edge detection\n");
   detecting_rxtx = true;
   pthread_create(&detect_rxtx_ready_thread, NULL, detect_rxtx_ready, NULL);
   fprintf(stderr, "starting...\n");
 
+  fprintf(stderr, "starting transfer\n");
   xfer();
 
   for (;;) {
@@ -269,12 +270,13 @@ int guarded_main(void) {
 
 int main(void) {
   int res = guarded_main();
-
   if (detecting_rxtx) {
+    printf("cancelling spi edge thread\n");
     detecting_rxtx = false;
     pthread_join(detect_rxtx_ready_thread, NULL);
   }
   if (NULL != chip) {
+    printf("closing chip\n");
     gpiod_line_release_bulk(&rxtx_lines);
     gpiod_line_release(rst);
     gpiod_chip_close(chip);
