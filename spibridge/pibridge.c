@@ -238,7 +238,7 @@ int work(void) {
     struct gpiod_line *rst = gpiod_chip_get_line(chip, PIN_BRIDGE_RST);
     GPIOD_OK(gpiod_line_request_output(rst, CONSUMER, 0));
     GPIOD_OK(gpiod_line_set_value(rst, 0));
-    delay(100);
+    delay(10);
     GPIOD_OK(gpiod_line_set_value(rst, 1));
     GPIOD_OK(gpiod_line_set_direction_input(rst));
     gpiod_line_release(rst);
