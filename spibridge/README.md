@@ -12,10 +12,7 @@ This is a prototype and has not been EMI-tested.
 
 ## Installation
 
-* install [libgpio-dev](https://packages.debian.org/sid/libgpiod-dev)
-
-    sudo apt install libgpiod-dev
-
+* you need to use kernel 5.10.63 (for example in Raspbian Bullseye 11)
 * run `make` in this folder.
 * put `pibridge` executable somewhere.
 

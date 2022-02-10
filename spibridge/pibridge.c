@@ -10,14 +10,67 @@
 #include <errno.h>
 #include <sys/ioctl.h>
 #include <linux/spi/spidev.h>
-#include <gpiod.h> // https://git.kernel.org/pub/scm/libs/libgpiod/libgpiod.git/
+#include <linux/gpio.h>
+#include <stdbool.h>
 
 int spi_fd;
+int rxfd;
 
 #define SPI_DEV "/dev/spidev0.0"
 #define GPIO_CHIP "/dev/gpiochip0"
 #define CONSUMER "jacdac"
 #define XFER_SIZE 256
+
+void fatal(const char *msg) {
+    fprintf(stderr, "Fatal error: %s (%s)\n", msg, strerror(errno));
+    exit(1);
+}
+
+int req_lines(const unsigned *lines, unsigned numlines, unsigned flags) {
+    struct gpio_v2_line_request req;
+
+    memset(&req, 0, sizeof(req));
+
+    req.config.flags = flags;
+    strcpy(req.consumer, "jacdac-SPI");
+    req.num_lines = numlines;
+    for (unsigned i = 0; i < numlines; ++i)
+        req.offsets[i] = lines[i];
+
+    int gpio_fd = open(GPIO_CHIP, 0);
+    if (gpio_fd < 0)
+        fatal("can't open " GPIO_CHIP);
+
+    int ret = ioctl(gpio_fd, GPIO_V2_GET_LINE_IOCTL, &req);
+    if (ret == -1)
+        fatal("can't GPIO_GET_LINE_IOCTL");
+
+    close(gpio_fd);
+
+    return req.fd;
+}
+
+void set_pin(int fd, int val) {
+    struct gpio_v2_line_values vals;
+    vals.bits = val ? 1 : 0;
+    vals.mask = 1;
+
+    int ret = ioctl(fd, GPIO_V2_LINE_SET_VALUES_IOCTL, &vals);
+    if (ret == -1)
+        fatal("failed GPIOHANDLE_SET_LINE_VALUES_IOCTL");
+}
+
+unsigned get_pins(int fd, int num) {
+    struct gpio_v2_line_values vals;
+    vals.bits = 0;
+    vals.mask = (1 << num) - 1;
+
+    int ret = ioctl(fd, GPIO_V2_LINE_GET_VALUES_IOCTL, &vals);
+    if (ret == -1)
+        fatal("failed GPIOHANDLE_SET_LINE_VALUES_IOCTL");
+
+    return vals.bits;
+}
 
 #define PIN_TX_READY 24   // RST; G0 is ready for data from Pi
 #define PIN_RX_READY 25   // AN; G0 has data for Pi
@@ -27,10 +80,6 @@ int spi_fd;
     if (0 != (v))                                                                                  \
         return 1;
 
-volatile sig_atomic_t sigint_received = 0;
-struct gpiod_chip *chip;
-struct gpiod_line_bulk rxtx_lines;
-struct gpiod_line_bulk rxtx_events;
 struct timespec start_time;
 uint8_t emptyqueue[XFER_SIZE];
 uint8_t txqueue[XFER_SIZE + 4];
@@ -39,7 +88,6 @@ int txq_ptr;
 pthread_mutex_t sendmut;
 pthread_cond_t txfree;
 pthread_t detect_rxtx_ready_thread;
-volatile bool detecting_rxtx;
 
 // https://wiki.nicksoft.info/mcu:pic16:crc-16:home
 uint16_t jd_crc16(const void *data, uint32_t size) {
@@ -71,10 +119,6 @@ unsigned long millis() {
 
 void warning(const char *msg) {
     fprintf(stderr, "warning: %s\n", msg);
-}
-void fatal(const char *msg) {
-    fprintf(stderr, "fatal error: %s\n", msg);
-    exit(3);
 }
 
 static void printpkt(int ts, const uint8_t *ptr, int len) {
@@ -108,18 +152,14 @@ static void queuetx(const uint8_t *ptr, int len) {
 }
 
 void xfer() {
-    fprintf(stderr, "xfer\n");
     pthread_mutex_lock(&sendmut);
 
-    int rxtx[2];
-    gpiod_line_get_value_bulk(&rxtx_lines, rxtx);
-    int rx_value = rxtx[0];
-    int tx_value = rxtx[1];
-    fprintf(stderr, "rx %d, tx %d\n", rx_value, tx_value);
+    unsigned v = get_pins(rxfd, 2);
+    int rx_value = v & 1;
+    int tx_value = v & 2;
 
     int sendtx = txq_ptr && tx_value;
     if (rx_value || sendtx) {
-        fprintf(stderr, "ioctl\n");
         struct spi_ioc_transfer spi;
         if (sendtx)
             memset(txqueue + txq_ptr, 0, 4);
@@ -173,7 +213,6 @@ void xfer() {
         }
     }
     pthread_mutex_unlock(&sendmut);
-    fprintf(stderr, "xfer done\n");
 }
 
 int hexdig(char c) {
@@ -186,71 +225,46 @@ int hexdig(char c) {
 }
 
 void *detect_rxtx_ready() {
-    fprintf(stderr, "starting edge detection\n");
-    while (detecting_rxtx && !sigint_received) {
-        fprintf(stderr, "wait for edges\n");
-        struct gpiod_line_bulk rxtx_events;
-        int ret = gpiod_line_event_wait_bulk(&rxtx_lines, NULL, &rxtx_events);
-        fprintf(stderr, "edge detect: %d\n", ret);
+    struct gpio_v2_line_event event;
+    while (true) {
+        int ret = read(rxfd, &event, sizeof(event));
+        if (ret == -1) {
+            if (errno == -EAGAIN) {
+                // fprintf(stderr, "nothing available\n");
+                continue;
+            } else {
+                fatal("failed to read event");
+            }
+        }
+
+        if (ret != sizeof(event))
+            fatal("short event read");
         xfer();
     }
-    fprintf(stderr, "end edge detection\n");
     return NULL;
 }
 
-void sigint_handler() {
-    sigint_received = 1;
-}
-
-void cleanup(void) {
-    fprintf(stderr, "starting transfer\n");
-    if (detecting_rxtx) {
-        printf("cancelling spi edge thread\n");
-        detecting_rxtx = false;
-        pthread_join(detect_rxtx_ready_thread, NULL);
-    }
-    if (NULL != chip) {
-        printf("closing chip\n");
-        gpiod_line_release_bulk(&rxtx_lines);
-        gpiod_chip_close(chip);
-    }
-}
-
 int work(void) {
-
     unsigned int rxtx_offsets[] = {PIN_RX_READY, PIN_TX_READY};
+    unsigned int rst_offsets[] = {PIN_BRIDGE_RST};
+
+    int rstfd = req_lines(rst_offsets, 1, GPIO_V2_LINE_FLAG_OUTPUT);
+    set_pin(rstfd, 0);
+    delay(10);
+    set_pin(rstfd, 1);
+    close(rstfd);
+    // re-request as input and release; needed?
+    rstfd = req_lines(rst_offsets, 1, GPIO_V2_LINE_FLAG_INPUT);
+    close(rstfd);
+
+    rxfd = req_lines(rxtx_offsets, 2,
+                     GPIO_V2_LINE_FLAG_INPUT | GPIO_V2_LINE_FLAG_EDGE_RISING |
+                         GPIO_V2_LINE_FLAG_BIAS_PULL_DOWN);
 
     pthread_mutex_init(&sendmut, NULL);
     pthread_cond_init(&txfree, NULL);
     clock_gettime(CLOCK_MONOTONIC, &start_time);
 
-    // request rx, tx
-    chip = gpiod_chip_open(GPIO_CHIP);
-    if (NULL == chip) {
-        printf("error opening gpio chip %s\n", GPIO_CHIP);
-        return 1;
-    }
-
-    fprintf(stderr, "opening rx, tx\n");
-    GPIOD_OK(gpiod_chip_get_lines(chip, rxtx_offsets, 2, &rxtx_lines));
-    fprintf(stderr, "requesting rx, tx edge events\n");
-    GPIOD_OK(gpiod_line_request_bulk_rising_edge_events_flags(&rxtx_lines, CONSUMER,
-                                                              GPIOD_LINE_BIAS_PULL_DOWN));
-
-    // reset spi bridge
-    fprintf(stderr, "reseting bridge\n");
-    {
-        struct gpiod_line *rst = gpiod_chip_get_line(chip, PIN_BRIDGE_RST);
-        GPIOD_OK(gpiod_line_request_output(rst, CONSUMER, 0));
-        GPIOD_OK(gpiod_line_set_value(rst, 0));
-        delay(10);
-        GPIOD_OK(gpiod_line_set_value(rst, 1));
-        gpiod_line_set_config(rst, GPIOD_LINE_REQUEST_DIRECTION_INPUT, 0, 0);
-        // GPIOD_OK(gpiod_line_set_direction_input(rst));
-        gpiod_line_release(rst);
-    }
-
-    fprintf(stderr, "starting spi\n");
     spi_fd = open(SPI_DEV, O_RDWR);
     if (spi_fd < 0) {
         printf("error opening %s: %s\n", SPI_DEV, strerror(errno));
@@ -263,14 +277,11 @@ int work(void) {
     if (r != 0)
         fatal("can't WR_MODE on SPI");
 
-    fprintf(stderr, "starting edge detection thread\n");
-    detecting_rxtx = true;
     pthread_create(&detect_rxtx_ready_thread, NULL, detect_rxtx_ready, NULL);
 
-    fprintf(stderr, "starting transfer\n");
     xfer();
 
-    while (!sigint_received) {
+    while (true) {
         uint8_t pkt[XFER_SIZE];
         int ptr = 0;
         for (;;) {
@@ -304,8 +315,5 @@ int work(void) {
 }
 
 int main(void) {
-    signal(SIGINT, sigint_handler);
-    int res = work();
-    cleanup();
-    return res;
+    return work();
 }
