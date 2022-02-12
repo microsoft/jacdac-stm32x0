@@ -3,12 +3,22 @@
 
 static bool adc_calibrated;
 
-#ifdef STM32G0
+#ifdef STM32WL
+#define ADC1 ADC
+#endif
+
+#if defined(STM32G0) || defined(STM32WL)
+#define NEW_ADC 1
+#else
+#define NEW_ADC 0
+#endif
+
+#if NEW_ADC
 static bool configured_fixed = false;
 #endif 
 
 static void set_sampling_time(uint32_t time) {
-#ifdef STM32G0
+#if NEW_ADC
     LL_ADC_SetSamplingTimeCommonChannels(ADC1, LL_ADC_SAMPLINGTIME_COMMON_1, time);
 #else
     LL_ADC_SetSamplingTimeCommonChannels(ADC1, time);
@@ -34,7 +44,7 @@ static void set_channel(uint32_t chan) {
     while (LL_ADC_IsDisableOngoing(ADC1))
         ;
 
-#ifdef STM32G0
+#if NEW_ADC
     if (chan == LL_ADC_CHANNEL_15 || chan == LL_ADC_CHANNEL_16 || chan == LL_ADC_CHANNEL_17)
     {
         if (!configured_fixed) {
@@ -102,7 +112,7 @@ uint32_t bl_adc_random_seed(void) {
 
     ADC1->CFGR1 = LL_ADC_REG_OVR_DATA_OVERWRITTEN;
 
-#ifdef STM32G0
+#if NEW_ADC
     LL_ADC_REG_SetSequencerLength(ADC1, LL_ADC_REG_SEQ_SCAN_DISABLE);
     target_wait_us(5);
 
@@ -113,7 +123,7 @@ uint32_t bl_adc_random_seed(void) {
 
     ADC1->CFGR2 = LL_ADC_CLOCK_SYNC_PCLK_DIV2;
 
-#ifdef STM32G0
+#if NEW_ADC
     LL_ADC_REG_SetSequencerRanks(ADC1, LL_ADC_REG_RANK_1, LL_ADC_CHANNEL_TEMPSENSOR);
     LL_ADC_SetChannelSamplingTime(ADC1, LL_ADC_CHANNEL_TEMPSENSOR, LL_ADC_SAMPLINGTIME_COMMON_1);
 
@@ -150,7 +160,7 @@ void adc_init_random(void) {
     set_temp_ref(1);
     ADC1->CFGR1 = LL_ADC_REG_OVR_DATA_OVERWRITTEN;
 
-#ifdef STM32G0
+#if NEW_ADC
     LL_ADC_REG_SetSequencerLength(ADC1, LL_ADC_REG_SEQ_SCAN_DISABLE);
     target_wait_us(5);
 
@@ -201,15 +211,15 @@ static const uint32_t channels_PB[] = {
 #endif
 #endif
 
-#ifdef STM32G0
+#if NEW_ADC
 #define TS_CAL1 *(uint16_t *)0x1FFF75A8 // @30C
-#ifdef STM32G031xx
+#if NEW_ADC31xx
 #define TS_CAL2 *(uint16_t *)0x1FFF75CA // @130C (not defined on G030)
 #endif
 #endif
 
 uint16_t adc_read_temp(void) {
-#ifdef STM32G0
+#if NEW_ADC
     set_sampling_time(LL_ADC_SAMPLINGTIME_160CYCLES_5);
 #else
     set_sampling_time(LL_ADC_SAMPLINGTIME_71CYCLES_5); // min. sampling time for temp is 4us
@@ -262,7 +272,7 @@ void adc_prep_read_pin(uint8_t pin) {
 
     pin_setup_analog_input(pin);
 
-#ifdef STM32G0
+#if NEW_ADC
     set_sampling_time(LL_ADC_SAMPLINGTIME_39CYCLES_5);
 #else
     set_sampling_time(LL_ADC_SAMPLINGTIME_41CYCLES_5);

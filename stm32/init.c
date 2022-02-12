@@ -31,7 +31,7 @@ static void enable_nrst_pin(void) {
     // Reset as normal GPIO
     if (msk == OPTR_MODE1)
         return;
-#else 
+#else
     // Reset as conventional reset line
     if (msk == OPTR_MODE0 || msk == OPTR_MODE_LEGACY)
         return;
@@ -55,7 +55,8 @@ static void enable_nrst_pin(void) {
     /* unlock option byte registers */
     FLASH->OPTKEYR = 0x08192A3B;
     FLASH->OPTKEYR = 0x4C5D6E7F;
-    while ((FLASH->CR & FLASH_CR_OPTLOCK) == FLASH_CR_OPTLOCK);
+    while ((FLASH->CR & FLASH_CR_OPTLOCK) == FLASH_CR_OPTLOCK)
+        ;
 
     /* get current user option bytes */
     nrstmode = (FLASH->OPTR & ~FLASH_OPTR_NRST_MODE);
@@ -102,6 +103,9 @@ void clk_setup_pll(void) {
 #else
     LL_RCC_PLL_ConfigDomain_SYS(LL_RCC_PLLSOURCE_HSI_DIV_2, LL_RCC_PLL_MUL_12);
 #endif
+#elif defined(STM32WL)
+    LL_FLASH_SetLatency(LL_FLASH_LATENCY_2);
+    LL_RCC_PLL_ConfigDomain_SYS(LL_RCC_PLLSOURCE_HSI, LL_RCC_PLLM_DIV_1, 6, LL_RCC_PLLR_DIV_2);
 #else
 #error "clock?"
 #endif
@@ -155,13 +159,20 @@ void SystemInit(void) {
     LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_SYSCFG);
     LL_IOP_GRP1_EnableClock(LL_IOP_GRP1_PERIPH_GPIOA | LL_IOP_GRP1_PERIPH_GPIOB |
                             LL_IOP_GRP1_PERIPH_GPIOC);
+    LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_PWR);
+#elif defined(STM32WL)
+    SCB->VTOR = FLASH_BASE; // needed?
+    // LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_SYSCFG); - doesn't have?
+    LL_AHB2_GRP1_EnableClock(LL_AHB2_GRP1_PERIPH_GPIOA | LL_AHB2_GRP1_PERIPH_GPIOB |
+                             LL_AHB2_GRP1_PERIPH_GPIOC);
+    // LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_PWR); - also missing
 #else
     LL_APB1_GRP2_EnableClock(LL_APB1_GRP2_PERIPH_SYSCFG);
     LL_AHB1_GRP1_EnableClock(LL_AHB1_GRP1_PERIPH_GPIOA | LL_AHB1_GRP1_PERIPH_GPIOB |
                              LL_AHB1_GRP1_PERIPH_GPIOC | LL_AHB1_GRP1_PERIPH_GPIOF);
+    LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_PWR);
 #endif
 
-    LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_PWR);
 
 #ifdef BOARD_STARTUP_CODE
     BOARD_STARTUP_CODE;

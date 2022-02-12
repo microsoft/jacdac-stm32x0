@@ -29,14 +29,14 @@ void dspi_init(bool slow, int cpol, int cpha) {
 
     if (cpol)
         cpol_cpha |= LL_SPI_POLARITY_HIGH;
-    
+
     if (cpha)
         cpol_cpha |= LL_SPI_PHASE_2EDGE;
 
 #if SPI_RX
     pin_setup_output_af(PIN_AMISO, PIN_AF);
     uint32_t baud = LL_SPI_BAUDRATEPRESCALER_DIV4;
-#else 
+#else
     uint32_t baud = LL_SPI_BAUDRATEPRESCALER_DIV2;
 #endif
 
@@ -278,7 +278,7 @@ void px_init(int light_type) {
     if (light_type & LIGHT_TYPE_APA_MASK)
         pin_setup_output_af(PIN_ASCK, PIN_AF);
 
-#ifdef STM32G0
+#if defined(STM32G0) || defined(STM32WL)
     LL_DMA_SetPeriphRequest(DMA1, DMA_CH_TX, LL_DMAMUX_REQ_SPIx_TX);
 #endif
 

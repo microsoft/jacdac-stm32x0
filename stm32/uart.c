@@ -23,6 +23,9 @@
 #ifdef STM32G0
 #define DMA_IRQn DMA1_Ch4_5_DMAMUX1_OVR_IRQn
 #define DMA_Handler DMA1_Ch4_5_DMAMUX1_OVR_IRQHandler
+#elif defined(STM32WL)
+#define DMA_IRQn DMA1_Channel4_IRQn
+#define DMA_IRQn_2 DMA1_Channel5_IRQn
 #else
 #define DMA_IRQn DMA1_Channel4_5_IRQn
 #define DMA_Handler DMA1_Channel4_5_IRQHandler
@@ -115,19 +118,34 @@ void DMA_Handler(void) {
     }
 }
 
+#ifdef STM32WL
+void DMA1_Channel4_IRQHandler(void) {
+    DMA_Handler();
+}
+void DMA1_Channel5_IRQHandler(void) {
+    DMA_Handler();
+}
+#endif
+
 static void DMA_Init(void) {
     __HAL_RCC_DMA1_CLK_ENABLE();
 
     NVIC_SetPriority(DMA_IRQn, 0);
     NVIC_EnableIRQ(DMA_IRQn);
+#ifdef DMA_IRQn_2
+    NVIC_SetPriority(DMA_IRQn_2, 0);
+    NVIC_EnableIRQ(DMA_IRQn_2);
+#endif
 }
 
 static void USART_UART_Init(void) {
 #if USART_IDX == 2
-#ifndef DISABLE_PLL
+    __HAL_RCC_USART2_CLK_ENABLE();
+#ifdef STM32WL
+    LL_RCC_SetUSARTClockSource(LL_RCC_USART2_CLKSOURCE_HSI);
+#elif !defined(DISABLE_PLL)
 #error "PLL not supported"
 #endif
-    __HAL_RCC_USART2_CLK_ENABLE();
 #elif USART_IDX == 1
     LL_RCC_SetUSARTClockSource(LL_RCC_USART1_CLKSOURCE_HSI);
     __HAL_RCC_USART1_CLK_ENABLE();

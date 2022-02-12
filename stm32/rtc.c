@@ -30,6 +30,13 @@ static ctx_t ctx_;
 #define RTC_IRQn RTC_TAMP_IRQn
 #define RTC_IRQHandler RTC_TAMP_IRQHandler
 #define EXTI_LINE LL_EXTI_LINE_19
+#elif defined(STM32WL)
+#define RTC_IRQn RTC_Alarm_IRQn
+#define RTC_IRQHandler RTC_Alarm_IRQHandler
+#define EXTI_LINE LL_EXTI_LINE_17
+#define LL_EXTI_ClearRisingFlag_0_31 LL_EXTI_ClearFlag_0_31
+#define LL_PWR_ClearFlag_SB LL_PWR_ClearFlag_C1STOP_C1STB
+#define LL_PWR_IsActiveFlag_SB LL_PWR_IsActiveFlag_C1SB
 #else
 #define EXTI_LINE LL_EXTI_LINE_17
 #define LL_EXTI_ClearRisingFlag_0_31 LL_EXTI_ClearFlag_0_31
@@ -110,8 +117,10 @@ static void rtc_set(ctx_t *ctx, uint32_t delta_us, cb_t f) {
     ctx->cb = f;
 
     LL_RTC_ALMA_Disable(RTC);
+#ifndef STM32WL
     while (!LL_RTC_IsActiveFlag_ALRAW(RTC))
         ;
+#endif
 
     uint32_t v = LL_RTC_TIME_GetSubSecond(RTC);
     (void)RTC->DR;                             // unlock DR/TR
@@ -153,6 +162,9 @@ void RTC_IRQHandler(void) {
 static void rtc_config(uint8_t p0, uint16_t p1) {
 #ifdef STM32G0
     LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_PWR | LL_APB1_GRP1_PERIPH_RTC);
+#elif defined(STM32WL)
+    LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_RTCAPB);
+    // LL_C2_APB1_GRP1_EnableClock(LL_C2_APB1_GRP1_PERIPH_RTCAPB);
 #else
     LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_PWR);
 #endif
@@ -253,7 +265,7 @@ void rtc_set_to_seconds_and_standby() {
     }
 
     //    pin_setup_input(PA_0, -1);
-#ifdef STM32G0
+#if defined(STM32G0) || defined(STM32WL)
     LL_PWR_EnableGPIOPullDown(LL_PWR_GPIO_A, LL_PWR_GPIO_BIT_0);
     LL_PWR_EnablePUPDCfg();
 #endif
@@ -267,7 +279,7 @@ void rtc_set_to_seconds_and_standby() {
 }
 
 bool rtc_check_standby(void) {
-#ifdef STM32G0
+#if defined(STM32G0) || defined(STM32WL)
     LL_PWR_DisablePUPDCfg();
 #endif
 
@@ -299,7 +311,7 @@ void rtc_sleep(bool forceShallow) {
     }
 
     rtc_set(&ctx_, usec, f);
-#ifdef STM32G0
+#if defined(STM32G0) || defined(STM32WL)
     LL_PWR_SetPowerMode(LL_PWR_MODE_STOP1);
 #else
     LL_PWR_SetPowerMode(LL_PWR_MODE_STOP_LPREGU);
