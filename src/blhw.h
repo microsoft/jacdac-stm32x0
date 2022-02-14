@@ -77,9 +77,12 @@ struct app_top_handlers {
 #define bl_info (*((struct bl_info_block *)(0x8000000 + JD_FLASH_SIZE - BL_SIZE)))
 #endif
 
-#ifdef STM32G0
+#if defined( STM32G0 )
 #define OTP_DEVICE_ID_ADDR (0x1FFF7000 + 1024 - 8)
 #define APP_DEVICE_ID *(uint64_t *)OTP_DEVICE_ID_ADDR
+#elif defined(STM32WL)
+// 37.1.4 IEEE 64-bit unique device ID register (UID64)
+#define APP_DEVICE_ID *(uint64_t *)0x1fff7580
 #else
 #define APP_DEVICE_ID app_dev_info.device_id
 #endif
