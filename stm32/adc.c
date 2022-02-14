@@ -26,10 +26,11 @@ static void set_sampling_time(uint32_t time) {
 }
 
 uint16_t adc_convert(void) {
-    if ((LL_ADC_IsEnabled(ADC1) == 1) && (LL_ADC_IsDisableOngoing(ADC1) == 0) &&
-        (LL_ADC_REG_IsConversionOngoing(ADC1) == 0))
+    if ((LL_ADC_IsEnabled(ADC1) == 1) && (LL_ADC_IsDisableOngoing(ADC1) == 0)) {
+        while (LL_ADC_REG_IsConversionOngoing(ADC1))
+            ;
         LL_ADC_REG_StartConversion(ADC1);
-    else
+    } else
         jd_panic();
 
     while (LL_ADC_IsActiveFlag_EOC(ADC1) == 0)
