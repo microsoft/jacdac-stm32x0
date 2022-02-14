@@ -18,13 +18,15 @@ void led_init(void) {
         if (i != 13 && i != 14) // 13/14 are SWD pins
             pin_setup_analog_input(i);
 
+#ifdef GPIOF
     // also do all GPIOF (note that it's not enough to just clear PF0 and PF1
     // - the other ones seem to still draw power in stop mode)
     for (unsigned i = 0; i < 16; ++i)
         pin_setup_analog_input(i + 0x50);
+#endif
 
-    // The effects of the pins shutdown above is quite dramatic - without the MCU can draw
-    // ~100uA (but with wide random variation) in STOP; with shutdown we get a stable 4.3uA
+        // The effects of the pins shutdown above is quite dramatic - without the MCU can draw
+        // ~100uA (but with wide random variation) in STOP; with shutdown we get a stable 4.3uA
 
 #ifdef DISABLE_SWCLK_FUNC
     pin_setup_analog_input(PA_14);
