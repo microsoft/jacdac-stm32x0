@@ -264,7 +264,7 @@ void px_alloc() {
 
 void px_init(int light_type) {
     SPI_CLK_ENABLE();
-    __HAL_RCC_DMA1_CLK_ENABLE();
+    DMA_CLK_ENABLE();
 
     px_state.type = light_type;
 

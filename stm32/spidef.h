@@ -135,7 +135,7 @@ static inline bool dma_has_flag(int flag) {
 
 static inline void spi_init0(void) {
     SPI_CLK_ENABLE();
-    __HAL_RCC_DMA1_CLK_ENABLE();
+    DMA_CLK_ENABLE();
 
     LL_SPI_Disable(SPIx);
     while(LL_SPI_IsEnabled(SPIx) == 1);

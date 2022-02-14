@@ -42,7 +42,7 @@ bool spis_seems_connected() {
 
 void spis_init() {
     SPI_CLK_ENABLE();
-    __HAL_RCC_DMA1_CLK_ENABLE();
+    DMA_CLK_ENABLE();
 
     pin_setup_output_af(PIN_ASCK, PIN_AF);
     pin_setup_output_af(PIN_AMISO, PIN_AF);

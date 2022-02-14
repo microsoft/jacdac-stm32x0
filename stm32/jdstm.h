@@ -40,4 +40,12 @@ void rtc_cancel_cb(void);
 #define SPI_RX 0
 #endif
 
+#ifdef __HAL_RCC_DMAMUX1_CLK_ENABLE
+#define DMA_CLK_ENABLE()                                                                           \
+    __HAL_RCC_DMA1_CLK_ENABLE();                                                                   \
+    __HAL_RCC_DMAMUX1_CLK_ENABLE()
+#else
+#define DMA_CLK_ENABLE() __HAL_RCC_DMA1_CLK_ENABLE()
+#endif
+
 #endif

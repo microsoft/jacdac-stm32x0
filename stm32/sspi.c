@@ -98,7 +98,7 @@ void IRQHandler(void) {
 
 void sspi_init(void) {
     SPI_CLK_ENABLE();
-    __HAL_RCC_DMA1_CLK_ENABLE();
+    DMA_CLK_ENABLE();
 
     pin_setup_output_af(PIN_SSCK, PIN_AF);
 
