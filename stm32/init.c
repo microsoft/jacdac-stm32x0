@@ -127,10 +127,10 @@ void clk_setup_pll(void) {
 }
 
 void clk_set_pll(int on) {
-#ifndef DISABLE_PLL
+#if defined(STM32WL) || !defined(DISABLE_PLL)
     if (!on) {
         LL_RCC_SetSysClkSource(LL_RCC_SYS_CLKSOURCE_HSI);
-        while (LL_RCC_GetSysClkSource() != LL_RCC_SYS_CLKSOURCE_HSI)
+        while (LL_RCC_GetSysClkSource() != LL_RCC_SYS_CLKSOURCE_STATUS_HSI)
             ;
         cpu_mhz = HSI_MHZ;
         LL_FLASH_SetLatency(LL_FLASH_LATENCY_0);
@@ -166,13 +166,18 @@ void SystemInit(void) {
     LL_AHB2_GRP1_EnableClock(LL_AHB2_GRP1_PERIPH_GPIOA | LL_AHB2_GRP1_PERIPH_GPIOB |
                              LL_AHB2_GRP1_PERIPH_GPIOC);
     // LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_PWR); - also missing
+
+    // by default MSI is used not HSI16
+    LL_RCC_HSI_Enable();
+    while (!LL_RCC_HSI_IsReady())
+        ;
+    clk_set_pll(0);
 #else
     LL_APB1_GRP2_EnableClock(LL_APB1_GRP2_PERIPH_SYSCFG);
     LL_AHB1_GRP1_EnableClock(LL_AHB1_GRP1_PERIPH_GPIOA | LL_AHB1_GRP1_PERIPH_GPIOB |
                              LL_AHB1_GRP1_PERIPH_GPIOC | LL_AHB1_GRP1_PERIPH_GPIOF);
     LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_PWR);
 #endif
-
 
 #ifdef BOARD_STARTUP_CODE
     BOARD_STARTUP_CODE;
