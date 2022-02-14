@@ -26,16 +26,21 @@ static void set_sampling_time(uint32_t time) {
 }
 
 uint16_t adc_convert(void) {
-    if ((LL_ADC_IsEnabled(ADC1) == 1) && (LL_ADC_IsDisableOngoing(ADC1) == 0)) {
-        while (LL_ADC_REG_IsConversionOngoing(ADC1))
-            ;
+    if ((LL_ADC_IsEnabled(ADC1) == 1) && (LL_ADC_IsDisableOngoing(ADC1) == 0) &&
+        (LL_ADC_REG_IsConversionOngoing(ADC1) == 0)) {
         LL_ADC_REG_StartConversion(ADC1);
     } else
         jd_panic();
 
+#if STM32WL
+    while (LL_ADC_IsActiveFlag_EOS(ADC1) == 0)
+        ;
+    LL_ADC_ClearFlag_EOS(ADC1);
+#else
     while (LL_ADC_IsActiveFlag_EOC(ADC1) == 0)
         ;
     LL_ADC_ClearFlag_EOC(ADC1);
+#endif
 
     return LL_ADC_REG_ReadConversionData12(ADC1) << 4;
 }
@@ -160,6 +165,9 @@ void adc_init_random(void) {
 
     set_temp_ref(1);
     ADC1->CFGR1 = LL_ADC_REG_OVR_DATA_OVERWRITTEN;
+#ifdef STM32WL
+    ADC1->CFGR2 = LL_ADC_CLOCK_SYNC_PCLK_DIV4;
+#endif
 
 #if NEW_ADC
     LL_ADC_REG_SetSequencerLength(ADC1, LL_ADC_REG_SEQ_SCAN_DISABLE);
@@ -211,9 +219,9 @@ static const uint32_t channels_PB[] = {
 #endif
 #endif
 
-#if NEW_ADC
+#if STM32G0
 #define TS_CAL1 *(uint16_t *)0x1FFF75A8 // @30C
-#if NEW_ADC31xx
+#if STM32G031xx
 #define TS_CAL2 *(uint16_t *)0x1FFF75CA // @130C (not defined on G030)
 #endif
 #endif
@@ -224,8 +232,8 @@ uint16_t adc_read_temp(void) {
 #else
     set_sampling_time(LL_ADC_SAMPLINGTIME_71CYCLES_5); // min. sampling time for temp is 4us
 #endif
-    set_temp_ref(1);
     set_channel(LL_ADC_CHANNEL_TEMPSENSOR);
+    set_temp_ref(1);
 
     uint16_t r = adc_convert() >> 4;
 
@@ -239,9 +247,14 @@ uint16_t adc_read_temp(void) {
 #elif defined(STM32G031xx)
     // 33/30 - because factory measurements are done at 3.0V and we're running at 3.3V
     return ((130 - 30) * 33 * (r - TS_CAL1)) / (30 * TS_CAL2 - TS_CAL1) + 30;
-#else
+#elif defined(STM32G0)
     // copied TEMP slope from G031; hopefully that works for G030
     return ((130 - 30) * 33 * (r - TS_CAL1)) / (30 * 343) + 30;
+#elif defined(STM32WL)
+    // TODO use this macro on other chips as well?
+    return __LL_ADC_CALC_TEMPERATURE(3300, r, LL_ADC_RESOLUTION_12B);
+#else
+#error "no temp"
 #endif
 }
 
