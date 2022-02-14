@@ -15,7 +15,7 @@ static bool adc_calibrated;
 
 #if NEW_ADC
 static bool configured_fixed = false;
-#endif 
+#endif
 
 static void set_sampling_time(uint32_t time) {
 #if NEW_ADC
@@ -45,8 +45,7 @@ static void set_channel(uint32_t chan) {
         ;
 
 #if NEW_ADC
-    if (chan == LL_ADC_CHANNEL_15 || chan == LL_ADC_CHANNEL_16 || chan == LL_ADC_CHANNEL_17)
-    {
+    if (chan == LL_ADC_CHANNEL_15 || chan == LL_ADC_CHANNEL_16 || chan == LL_ADC_CHANNEL_17) {
         if (!configured_fixed) {
             LL_ADC_REG_SetSequencerConfigurable(ADC1, LL_ADC_REG_SEQ_FIXED);
             configured_fixed = true;
@@ -56,12 +55,13 @@ static void set_channel(uint32_t chan) {
         LL_ADC_REG_SetSequencerScanDirection(ADC1, LL_ADC_REG_SEQ_SCAN_DIR_BACKWARD);
         LL_ADC_REG_SetSequencerChannels(ADC1, chan);
         LL_ADC_REG_SetSequencerDiscont(ADC1, LL_ADC_REG_SEQ_DISCONT_1RANK);
-        while(LL_ADC_IsActiveFlag_CCRDY(ADC1) == 0);
-    }
-    else {
+        while (LL_ADC_IsActiveFlag_CCRDY(ADC1) == 0)
+            ;
+    } else {
         if (configured_fixed) {
             LL_ADC_REG_SetSequencerConfigurable(ADC1, LL_ADC_REG_SEQ_CONFIGURABLE);
-            while(LL_ADC_IsActiveFlag_CCRDY(ADC1) == 0);
+            while (LL_ADC_IsActiveFlag_CCRDY(ADC1) == 0)
+                ;
             configured_fixed = false;
         }
         LL_ADC_REG_SetSequencerRanks(ADC1, LL_ADC_REG_RANK_1, chan);
@@ -192,10 +192,9 @@ void adc_init_random(void) {
 #define NO_CHANNEL 0xffffffff
 
 static const uint32_t channels_PA[] = {
-    LL_ADC_CHANNEL_0, LL_ADC_CHANNEL_1, LL_ADC_CHANNEL_2, LL_ADC_CHANNEL_3,
-    LL_ADC_CHANNEL_4, LL_ADC_CHANNEL_5, LL_ADC_CHANNEL_6, LL_ADC_CHANNEL_7,
-    NO_CHANNEL, NO_CHANNEL, NO_CHANNEL, LL_ADC_CHANNEL_15, 
-    LL_ADC_CHANNEL_16, 
+    LL_ADC_CHANNEL_0, LL_ADC_CHANNEL_1,  LL_ADC_CHANNEL_2,  LL_ADC_CHANNEL_3, LL_ADC_CHANNEL_4,
+    LL_ADC_CHANNEL_5, LL_ADC_CHANNEL_6,  LL_ADC_CHANNEL_7,  NO_CHANNEL,       NO_CHANNEL,
+    NO_CHANNEL,       LL_ADC_CHANNEL_15, LL_ADC_CHANNEL_16,
 };
 
 static const uint32_t channels_PB[] = {
@@ -244,7 +243,6 @@ uint16_t adc_read_temp(void) {
     return ((130 - 30) * 33 * (r - TS_CAL1)) / (30 * 343) + 30;
 #endif
 }
-
 
 static uint32_t pin_channel(uint8_t pin) {
     if (pin >> 4 == 0) {
