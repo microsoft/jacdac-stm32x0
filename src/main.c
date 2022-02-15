@@ -14,7 +14,12 @@ static const uint8_t output_pins[] = {
 void led_init(void) {
     // To save power, especially in STOP mode,
     // configure all pins in GPIOA,B,C as analog inputs (except for SWD)
-    for (unsigned i = 0; i < 16 * 3; ++i)
+#ifdef JD_USE_LSE
+#define LAST_PIN PC_13
+#else
+#define LAST_PIN PC_15
+#endif
+    for (unsigned i = 0; i <= LAST_PIN; ++i)
         if (i != 13 && i != 14) // 13/14 are SWD pins
             pin_setup_analog_input(i);
 

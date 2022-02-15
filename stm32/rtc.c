@@ -7,6 +7,7 @@
 
 STATIC_ASSERT(10000 <= RTC_SECOND_IN_US);
 STATIC_ASSERT(RTC_SECOND_IN_US <= 200000);
+STATIC_ASSERT(((1ULL * RTC_SECOND_IN_US) << US_TICK_SCALE) < 0xff000000);
 
 typedef struct rtc_state {
     uint64_t microsecondBase;
@@ -171,14 +172,20 @@ static void rtc_config(uint8_t p0, uint16_t p1) {
 
     LL_PWR_EnableBkUpAccess();
 
-    LL_RCC_LSI_Enable();
-
-    while (LL_RCC_LSI_IsReady() != 1)
-        ;
-
     LL_RCC_ForceBackupDomainReset();
     LL_RCC_ReleaseBackupDomainReset();
+
+#ifdef JD_USE_LSE
+    LL_RCC_LSE_Enable();
+    while (!LL_RCC_LSE_IsReady())
+        ;
+    LL_RCC_SetRTCClockSource(LL_RCC_RTC_CLKSOURCE_LSE);
+#else
+    LL_RCC_LSI_Enable();
+    while (!LL_RCC_LSI_IsReady())
+        ;
     LL_RCC_SetRTCClockSource(LL_RCC_RTC_CLKSOURCE_LSI);
+#endif
 
     LL_RCC_EnableRTC();
 
@@ -225,6 +232,10 @@ void rtc_init() {
     pin_setup_output(PIN_PWR_STATE);
     pin_setup_output(PIN_PWR_LOG);
 
+#ifdef JD_USE_LSE
+    // assume 32.768kHz crystal
+    uint32_t d = 1000000 * CALIB_CYCLES / 32768;
+#else
     target_disable_irq();
     rtc_config(1, CALIB_CYCLES);
     uint64_t t0 = tim_get_micros();
@@ -232,15 +243,20 @@ void rtc_init() {
         ;
     uint32_t d = (tim_get_micros() - t0) + 20;
     target_enable_irq();
+#endif
 
     ctx->ticksPerUs = (1 << US_TICK_SCALE) * CALIB_CYCLES / d;
     ctx->usPerTick = d * CALIB_CYCLES / (1 << TICK_US_SCALE);
 
     int tmp = US_TO_TICKS(RTC_SECOND_IN_US);
-    uint32_t h_ms = US_TO_TICKS(100000);
-    DMESG("rtc: 100ms=%d ticks; presc=%d", h_ms, tmp);
-    // we're expecting around 4000, but there's large drift possible
-    if (!(3000 <= h_ms && h_ms <= 5000))
+#ifdef JD_USE_LSE
+    // we get 1023 due to rounding...
+    tmp++;
+#endif
+    uint32_t h_ms = US_TO_TICKS(1000000);
+    DMESG("rtc: 1s=%d ticks; presc=%d", h_ms, tmp);
+    // we're expecting around 40000, but there's large drift possible
+    if (!(30000 <= h_ms && h_ms <= 50000))
         jd_panic();
     if (tmp > 0x7f00)
         jd_panic();
@@ -330,6 +346,9 @@ void rtc_sleep(bool forceShallow) {
 }
 
 void rtc_deepsleep(void) {
+#ifdef STM32WL
+    LL_PWR_SetPowerMode(LL_PWR_MODE_STOP1);
+#endif
     LL_LPM_EnableDeepSleep();
     pin_set(PIN_PWR_STATE, 0);
     schedule_sync(&ctx_);
