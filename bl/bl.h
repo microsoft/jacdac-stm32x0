@@ -40,7 +40,7 @@ typedef struct ctx {
     jd_frame_t rxBuffer;
     jd_frame_t txBuffer;
 
-    uint8_t pagedata[FLASH_PAGE_SIZE];
+    uint8_t pagedata[JD_FLASH_PAGE_SIZE];
 } ctx_t;
 
 #if QUICK_LOG == 1

@@ -19,7 +19,7 @@ int main(void) {
     uint8_t *erase_ptr = bladdr;
     while (erase_ptr < flashend) {
         flash_erase(erase_ptr);
-        erase_ptr += FLASH_PAGE_SIZE;
+        erase_ptr += JD_FLASH_PAGE_SIZE;
     }
 
     len = (len + 7) & ~7;
