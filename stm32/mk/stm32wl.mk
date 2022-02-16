@@ -7,7 +7,8 @@ CFLAGS += -mcpu=cortex-m4
 #OPENOCD ?= ./scripts/openocd -s ./scripts -f cmsis-dap.cfg -f stm32wlx.cfg
 OPENOCD ?= openocd -f interface/cmsis-dap.cfg -f target/stm32wlx.cfg #???
 
-HALPREF = $(PLATFORM)/stm32wlxx_hal_driver/Src
+HALPATH = $(PLATFORM)/STM32CubeWL/Drivers/STM32WLxx_HAL_Driver
+HALPREF = $(HALPATH)/Src
 HALSRC =  \
 $(HALPREF)/stm32wlxx_ll_adc.c \
 $(HALPREF)/stm32wlxx_ll_comp.c \
@@ -31,8 +32,8 @@ LD_FLASH_SIZE ?= $(FLASH_SIZE)
 # TODO move some of this to common stm32.mk
 AS_SRC = $(STARTUP_FILE)
 CPPFLAGS += 	\
-	-I$(PLATFORM)/stm32wlxx_hal_driver/Inc \
-	-I$(PLATFORM)/cmsis_device_wl/Include \
+	-I$(HALPATH)/Inc \
+	-I$(PLATFORM)/STM32CubeWL/Drivers/CMSIS/Device/ST/STM32WLxx/Include \
 	-I$(PLATFORM)/cmsis_core/Include
 DEFINES += -DUSE_FULL_LL_DRIVER -DSTM32$(SERIES)
 DEFINES += -D$(MCU) -DJD_FLASH_SIZE="1024*$(FLASH_SIZE)" -DFLASH_PAGE_SIZE=$(PAGE_SIZE) -DBL_SIZE="1024*$(BL_SIZE)"

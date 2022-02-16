@@ -13,9 +13,6 @@
 [submodule "stm32/stm32g0xx_hal_driver"]
 	path = stm32/stm32g0xx_hal_driver
 	url = https://github.com/STMicroelectronics/stm32g0xx_hal_driver
-[submodule "stm32/cmsis_device_wl"]
-	path = stm32/cmsis_device_wl
-	url = https://github.com/STMicroelectronics/cmsis_device_wl
-[submodule "stm32/stm32wlxx_hal_driver"]
-	path = stm32/stm32wlxx_hal_driver
-	url = https://github.com/STMicroelectronics/stm32wlxx_hal_driver
+[submodule "stm32/STM32CubeWL"]
+	path = stm32/STM32CubeWL
+	url = https://github.com/STMicroelectronics/STM32CubeWL
