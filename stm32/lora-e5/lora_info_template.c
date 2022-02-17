@@ -47,7 +47,7 @@
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
-static LoraInfo_t loraInfo = {0, 0};
+static LoraInfo_t loraInfo;
 
 /* USER CODE BEGIN PV */
 

@@ -41,15 +41,19 @@
 ******************************************************************************
 */
 
-/* Includes ------------------------------------------------------------------*/
 #include "jdstm.h"
 #include "systime.h"
 
-/* Functions Definition ------------------------------------------------------*/
-/**
- * @addtogroup SYSTIME_exported_function
- *  @{
- */
+static SysTime_t _DeltaTime;
+
+static void save_delta(SysTime_t delta) {
+    // TODO save in BKP
+    _DeltaTime = delta;
+}
+
+static SysTime_t read_delta(void) {
+    return _DeltaTime;
+}
 
 SysTime_t SysTimeAdd(SysTime_t a, SysTime_t b) {
     SysTime_t c = {.Seconds = 0, .SubSeconds = 0};
@@ -76,59 +80,60 @@ SysTime_t SysTimeSub(SysTime_t a, SysTime_t b) {
 }
 
 void SysTimeSet(SysTime_t sysTime) {
-    SysTime_t DeltaTime;
-
-    SysTime_t calendarTime = {.Seconds = 0, .SubSeconds = 0};
-
-    calendarTime.Seconds = UTIL_SYSTIMDriver.GetCalendarTime((uint16_t *)&calendarTime.SubSeconds);
-
     // sysTime is UNIX epoch
-    DeltaTime = SysTimeSub(sysTime, calendarTime);
-
-    UTIL_SYSTIMDriver.BKUPWrite_Seconds(DeltaTime.Seconds);
-    UTIL_SYSTIMDriver.BKUPWrite_SubSeconds((uint32_t)DeltaTime.SubSeconds);
+    save_delta(SysTimeSub(sysTime, SysTimeGetMcuTime()));
 }
 
 SysTime_t SysTimeGet(void) {
-    SysTime_t calendarTime = {.Seconds = 0, .SubSeconds = 0};
-    SysTime_t sysTime = {.Seconds = 0, .SubSeconds = 0};
-    SysTime_t DeltaTime;
-
-    calendarTime.Seconds = UTIL_SYSTIMDriver.GetCalendarTime((uint16_t *)&calendarTime.SubSeconds);
-
-    DeltaTime.SubSeconds = (int16_t)UTIL_SYSTIMDriver.BKUPRead_SubSeconds();
-    DeltaTime.Seconds = UTIL_SYSTIMDriver.BKUPRead_Seconds();
-
-    sysTime = SysTimeAdd(DeltaTime, calendarTime);
-
-    return sysTime;
-}
-
-SysTime_t SysTimeGetMcuTime(void) {
-    SysTime_t calendarTime = {.Seconds = 0, .SubSeconds = 0};
-
-    calendarTime.Seconds = UTIL_SYSTIMDriver.GetCalendarTime((uint16_t *)&calendarTime.SubSeconds);
-
-    return calendarTime;
+    return SysTimeAdd(read_delta(), SysTimeGetMcuTime());
 }
 
 uint32_t SysTimeToMs(SysTime_t sysTime) {
-    SysTime_t DeltaTime;
-    DeltaTime.SubSeconds = (int16_t)UTIL_SYSTIMDriver.BKUPRead_SubSeconds();
-    DeltaTime.Seconds = UTIL_SYSTIMDriver.BKUPRead_Seconds();
-
-    SysTime_t calendarTime = SysTimeSub(sysTime, DeltaTime);
+    SysTime_t calendarTime = SysTimeSub(sysTime, read_delta());
     return calendarTime.Seconds * 1000 + calendarTime.SubSeconds;
 }
 
 SysTime_t SysTimeFromMs(uint32_t timeMs) {
     uint32_t seconds = timeMs / 1000;
     SysTime_t sysTime = {.Seconds = seconds, .SubSeconds = timeMs - seconds * 1000};
-    SysTime_t DeltaTime = {0};
+    return SysTimeAdd(sysTime, read_delta());
+}
 
-    DeltaTime.SubSeconds = (int16_t)UTIL_SYSTIMDriver.BKUPRead_SubSeconds();
-    DeltaTime.Seconds = UTIL_SYSTIMDriver.BKUPRead_Seconds();
-    return SysTimeAdd(sysTime, DeltaTime);
+SysTime_t SysTimeGetMcuTime(void) {
+    static SysTime_t prevSysTime;
+    static uint64_t prevUS;
+
+    uint64_t now = tim_get_micros();
+
+    // first call?
+    if (prevUS == 0) {
+        prevUS = now;
+        prevSysTime.Seconds = 1;
+        return prevSysTime;
+    }
+
+    int64_t delta = now - prevUS;
+    if (delta <= 0) {
+        // time went back? just return the same time
+        return prevSysTime;
+    }
+
+    // only allow ~130ms between calls
+    if (delta > 128 * 1024)
+        jd_panic();
+
+    // avoid uint64_t division
+    while (delta > 1000) {
+        delta -= 1000;
+        prevUS += 1000;
+        prevSysTime.SubSeconds++;
+        if (prevSysTime.SubSeconds >= 1000) {
+            prevSysTime.SubSeconds -= 1000;
+            prevSysTime.Seconds++;
+        }
+    }
+
+    return prevSysTime;
 }
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
