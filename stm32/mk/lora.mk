@@ -46,6 +46,9 @@ $(CUBE)/Utilities/misc/stm32_tiny_vsnprintf.c \
 $(CUBE)/Utilities/sequencer/stm32_seq.c \
 $(CUBE)/Utilities/timer/stm32_timer.c \
 $(CUBE)/Utilities/trace/adv_trace/stm32_adv_trace.c \
+\
+$(wildcard $(PLATFORM)/lora-e5/*.c)
+
 
 CPPFLAGS += 	\
 -I$(PLATFORM)/lora-e5 \
@@ -57,3 +60,4 @@ CPPFLAGS += 	\
 -I$(LORAWAN)/Mac \
 -I$(LORAWAN)/Mac/Region \
 -I$(LORAWAN)/LmHandler/Packages \
+-DJD_LORA=1

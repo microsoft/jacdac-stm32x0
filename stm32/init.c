@@ -126,13 +126,24 @@ void clk_setup_pll(void) {
         ;
 }
 
+uint8_t cpu_mhz = HSI_MHZ;
+
+#if JD_LORA
+uint32_t SystemCoreClock = HSI_MHZ * 1000000;
+#define SET_MHZ(n)                                                                                 \
+    cpu_mhz = (n);                                                                                 \
+    SystemCoreClock = (n)*1000000
+#else
+#define SET_MHZ(n) cpu_mhz = n
+#endif
+
 void clk_set_pll(int on) {
 #if defined(STM32WL) || !defined(DISABLE_PLL)
     if (!on) {
         LL_RCC_SetSysClkSource(LL_RCC_SYS_CLKSOURCE_HSI);
         while (LL_RCC_GetSysClkSource() != LL_RCC_SYS_CLKSOURCE_STATUS_HSI)
             ;
-        cpu_mhz = HSI_MHZ;
+        SET_MHZ(HSI_MHZ);
         LL_FLASH_SetLatency(LL_FLASH_LATENCY_0);
         LL_FLASH_DisablePrefetch();
         tim_update_prescaler();
@@ -141,14 +152,12 @@ void clk_set_pll(int on) {
 
     clk_setup_pll();
 
-    cpu_mhz = PLL_MHZ;
+    SET_MHZ(PLL_MHZ);
     tim_update_prescaler();
 
     // LL_RCC_SetAPB1Prescaler(LL_RCC_APB1_DIV_1);
 #endif
 }
-
-uint8_t cpu_mhz = HSI_MHZ;
 
 void SystemInit(void) {
     // on G0 this is called before global variables are initialized
