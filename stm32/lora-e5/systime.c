@@ -45,15 +45,18 @@
 #include "systime.h"
 #include <stdlib.h> // lldiv()
 
-static SysTime_t _DeltaTime;
+#define REG_SECONDS TAMP->BKP6R
+#define REG_SUBSECONDS TAMP->BKP7R
 
 static void save_delta(SysTime_t delta) {
-    // TODO save in BKP
-    _DeltaTime = delta;
+    LL_PWR_EnableBkUpAccess();
+    REG_SECONDS = delta.Seconds;
+    REG_SUBSECONDS = delta.SubSeconds;
 }
 
 static SysTime_t read_delta(void) {
-    return _DeltaTime;
+    SysTime_t r = {.Seconds = REG_SECONDS, .SubSeconds = REG_SUBSECONDS};
+    return r;
 }
 
 SysTime_t SysTimeAdd(SysTime_t a, SysTime_t b) {
