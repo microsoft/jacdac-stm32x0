@@ -102,7 +102,7 @@ int codal_vsprintf(char *dst, unsigned dstsize, const char *format, va_list ap) 
                 buf[0] = val;
                 break;
             case 'd':
-                itoa(val, buf);
+                itoa10(val, buf);
                 break;
             case 'x':
             case 'p':
