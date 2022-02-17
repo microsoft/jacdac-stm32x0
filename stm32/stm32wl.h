@@ -19,6 +19,7 @@
 #include "stm32wlxx_ll_pwr.h"
 #include "stm32wlxx_ll_usart.h"
 #include "stm32wlxx_ll_tim.h"
+#include "stm32wlxx_ll_lptim.h"
 #include "stm32wlxx_ll_spi.h"
 #include "stm32wlxx_ll_adc.h"
 #include "stm32wlxx_ll_rtc.h"
