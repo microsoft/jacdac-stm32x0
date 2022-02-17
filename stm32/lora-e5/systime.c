@@ -43,6 +43,7 @@
 
 #include "jdstm.h"
 #include "systime.h"
+#include <stdlib.h> // lldiv()
 
 static SysTime_t _DeltaTime;
 
@@ -100,10 +101,16 @@ SysTime_t SysTimeFromMs(uint32_t timeMs) {
 }
 
 SysTime_t SysTimeGetMcuTime(void) {
+    uint64_t now = tim_get_micros();
+
+#if 1
+    // this will be 500-1000 cycles, so use this function sparingly
+    lldiv_t r = lldiv(now, 1000000);
+    SysTime_t s = {.Seconds = r.quot, .SubSeconds = (uint32_t)r.rem / 1000};
+    return s;
+#else
     static SysTime_t prevSysTime;
     static uint64_t prevUS;
-
-    uint64_t now = tim_get_micros();
 
     // first call?
     if (prevUS == 0) {
@@ -118,22 +125,24 @@ SysTime_t SysTimeGetMcuTime(void) {
         return prevSysTime;
     }
 
-    // only allow ~130ms between calls
-    if (delta > 128 * 1024)
+    // only allow ~hour between calls
+    if (delta >> 32)
         jd_panic();
 
-    // avoid uint64_t division
-    while (delta > 1000) {
-        delta -= 1000;
-        prevUS += 1000;
-        prevSysTime.SubSeconds++;
-        if (prevSysTime.SubSeconds >= 1000) {
-            prevSysTime.SubSeconds -= 1000;
-            prevSysTime.Seconds++;
-        }
+    uint32_t subs = (uint32_t)delta / 1000;
+    if (subs > 1000) {
+        prevSysTime.Seconds += subs / 1000;
+        prevSysTime.SubSeconds += subs % 1000;
+    } else {
+        prevSysTime.SubSeconds += subs;
+    }
+    if (prevSysTime.SubSeconds >= 1000) {
+        prevSysTime.SubSeconds -= 1000;
+        prevSysTime.Seconds++;
     }
 
     return prevSysTime;
+#endif
 }
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

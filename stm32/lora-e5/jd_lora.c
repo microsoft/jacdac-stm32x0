@@ -1,5 +1,7 @@
 
 #include "jdstm.h"
+
+#if JD_LORA
 #include "systime.h"
 #include "LmHandler.h"
 #include "lora_app.h"
@@ -47,5 +49,6 @@ void jd_lora_init(void) {
 }
 
 void jd_lora_process(void) {
-    SysTimeGetMcuTime(); // refresh timer
+    // SysTimeGetMcuTime(); // refresh timer
 }
+#endif
