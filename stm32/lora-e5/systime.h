@@ -26,18 +26,80 @@
 extern "C" {
 #endif
 
-/* Includes ------------------------------------------------------------------*/
-#include "stm32_systime.h"
+#include <stdint.h>
 
-/* Exported types ------------------------------------------------------------*/
 
-/* Exported constants --------------------------------------------------------*/
+/*!
+* @brief Number of seconds elapsed between Unix epoch and GPS epoch
+*/
+#define UNIX_GPS_EPOCH_OFFSET                       315964800
 
-/* External variables --------------------------------------------------------*/
 
-/* Exported macro ------------------------------------------------------------*/
+typedef struct SysTime_s
+{
+uint32_t Seconds;
+int16_t SubSeconds;
+}SysTime_t;
 
-/* Exported functions prototypes ---------------------------------------------*/
+/*!
+* @brief Gets current system time
+*
+* @retval sysTime    Current seconds/sub-seconds since UNIX epoch origin
+*/
+SysTime_t SysTimeGet( void );
+
+/*!
+* @brief Gets current MCU system time
+*
+* @retval sysTime    Current seconds/sub-seconds since Mcu started
+*/
+SysTime_t SysTimeGetMcuTime( void );
+
+/*!
+* Converts the given SysTime to the equivalent RTC value in milliseconds
+*
+* @param [IN] sysTime System time to be converted
+* 
+* @retval timeMs The RTC converted time value in ms
+*/
+uint32_t SysTimeToMs( SysTime_t sysTime );
+
+/*!
+* Converts the given RTC value in milliseconds to the equivalent SysTime
+*
+* \param [IN] timeMs The RTC time value in ms to be converted
+* 
+* \retval sysTime Converted system time
+*/
+SysTime_t SysTimeFromMs( uint32_t timeMs );
+
+/*!
+* @brief Adds 2 SysTime_t values
+*
+* @param a Value
+* @param b Value to added
+*
+* @retval result Addition result (SysTime_t value)
+*/
+SysTime_t SysTimeAdd( SysTime_t a, SysTime_t b );
+
+/*!
+* @brief Subtracts 2 SysTime_t values
+*
+* @param a Value
+* @param b Value to be subtracted
+*
+* @retval result Subtraction result (SysTime_t value)
+*/
+SysTime_t SysTimeSub( SysTime_t a, SysTime_t b );
+
+/*!
+* @brief Sets new system time
+*
+* @param  sysTime    New seconds/sub-seconds since UNIX epoch origin
+*/
+void SysTimeSet( SysTime_t sysTime );
+
 
 #ifdef __cplusplus
 }

@@ -41,13 +41,14 @@ $(CUBE)/Middlewares/Third_Party/SubGHz_Phy/stm32_radio_driver/radio_fw.c \
 \
 $(CUBE)/Utilities/lpm/tiny_lpm/stm32_lpm.c \
 $(CUBE)/Utilities/misc/stm32_mem.c \
-$(CUBE)/Utilities/misc/stm32_systime.c \
 $(CUBE)/Utilities/misc/stm32_tiny_vsnprintf.c \
 $(CUBE)/Utilities/sequencer/stm32_seq.c \
 $(CUBE)/Utilities/timer/stm32_timer.c \
 $(CUBE)/Utilities/trace/adv_trace/stm32_adv_trace.c \
 \
 $(wildcard $(PLATFORM)/lora-e5/*.c)
+
+#$(CUBE)/Utilities/misc/stm32_systime.c 
 
 
 CPPFLAGS += 	\
