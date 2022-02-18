@@ -44,8 +44,6 @@ $(CUBE)/Utilities/timer/stm32_timer.c \
 \
 $(wildcard $(PLATFORM)/lora-e5/*.c)
 
-#$(CUBE)/Utilities/misc/stm32_systime.c 
-
 
 CPPFLAGS += 	\
 -I$(PLATFORM)/lora-e5 \

@@ -31,7 +31,7 @@ void MX_SUBGHZ_Init(void) {
 
 void HAL_SUBGHZ_MspInit(SUBGHZ_HandleTypeDef *subghzHandle) {
     __HAL_RCC_SUBGHZSPI_CLK_ENABLE();
-    NVIC_SetPriority(SUBGHZ_Radio_IRQn, 3);
+    NVIC_SetPriority(SUBGHZ_Radio_IRQn, IRQ_PRIORITY_LORA);
     NVIC_EnableIRQ(SUBGHZ_Radio_IRQn);
 }
 
