@@ -3,7 +3,7 @@
 #include "stm32_timer.h"
 #include "stm32_systime.h"
 
-#define LOG JD_NOLOG
+#define LOG JD_LOG
 #define VLOG JD_NOLOG
 
 /**
@@ -15,8 +15,7 @@ static uint32_t RtcTimerContext = 0;
 static uint32_t user_timeout;
 #define TIMEOUT_UNINIT 0
 #define TIMEOUT_DISABLED 1
-#define TIMEOUT_THIS 2
-#define TIMEOUT_LATER 3
+#define TIMEOUT_ENABLED 2
 static uint8_t timeout_status;
 
 #define ENTER_CRITICAL_SECTION()                                                                   \
@@ -108,15 +107,13 @@ static void set_hw_alarm(void) {
     if (timeout_status == TIMEOUT_DISABLED)
         delta = 0x8000;
     else if (is_before(user_timeout, now))
-        delta = 10;
+        delta = 5;
     else {
         delta = ((user_timeout - now) << 15) / 1000;
-        if (delta > 0x8000) {
+        if (delta > 0x8000)
             delta = 0x7000;
-            timeout_status = TIMEOUT_LATER;
-        } else {
-            timeout_status = TIMEOUT_THIS;
-        }
+        else if (delta < 5)
+            delta = 5;
     }
     LPTIM1->CMP = prev_cnt + delta;
     EXIT_CRITICAL_SECTION();
@@ -125,7 +122,7 @@ static void set_hw_alarm(void) {
 }
 
 UTIL_TIMER_Status_t TIMER_IF_StartTimer(uint32_t timeout) {
-    timeout_status = TIMEOUT_LATER;
+    timeout_status = TIMEOUT_ENABLED;
     user_timeout = timeout + RtcTimerContext;
     VLOG("set tm=%d now=%d", user_timeout, GetTimerTicks());
     set_hw_alarm();
@@ -159,13 +156,16 @@ uint32_t TIMER_IF_Convert_Tick2ms(uint32_t tick) {
     return tick;
 }
 
+bool jd_lora_in_timer(void) {
+    return (SCB->ICSR & SCB_ICSR_VECTACTIVE_Msk) == LPTIM1_IRQn + 16;
+}
+
 void LPTIM1_IRQHandler(void) {
     if (LL_LPTIM_IsActiveFlag_CMPM(LPTIM1)) {
         LL_LPTIM_ClearFLAG_CMPM(LPTIM1);
         uint32_t now = GetTimerTicks();
         VLOG("cmp %d %d", user_timeout, now);
-        if (timeout_status == TIMEOUT_THIS ||
-            (timeout_status == TIMEOUT_LATER && is_before(user_timeout, now))) {
+        if (timeout_status == TIMEOUT_ENABLED && is_before(user_timeout, now)) {
             timeout_status = TIMEOUT_DISABLED;
             uint32_t st = tim_get_micros();
             LOG("run at %d (%d ms late)", now, now - user_timeout);
