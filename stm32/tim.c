@@ -68,7 +68,7 @@ void tim_init(void) {
     /* Peripheral clock enable */
     TIMx_CLK_EN();
 
-    NVIC_SetPriority(TIMx_IRQn, 2);
+    NVIC_SetPriority(TIMx_IRQn, IRQ_PRIORITY_TIM);
     NVIC_EnableIRQ(TIMx_IRQn);
 
     LL_TIM_SetAutoReload(TIMx, 0xffff);

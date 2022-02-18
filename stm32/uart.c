@@ -133,10 +133,10 @@ void DMA1_Channel5_IRQHandler(void) {
 static void DMA_Init(void) {
     DMA_CLK_ENABLE();
 
-    NVIC_SetPriority(DMA_IRQn, 0);
+    NVIC_SetPriority(DMA_IRQn, IRQ_PRIORITY_UART);
     NVIC_EnableIRQ(DMA_IRQn);
 #ifdef DMA_IRQn_2
-    NVIC_SetPriority(DMA_IRQn_2, 0);
+    NVIC_SetPriority(DMA_IRQn_2, IRQ_PRIORITY_UART);
     NVIC_EnableIRQ(DMA_IRQn_2);
 #endif
 }
@@ -191,7 +191,7 @@ static void USART_UART_Init(void) {
                               LL_DMA_MDATAALIGN_BYTE);
 
     /* USARTx interrupt Init */
-    NVIC_SetPriority(IRQn, 0);
+    NVIC_SetPriority(IRQn, IRQ_PRIORITY_UART);
     NVIC_EnableIRQ(IRQn);
 
     /* Enable DMA transfer complete/error interrupts  */

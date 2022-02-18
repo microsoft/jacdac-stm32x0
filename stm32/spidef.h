@@ -185,10 +185,10 @@ static inline void spi_init1(void) {
     LL_DMA_EnableIT_TC(DMA1, DMA_CH_TX);
     LL_DMA_EnableIT_TE(DMA1, DMA_CH_TX);
 
-    NVIC_SetPriority(DMA_IRQn, 1);
+    NVIC_SetPriority(DMA_IRQn, IRQ_PRIORITY_DMA);
     NVIC_EnableIRQ(DMA_IRQn);
 
-    NVIC_SetPriority(IRQn, 1);
+    NVIC_SetPriority(IRQn, IRQ_PRIORITY_DMA);
     NVIC_EnableIRQ(IRQn);
 }
 

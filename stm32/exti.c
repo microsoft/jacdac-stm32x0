@@ -123,7 +123,7 @@ void exti_set_callback(uint8_t pin, cb_t callback, uint32_t flags) {
     callbacks[pos] = callback;
 
 #define SETUP(irq)                                                                                 \
-    NVIC_SetPriority(irq, 0);                                                                      \
+    NVIC_SetPriority(irq, IRQ_PRIORITY_EXTI);                                                      \
     NVIC_EnableIRQ(irq)
 
 #ifdef STM32WL

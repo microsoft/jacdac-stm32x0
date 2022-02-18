@@ -120,7 +120,7 @@ void sspi_init(void) {
     // LL_SPI_EnableIT_RXNE(SPIx);
     LL_SPI_EnableIT_ERR(SPIx);
 
-    NVIC_SetPriority(IRQn, 1);
+    NVIC_SetPriority(IRQn, IRQ_PRIORITY_DMA);
     NVIC_EnableIRQ(IRQn);
     LL_SPI_Enable(SPIx);
 }

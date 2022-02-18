@@ -217,7 +217,7 @@ static void rtc_config(uint8_t p0, uint16_t p1) {
     LL_EXTI_EnableIT_0_31(EXTI_LINE);
     LL_EXTI_EnableRisingTrig_0_31(EXTI_LINE);
 
-    NVIC_SetPriority(RTC_IRQn, 2); // match tim.c
+    NVIC_SetPriority(RTC_IRQn, IRQ_PRIORITY_TIM); // match tim.c
     NVIC_EnableIRQ(RTC_IRQn);
 
     LL_RTC_DisableInitMode(RTC);

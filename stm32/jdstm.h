@@ -17,6 +17,12 @@
 
 #include "lib.h"
 
+#define IRQ_PRIORITY_LORA 3
+#define IRQ_PRIORITY_TIM 2
+#define IRQ_PRIORITY_DMA 1
+#define IRQ_PRIORITY_EXTI 0
+#define IRQ_PRIORITY_UART 0
+
 extern uint8_t cpu_mhz;
 
 #define exti_disable(pin) LL_EXTI_DisableIT_0_31(pin)
