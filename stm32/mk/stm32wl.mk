@@ -22,6 +22,7 @@ $(HALPREF)/stm32wlxx_ll_rcc.c \
 $(HALPREF)/stm32wlxx_ll_rtc.c \
 $(HALPREF)/stm32wlxx_ll_spi.c \
 $(HALPREF)/stm32wlxx_ll_tim.c \
+$(HALPREF)/stm32wlxx_ll_lptim.c \
 $(HALPREF)/stm32wlxx_ll_usart.c \
 $(HALPREF)/stm32wlxx_ll_utils.c \
 

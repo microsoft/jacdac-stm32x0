@@ -40,4 +40,8 @@ void HAL_SUBGHZ_MspDeInit(SUBGHZ_HandleTypeDef *subghzHandle) {
     NVIC_DisableIRQ(SUBGHZ_Radio_IRQn);
 }
 
+void SUBGHZ_Radio_IRQHandler(void) {
+    HAL_SUBGHZ_IRQHandler(&hsubghz);
+}
+
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

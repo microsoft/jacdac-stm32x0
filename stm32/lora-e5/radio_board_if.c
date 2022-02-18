@@ -13,6 +13,7 @@ int32_t RBI_Init(void) {
 }
 
 int32_t RBI_ConfigRFSwitch(RBI_Switch_TypeDef cfg) {
+    // DMESG("rf switch %d", cfg);
     switch (cfg) {
     case RBI_SWITCH_OFF:
         pin_set(PIN_LORA_CTRL3, 0);
