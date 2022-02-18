@@ -23,12 +23,12 @@ static void process_notify(void) {
 }
 
 static void get_device_id(uint8_t *id) {
-    uint64_t devid = hw_device_id();
+    uint64_t devid = jd_device_id();
     memcpy(id, &devid, 8);
 }
 
 static uint32_t get_device_addr(void) {
-    uint64_t devid = hw_device_id();
+    uint64_t devid = jd_device_id();
     return jd_hash_fnv1a(&devid, 8);
 }
 
@@ -120,6 +120,8 @@ static LmHandlerParams_t LmHandlerParams = {
 };
 
 void jd_lora_init(void) {
+    UTIL_TIMER_Init();
+
     LoraInfo_Init();
     LmHandlerInit(&LmHandlerCallbacks);
 
