@@ -1,7 +1,7 @@
 # Jacdac for STM32F0xx and STM32G0xx
 
 This repository contains firmware for [Jacdac](https://aka.ms/jacdac) modules based on STM32F0xx and STM32G0xx
-chips and is part of the [Jacdac Module Development Kit](https://github.com/microsoft/jacdac-mdk).
+chips and is part of the [Jacdac Device Development Kit](https://microsoft.github.io/jacdac-docs/ddk/).
 
 ## Bootloader
 
