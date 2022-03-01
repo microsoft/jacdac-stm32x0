@@ -138,9 +138,9 @@ void exti_set_callback(uint8_t pin, cb_t callback, uint32_t flags) {
     }
 #else
     if (!NVIC_GetEnableIRQ(EXTI0_1_IRQn)) {
-        SETUP(EXTI0_1_IRQn, 0);
-        SETUP(EXTI2_3_IRQn, 0);
-        SETUP(EXTI4_15_IRQn, 0);
+        SETUP(EXTI0_1_IRQn);
+        SETUP(EXTI2_3_IRQn);
+        SETUP(EXTI4_15_IRQn);
     }
 #endif
 }
