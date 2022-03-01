@@ -21,6 +21,10 @@
 #define I2C_FAST_MODE 1
 #endif
 
+// I2C_TIMINGR
+// 0x3     0   4      2      0F   13
+//   PRESC RES SCLDEL SDADEL SCLH SCLL
+
 #ifdef STM32F0
 #if 1
 // 22.4.10 I2C_TIMINGR register configuration examples
@@ -39,14 +43,16 @@
 #endif
 #endif
 
-#ifdef STM32G0
-// 25.4.11 I2C_TIMINGR register configuration examples
+#if defined(STM32G0) || defined(STM32WL)
+// 25.4.11 I2C_TIMINGR register configuration examples (G0 docs)
+// 32.4.10 in WL docs
 #if I2C_FAST_MODE
 #define I2C_TIMING 0x10320309
 #else
 #define I2C_TIMING 0x30420F13
 #endif
 #endif
+
 
 static void setup_pin(uint8_t pin) {
     pin_setup_output_af(pin, I2C_AF);
@@ -67,6 +73,8 @@ void i2c_init(void) {
 #ifdef STM32F0
 #define CYCLES_PER_MS (77 * cpu_mhz)
 #elif defined(STM32G0)
+#define CYCLES_PER_MS (100 * cpu_mhz) // TODO measure this!
+#elif defined(STM32WL)
 #define CYCLES_PER_MS (100 * cpu_mhz) // TODO measure this!
 #else
 #error "measure CYCLES_PER_MS"

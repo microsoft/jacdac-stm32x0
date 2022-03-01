@@ -17,7 +17,7 @@ static const struct TimDesc tims[] = {
 #ifdef TIM2
     {TIM2, 1, RCC_APBENR1_TIM2EN},
 #endif
-#else
+#elif defined(STM32F0)
     {TIM1, 2, RCC_APB2ENR_TIM1EN}, //
 #ifdef TIM2
     {TIM2, 1, RCC_APB1ENR_TIM2EN},
@@ -25,6 +25,13 @@ static const struct TimDesc tims[] = {
     {TIM3, 1, RCC_APB1ENR_TIM3EN},   //
     {TIM14, 1, RCC_APB1ENR_TIM14EN}, //
     {TIM16, 2, RCC_APB2ENR_TIM16EN}, //
+#elif defined(STM32WL)
+#define APB1ENR APB1ENR1
+    // TODO LPTIM...
+    {TIM1, 2, RCC_APB2ENR_TIM1EN},  //
+    {TIM2, 1, RCC_APB1ENR1_TIM2EN}, //
+#else
+#error "missing"
 #endif
     // TIM17 // used in tim.c, skip here
 };
@@ -39,10 +46,10 @@ struct PinPWM {
 static const struct PinPWM pins[] = {
 #ifdef STM32G0
 #ifdef TIM2
-    {PA_0, 1, LL_GPIO_AF_2, TIM2},  // rgb led
-    {PA_1, 2, LL_GPIO_AF_2, TIM2},  // rgb led
-    {PA_2, 3, LL_GPIO_AF_2, TIM2},  // rgb led
-    {PA_3, 4, LL_GPIO_AF_2, TIM2},  // rgb led
+    {PA_0, 1, LL_GPIO_AF_2, TIM2}, // rgb led
+    {PA_1, 2, LL_GPIO_AF_2, TIM2}, // rgb led
+    {PA_2, 3, LL_GPIO_AF_2, TIM2}, // rgb led
+    {PA_3, 4, LL_GPIO_AF_2, TIM2}, // rgb led
 #endif
     {PA_4, 1, LL_GPIO_AF_4, TIM14}, // PWM mikrobus
     {PA_6, 1, LL_GPIO_AF_1, TIM3},  // rgb led
@@ -51,7 +58,7 @@ static const struct PinPWM pins[] = {
     {PB_1, 4, LL_GPIO_AF_1, TIM3},  // rgb led
     {PB_8, 1, LL_GPIO_AF_2, TIM16}, // rgb led
     {PA_10, 3, LL_GPIO_AF_2, TIM1}
-#else
+#elif defined(STM32F0)
 #ifdef TIM2
     {PA_1, 2, LL_GPIO_AF_2, TIM2},   // LED on jdm-v2
     {PA_3, 4, LL_GPIO_AF_2, TIM2},   // POWER on jdm-v2
@@ -67,6 +74,11 @@ static const struct PinPWM pins[] = {
     {PA_10, 3, LL_GPIO_AF_2, TIM1}, // SND
     {PA_4, 1, LL_GPIO_AF_4, TIM14}, // SND
     {PA_7, 1, LL_GPIO_AF_4, TIM14}, // servo
+#elif defined(STM32WL)
+    {PA_0, 1, LL_GPIO_AF_1, TIM2},
+// ...
+#else
+#error "missing"
 #endif
 };
 

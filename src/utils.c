@@ -35,7 +35,7 @@ int string_reverse(char *s) {
  *
  * @return DEVICE_OK, or DEVICE_INVALID_PARAMETER.
  */
-int itoa(int n, char *s) {
+int itoa10(int n, char *s) {
     int i = 0;
     int positive = (n >= 0);
 

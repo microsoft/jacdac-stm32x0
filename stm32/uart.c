@@ -23,9 +23,15 @@
 #ifdef STM32G0
 #define DMA_IRQn DMA1_Ch4_5_DMAMUX1_OVR_IRQn
 #define DMA_Handler DMA1_Ch4_5_DMAMUX1_OVR_IRQHandler
+#define NEW_UART 1
+#elif defined(STM32WL)
+#define DMA_IRQn DMA1_Channel4_IRQn
+#define DMA_IRQn_2 DMA1_Channel5_IRQn
+#define NEW_UART 1
 #else
 #define DMA_IRQn DMA1_Channel4_5_IRQn
 #define DMA_Handler DMA1_Channel4_5_IRQHandler
+#define NEW_UART 0
 #endif
 
 // DMA Channel 4 - TX
@@ -41,11 +47,11 @@ __attribute__((noinline)) void gpio_probe_and_set(GPIO_TypeDef *gpio, uint32_t p
 
 static void uartOwnsPin(int doesIt) {
     if (doesIt) {
-        LL_GPIO_SetPinMode(PIN_PORT(UART_PIN), PIN_MASK(UART_PIN), LL_GPIO_MODE_ALTERNATE);
         if ((UART_PIN & 0xf) <= 7)
             LL_GPIO_SetAFPin_0_7(PIN_PORT(UART_PIN), PIN_MASK(UART_PIN), UART_PIN_AF);
         else
             LL_GPIO_SetAFPin_8_15(PIN_PORT(UART_PIN), PIN_MASK(UART_PIN), UART_PIN_AF);
+        LL_GPIO_SetPinMode(PIN_PORT(UART_PIN), PIN_MASK(UART_PIN), LL_GPIO_MODE_ALTERNATE);
     } else {
         LL_GPIO_SetPinMode(PIN_PORT(UART_PIN), PIN_MASK(UART_PIN), LL_GPIO_MODE_INPUT);
         exti_clear_falling(PIN_MASK(UART_PIN));
@@ -115,19 +121,34 @@ void DMA_Handler(void) {
     }
 }
 
-static void DMA_Init(void) {
-    __HAL_RCC_DMA1_CLK_ENABLE();
+#ifdef STM32WL
+void DMA1_Channel4_IRQHandler(void) {
+    DMA_Handler();
+}
+void DMA1_Channel5_IRQHandler(void) {
+    DMA_Handler();
+}
+#endif
 
-    NVIC_SetPriority(DMA_IRQn, 0);
+static void DMA_Init(void) {
+    DMA_CLK_ENABLE();
+
+    NVIC_SetPriority(DMA_IRQn, IRQ_PRIORITY_UART);
     NVIC_EnableIRQ(DMA_IRQn);
+#ifdef DMA_IRQn_2
+    NVIC_SetPriority(DMA_IRQn_2, IRQ_PRIORITY_UART);
+    NVIC_EnableIRQ(DMA_IRQn_2);
+#endif
 }
 
 static void USART_UART_Init(void) {
 #if USART_IDX == 2
-#ifndef DISABLE_PLL
+    __HAL_RCC_USART2_CLK_ENABLE();
+#ifdef STM32WL
+    LL_RCC_SetUSARTClockSource(LL_RCC_USART2_CLKSOURCE_HSI);
+#elif !defined(DISABLE_PLL)
 #error "PLL not supported"
 #endif
-    __HAL_RCC_USART2_CLK_ENABLE();
 #elif USART_IDX == 1
     LL_RCC_SetUSARTClockSource(LL_RCC_USART1_CLKSOURCE_HSI);
     __HAL_RCC_USART1_CLK_ENABLE();
@@ -145,7 +166,7 @@ static void USART_UART_Init(void) {
 #endif
 
     /* USART_RX Init */
-#ifdef STM32G0
+#if NEW_UART
     LL_DMA_SetPeriphRequest(DMA1, LL_DMA_CHANNEL_5, LL_DMAMUX_REQ_USARTx_RX);
 #endif
     LL_DMA_ConfigTransfer(DMA1, LL_DMA_CHANNEL_5,
@@ -156,9 +177,8 @@ static void USART_UART_Init(void) {
                               LL_DMA_MEMORY_INCREMENT |       //
                               LL_DMA_PDATAALIGN_BYTE |        //
                               LL_DMA_MDATAALIGN_BYTE);
-
     /* USART_TX Init */
-#ifdef STM32G0
+#if NEW_UART
     LL_DMA_SetPeriphRequest(DMA1, LL_DMA_CHANNEL_4, LL_DMAMUX_REQ_USARTx_TX);
 #endif
     LL_DMA_ConfigTransfer(DMA1, LL_DMA_CHANNEL_4,
@@ -171,7 +191,7 @@ static void USART_UART_Init(void) {
                               LL_DMA_MDATAALIGN_BYTE);
 
     /* USARTx interrupt Init */
-    NVIC_SetPriority(IRQn, 0);
+    NVIC_SetPriority(IRQn, IRQ_PRIORITY_UART);
     NVIC_EnableIRQ(IRQn);
 
     /* Enable DMA transfer complete/error interrupts  */
@@ -180,7 +200,7 @@ static void USART_UART_Init(void) {
     LL_DMA_EnableIT_TC(DMA1, LL_DMA_CHANNEL_5);
     LL_DMA_EnableIT_TE(DMA1, LL_DMA_CHANNEL_5);
 
-#ifdef STM32G0
+#if NEW_UART
     USARTx->CR1 = LL_USART_DATAWIDTH_8B | LL_USART_PARITY_NONE | LL_USART_OVERSAMPLING_16 |
                   LL_USART_DIRECTION_TX;
     USARTx->BRR = HSI_MHZ; // ->1MHz (16x oversampling)
@@ -227,6 +247,7 @@ int uart_wait_high() {
 }
 
 int uart_start_tx(const void *data, uint32_t numbytes) {
+    // DMESG("tx %d", numbytes);
     exti_disable(PIN_MASK(UART_PIN));
     exti_clear_falling(PIN_MASK(UART_PIN));
     // We assume EXTI runs at higher priority than us
@@ -257,7 +278,8 @@ int uart_start_tx(const void *data, uint32_t numbytes) {
     uartOwnsPin(1);
     LL_USART_DisableDirectionRx(USARTx);
     LL_USART_EnableDirectionTx(USARTx);
-    USARTx->ICR = USART_ISR_FE | USART_ISR_NE | USART_ISR_ORE; // clear error flags before we start
+    USARTx->ICR = USART_ISR_FE | USART_ISR_NE | USART_ISR_ORE |
+                  USART_ISR_TC; // clear error flags before we start
     LL_USART_Enable(USARTx);
     while (!(LL_USART_IsActiveFlag_TEACK(USARTx)))
         ;
@@ -269,11 +291,8 @@ int uart_start_tx(const void *data, uint32_t numbytes) {
     // to here, it's about 1.3us
 
     // the USART takes a few us to start transmitting
-    target_wait_us(40);
-    // this works out to be:
-    // 57us on F0 at 8MHz
-    // 51us on G0 at 16MHz
-    // The spec requires min of 40us and max of 89us.
+    target_wait_us(45);
+    // The spec requires min of 50us and max of 189us.
 
     LL_DMA_EnableChannel(DMA1, LL_DMA_CHANNEL_4);
 
@@ -304,6 +323,7 @@ void uart_start_rx(void *data, uint32_t maxbytes) {
 
 // this is only enabled for error events
 void IRQHandler(void) {
+    // DMESG("irq handler");
     //  pulse_log_pin();
     uint32_t dataLeft = LL_DMA_GetDataLength(DMA1, LL_DMA_CHANNEL_5);
     uart_disable();

@@ -6,7 +6,8 @@
 
 #ifndef RTC_SECOND_IN_US
 // use a little more than 10ms, so we don't have issues with wrap around
-#define RTC_SECOND_IN_US 25000
+// also, use value that converts evenly to 32768Hz crystal
+#define RTC_SECOND_IN_US 31250
 #endif
 
 // exti.c

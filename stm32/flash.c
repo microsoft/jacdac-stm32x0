@@ -1,5 +1,11 @@
 #include "jdstm.h"
 
+#if defined(STM32G0) || defined(STM32WL)
+#define NEW_FLASH 1
+#else
+#define NEW_FLASH 0
+#endif
+
 #ifdef STM32G0
 #define FLASH_SR_BSY FLASH_SR_BSY1
 #endif
@@ -16,7 +22,7 @@ static void unlock(void) {
     }
     FLASH->SR = FLASH_SR_EOP;
     FLASH->CR &= ~(FLASH_CR_PG | FLASH_CR_PER | FLASH_CR_STRT);
-#ifdef STM32G0
+#if NEW_FLASH
     // this is required for the EOP/error bit to be set
     FLASH->CR |= FLASH_CR_EOPIE | FLASH_CR_ERRIE;
 #endif
@@ -36,7 +42,7 @@ static void check_eop(void) {
 }
 
 void flash_program(void *dst, const void *src, uint32_t len) {
-#ifdef STM32G0
+#if NEW_FLASH
     if ((((uint32_t)dst) & 7) || (((uint32_t)src) & 3) || (len & 7))
         jd_panic();
 #else
@@ -47,7 +53,7 @@ void flash_program(void *dst, const void *src, uint32_t len) {
     unlock();
     FLASH->CR |= FLASH_CR_PG; // enable programming
 
-#ifdef STM32G0
+#if NEW_FLASH
     len >>= 3;
     __IO uint32_t *dp = dst;
     const uint32_t *sp = src;
@@ -78,7 +84,7 @@ void flash_program(void *dst, const void *src, uint32_t len) {
 
 void flash_erase(void *page_addr) {
     unlock();
-#ifdef STM32G0
+#if NEW_FLASH
     uint32_t addrmask = (((uint32_t)page_addr >> 11) << FLASH_CR_PNB_Pos) & FLASH_CR_PNB;
     FLASH->CR = (FLASH->CR & ~FLASH_CR_PNB) | FLASH_CR_PER | addrmask;
 #else

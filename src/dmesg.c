@@ -51,6 +51,10 @@ void codal_vdmesg(const char *format, va_list ap) {
     char tmp[80];
     codal_vsprintf(tmp, sizeof(tmp) - 1, format, ap);
     int len = strlen(tmp);
+#if JD_LORA
+    while (len && (tmp[len - 1] == '\r' || tmp[len - 1] == '\n'))
+        len--;
+#endif
     tmp[len] = '\n';
     tmp[len + 1] = 0;
     logwriten(tmp, len + 1);
@@ -95,6 +99,11 @@ int codal_vsprintf(char *dst, unsigned dstsize, const char *format, va_list ap) 
                 break;
 
             uint32_t val = va_arg(ap, uint32_t);
+#if JD_LORA
+            uint8_t fmtc = 0;
+            while ('0' <= *end && *end <= '9')
+                fmtc = *end++;
+#endif
             c = *end++;
             buf[1] = 0;
             switch (c) {
@@ -102,7 +111,7 @@ int codal_vsprintf(char *dst, unsigned dstsize, const char *format, va_list ap) 
                 buf[0] = val;
                 break;
             case 'd':
-                itoa(val, buf);
+                itoa10(val, buf);
                 break;
             case 'x':
             case 'p':
@@ -110,6 +119,13 @@ int codal_vsprintf(char *dst, unsigned dstsize, const char *format, va_list ap) 
                 buf[0] = '0';
                 buf[1] = 'x';
                 writeNum(buf + 2, val, c != 'x');
+#if JD_LORA
+                if (c == 'X' && fmtc == '2') {
+                    buf[0] = buf[8];
+                    buf[1] = buf[9];
+                    buf[2] = 0;
+                }
+#endif
                 break;
             case 's':
                 WRITEN((char *)(void *)val, strlen((char *)(void *)val));

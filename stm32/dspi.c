@@ -29,14 +29,14 @@ void dspi_init(bool slow, int cpol, int cpha) {
 
     if (cpol)
         cpol_cpha |= LL_SPI_POLARITY_HIGH;
-    
+
     if (cpha)
         cpol_cpha |= LL_SPI_PHASE_2EDGE;
 
 #if SPI_RX
     pin_setup_output_af(PIN_AMISO, PIN_AF);
     uint32_t baud = LL_SPI_BAUDRATEPRESCALER_DIV4;
-#else 
+#else
     uint32_t baud = LL_SPI_BAUDRATEPRESCALER_DIV2;
 #endif
 
@@ -264,7 +264,7 @@ void px_alloc() {
 
 void px_init(int light_type) {
     SPI_CLK_ENABLE();
-    __HAL_RCC_DMA1_CLK_ENABLE();
+    DMA_CLK_ENABLE();
 
     px_state.type = light_type;
 
@@ -278,7 +278,7 @@ void px_init(int light_type) {
     if (light_type & LIGHT_TYPE_APA_MASK)
         pin_setup_output_af(PIN_ASCK, PIN_AF);
 
-#ifdef STM32G0
+#if defined(STM32G0) || defined(STM32WL)
     LL_DMA_SetPeriphRequest(DMA1, DMA_CH_TX, LL_DMAMUX_REQ_SPIx_TX);
 #endif
 
@@ -307,10 +307,10 @@ void px_init(int light_type) {
     LL_DMA_EnableIT_TE(DMA1, DMA_CH_TX);
     LL_DMA_EnableIT_HT(DMA1, DMA_CH_TX);
 
-    NVIC_SetPriority(DMA_IRQn, 1);
+    NVIC_SetPriority(DMA_IRQn, IRQ_PRIORITY_DMA);
     NVIC_EnableIRQ(DMA_IRQn);
 
-    NVIC_SetPriority(IRQn, 1);
+    NVIC_SetPriority(IRQn, IRQ_PRIORITY_DMA);
     NVIC_EnableIRQ(IRQn);
 
     init_lookup();

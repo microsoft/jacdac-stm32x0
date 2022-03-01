@@ -14,17 +14,24 @@ static const uint8_t output_pins[] = {
 void led_init(void) {
     // To save power, especially in STOP mode,
     // configure all pins in GPIOA,B,C as analog inputs (except for SWD)
-    for (unsigned i = 0; i < 16 * 3; ++i)
+#ifdef JD_USE_LSE
+#define LAST_PIN PC_13
+#else
+#define LAST_PIN PC_15
+#endif
+    for (unsigned i = 0; i <= LAST_PIN; ++i)
         if (i != 13 && i != 14) // 13/14 are SWD pins
             pin_setup_analog_input(i);
 
+#ifdef GPIOF
     // also do all GPIOF (note that it's not enough to just clear PF0 and PF1
     // - the other ones seem to still draw power in stop mode)
     for (unsigned i = 0; i < 16; ++i)
         pin_setup_analog_input(i + 0x50);
+#endif
 
-    // The effects of the pins shutdown above is quite dramatic - without the MCU can draw
-    // ~100uA (but with wide random variation) in STOP; with shutdown we get a stable 4.3uA
+        // The effects of the pins shutdown above is quite dramatic - without the MCU can draw
+        // ~100uA (but with wide random variation) in STOP; with shutdown we get a stable 4.3uA
 
 #ifdef DISABLE_SWCLK_FUNC
     pin_setup_analog_input(PA_14);

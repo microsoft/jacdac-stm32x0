@@ -98,7 +98,7 @@ void IRQHandler(void) {
 
 void sspi_init(void) {
     SPI_CLK_ENABLE();
-    __HAL_RCC_DMA1_CLK_ENABLE();
+    DMA_CLK_ENABLE();
 
     pin_setup_output_af(PIN_SSCK, PIN_AF);
 
@@ -120,7 +120,7 @@ void sspi_init(void) {
     // LL_SPI_EnableIT_RXNE(SPIx);
     LL_SPI_EnableIT_ERR(SPIx);
 
-    NVIC_SetPriority(IRQn, 1);
+    NVIC_SetPriority(IRQn, IRQ_PRIORITY_DMA);
     NVIC_EnableIRQ(IRQn);
     LL_SPI_Enable(SPIx);
 }

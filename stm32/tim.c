@@ -68,7 +68,7 @@ void tim_init(void) {
     /* Peripheral clock enable */
     TIMx_CLK_EN();
 
-    NVIC_SetPriority(TIMx_IRQn, 2);
+    NVIC_SetPriority(TIMx_IRQn, IRQ_PRIORITY_TIM);
     NVIC_EnableIRQ(TIMx_IRQn);
 
     LL_TIM_SetAutoReload(TIMx, 0xffff);
@@ -78,7 +78,7 @@ void tim_init(void) {
     LL_TIM_DisableARRPreload(TIMx);
     LL_TIM_SetClockSource(TIMx, LL_TIM_CLOCKSOURCE_INTERNAL);
     LL_TIM_SetTriggerOutput(TIMx, LL_TIM_TRGO_RESET);
-#ifdef STM32G0
+#if defined(STM32G0) || defined(STM32WL)
     LL_TIM_SetTriggerOutput2(TIMx, LL_TIM_TRGO2_RESET);
 #endif
     LL_TIM_DisableMasterSlaveMode(TIMx);

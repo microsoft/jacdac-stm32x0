@@ -3,7 +3,7 @@
 static cb_t callbacks[16];
 
 static void _check_line(int ln) {
-#ifdef STM32F0
+#if defined(STM32F0) || defined(STM32WL)
     LL_EXTI_ClearFlag_0_31(1 << ln);
 #else
     LL_EXTI_ClearRisingFlag_0_31(1 << ln);
@@ -12,8 +12,10 @@ static void _check_line(int ln) {
     callbacks[ln]();
 }
 
-#ifdef STM32G0
+#if defined(STM32G0)
 #define EXTI_LINES() (EXTI->FPR1 | EXTI->RPR1)
+#elif defined(STM32WL)
+#define EXTI_LINES() (EXTI->PR1)
 #else
 #define EXTI_LINES() (EXTI->PR)
 #endif
@@ -22,6 +24,33 @@ static void _check_line(int ln) {
     if (lines & (1 << (ln)))                                                                       \
     _check_line(ln)
 
+#ifdef STM32WL
+#define SINGLE(name, ln)                                                                           \
+    void name(void) {                                                                              \
+        rtc_sync_time();                                                                           \
+        uint32_t lines = EXTI_LINES();                                                             \
+        check_line(ln);                                                                            \
+    }
+SINGLE(EXTI0_IRQHandler, 0)
+SINGLE(EXTI1_IRQHandler, 1)
+SINGLE(EXTI2_IRQHandler, 2)
+SINGLE(EXTI3_IRQHandler, 3)
+SINGLE(EXTI4_IRQHandler, 4)
+
+void EXTI9_5_IRQHandler(void) {
+    rtc_sync_time();
+    uint32_t lines = EXTI_LINES();
+    for (int i = 5; i <= 9; ++i)
+        check_line(i);
+}
+
+void EXTI15_10_IRQHandler(void) {
+    rtc_sync_time();
+    uint32_t lines = EXTI_LINES();
+    for (int i = 10; i <= 15; ++i)
+        check_line(i);
+}
+#else
 void EXTI0_1_IRQHandler(void) {
     rtc_sync_time();
     uint32_t lines = EXTI_LINES();
@@ -54,8 +83,9 @@ void EXTI4_15_IRQHandler(void) {
         check_line(i);
     }
 }
+#endif
 
-#ifndef STM32F0
+#ifdef STM32G0
 static const uint32_t cfgs[] = {LL_EXTI_CONFIG_PORTA, LL_EXTI_CONFIG_PORTB, LL_EXTI_CONFIG_PORTC};
 #endif
 
@@ -64,7 +94,7 @@ void exti_set_callback(uint8_t pin, cb_t callback, uint32_t flags) {
 
     if (pin >> 4 > 2)
         jd_panic();
-#ifdef STM32F0
+#if defined(STM32F0) || defined(STM32WL)
     extiport = pin >> 4;
 #elif defined(STM32G0)
     extiport = cfgs[pin >> 4];
@@ -76,6 +106,9 @@ void exti_set_callback(uint8_t pin, cb_t callback, uint32_t flags) {
 
 #ifdef STM32F0
     uint32_t line = (pos >> 2) | ((pos & 3) << 18);
+    LL_SYSCFG_SetEXTISource(extiport, line);
+#elif defined(STM32WL)
+    uint32_t line = (pos >> 2) | (0xF << (16 + (4 * (pos & 3))));
     LL_SYSCFG_SetEXTISource(extiport, line);
 #else
     uint32_t line = (pos >> 2) | ((pos & 3) << 19);
@@ -89,12 +122,25 @@ void exti_set_callback(uint8_t pin, cb_t callback, uint32_t flags) {
 
     callbacks[pos] = callback;
 
-    if (!NVIC_GetEnableIRQ(EXTI0_1_IRQn)) {
-        NVIC_SetPriority(EXTI0_1_IRQn, 0);
-        NVIC_EnableIRQ(EXTI0_1_IRQn);
-        NVIC_SetPriority(EXTI2_3_IRQn, 0);
-        NVIC_EnableIRQ(EXTI2_3_IRQn);
-        NVIC_SetPriority(EXTI4_15_IRQn, 0);
-        NVIC_EnableIRQ(EXTI4_15_IRQn);
+#define SETUP(irq)                                                                                 \
+    NVIC_SetPriority(irq, IRQ_PRIORITY_EXTI);                                                      \
+    NVIC_EnableIRQ(irq)
+
+#ifdef STM32WL
+    if (!NVIC_GetEnableIRQ(EXTI0_IRQn)) {
+        SETUP(EXTI0_IRQn);
+        SETUP(EXTI1_IRQn);
+        SETUP(EXTI2_IRQn);
+        SETUP(EXTI3_IRQn);
+        SETUP(EXTI4_IRQn);
+        SETUP(EXTI9_5_IRQn);
+        SETUP(EXTI15_10_IRQn);
     }
+#else
+    if (!NVIC_GetEnableIRQ(EXTI0_1_IRQn)) {
+        SETUP(EXTI0_1_IRQn, 0);
+        SETUP(EXTI2_3_IRQn, 0);
+        SETUP(EXTI4_15_IRQn, 0);
+    }
+#endif
 }

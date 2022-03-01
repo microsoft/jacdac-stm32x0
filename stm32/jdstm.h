@@ -9,11 +9,19 @@
 #include "stm32f0.h"
 #elif defined(STM32G0)
 #include "stm32g0.h"
+#elif defined(STM32WL)
+#include "stm32wl.h"
 #else
 #error "invalid CPU"
 #endif
 
 #include "lib.h"
+
+#define IRQ_PRIORITY_LORA 3
+#define IRQ_PRIORITY_TIM 2
+#define IRQ_PRIORITY_DMA 1
+#define IRQ_PRIORITY_EXTI 0
+#define IRQ_PRIORITY_UART 0
 
 extern uint8_t cpu_mhz;
 
@@ -36,6 +44,14 @@ void rtc_cancel_cb(void);
 
 #ifndef SPI_RX
 #define SPI_RX 0
+#endif
+
+#ifdef __HAL_RCC_DMAMUX1_CLK_ENABLE
+#define DMA_CLK_ENABLE()                                                                           \
+    __HAL_RCC_DMA1_CLK_ENABLE();                                                                   \
+    __HAL_RCC_DMAMUX1_CLK_ENABLE()
+#else
+#define DMA_CLK_ENABLE() __HAL_RCC_DMA1_CLK_ENABLE()
 #endif
 
 #endif
