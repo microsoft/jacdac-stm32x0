@@ -123,8 +123,6 @@ uint8_t pwm_init(uint8_t pin, uint32_t period, uint32_t duty, uint8_t prescaler)
 
     pin_setup_output_af(pin, pwm->af);
 
-    LL_TIM_OC_InitTypeDef tim_oc_initstruct;
-
     TIMx->CR1 = LL_TIM_COUNTERMODE_UP | LL_TIM_CLOCKDIVISION_DIV1; // default anyways
 
     LL_TIM_SetPrescaler(TIMx, prescaler - 1);
@@ -133,37 +131,34 @@ uint8_t pwm_init(uint8_t pin, uint32_t period, uint32_t duty, uint8_t prescaler)
     LL_TIM_GenerateEvent_UPDATE(TIMx);
     LL_TIM_EnableARRPreload(TIMx);
 
-    tim_oc_initstruct.OCMode = LL_TIM_OCMODE_PWM1;
-    tim_oc_initstruct.OCState = LL_TIM_OCSTATE_DISABLE;
-    tim_oc_initstruct.OCNState = LL_TIM_OCSTATE_DISABLE;
-    tim_oc_initstruct.CompareValue = duty;
-    tim_oc_initstruct.OCPolarity = LL_TIM_OCPOLARITY_HIGH;
-    tim_oc_initstruct.OCNPolarity = LL_TIM_OCPOLARITY_HIGH;
-    tim_oc_initstruct.OCIdleState = LL_TIM_OCIDLESTATE_LOW;
-    tim_oc_initstruct.OCNIdleState = LL_TIM_OCIDLESTATE_LOW;
-
     if (TIMx == TIM1 || TIMx == TIM16)
         TIMx->BDTR |= TIM_BDTR_MOE;
+
+    uint32_t mode = LL_TIM_OCMODE_PWM1;
 
     // do a switch, so the compiler can optimize bodies of these inline functions
     switch (pwm->ch) {
     case 1:
-        LL_TIM_OC_Init(TIMx, LL_TIM_CHANNEL_CH1, &tim_oc_initstruct);
+        LL_TIM_OC_SetMode(TIMx, LL_TIM_CHANNEL_CH1, mode);
+        LL_TIM_OC_SetCompareCH1(TIMx, duty);
         LL_TIM_OC_EnablePreload(TIMx, LL_TIM_CHANNEL_CH1);
         LL_TIM_CC_EnableChannel(TIMx, LL_TIM_CHANNEL_CH1);
         break;
     case 2:
-        LL_TIM_OC_Init(TIMx, LL_TIM_CHANNEL_CH2, &tim_oc_initstruct);
+        LL_TIM_OC_SetMode(TIMx, LL_TIM_CHANNEL_CH2, mode);
+        LL_TIM_OC_SetCompareCH2(TIMx, duty);
         LL_TIM_OC_EnablePreload(TIMx, LL_TIM_CHANNEL_CH2);
         LL_TIM_CC_EnableChannel(TIMx, LL_TIM_CHANNEL_CH2);
         break;
     case 3:
-        LL_TIM_OC_Init(TIMx, LL_TIM_CHANNEL_CH3, &tim_oc_initstruct);
+        LL_TIM_OC_SetMode(TIMx, LL_TIM_CHANNEL_CH3, mode);
+        LL_TIM_OC_SetCompareCH3(TIMx, duty);
         LL_TIM_OC_EnablePreload(TIMx, LL_TIM_CHANNEL_CH3);
         LL_TIM_CC_EnableChannel(TIMx, LL_TIM_CHANNEL_CH3);
         break;
     case 4:
-        LL_TIM_OC_Init(TIMx, LL_TIM_CHANNEL_CH4, &tim_oc_initstruct);
+        LL_TIM_OC_SetMode(TIMx, LL_TIM_CHANNEL_CH4, mode);
+        LL_TIM_OC_SetCompareCH4(TIMx, duty);
         LL_TIM_OC_EnablePreload(TIMx, LL_TIM_CHANNEL_CH4);
         LL_TIM_CC_EnableChannel(TIMx, LL_TIM_CHANNEL_CH4);
         break;
