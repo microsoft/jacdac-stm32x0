@@ -32,10 +32,10 @@ void pin_set_pull(int pin, int pull) {
     if ((uint8_t)pin == NO_PIN)
         return;
     LL_GPIO_SetPinPull(PIN_PORT(pin), PIN_MASK(pin),
-                       pull == -1  ? LL_GPIO_PULL_DOWN
-                       : pull == 1 ? LL_GPIO_PULL_UP
-                       : pull == 0 ? LL_GPIO_PULL_NO
-                                   : (jd_panic(), 0));
+                       pull == PIN_PULL_DOWN   ? LL_GPIO_PULL_DOWN
+                       : pull == PIN_PULL_UP   ? LL_GPIO_PULL_UP
+                       : pull == PIN_PULL_NONE ? LL_GPIO_PULL_NO
+                                               : (jd_panic(), 0));
 }
 
 void pin_setup_input(int pin, int pull) {
