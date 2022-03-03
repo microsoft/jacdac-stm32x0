@@ -57,7 +57,9 @@ static const struct PinPWM pins[] = {
     {PB_0, 3, LL_GPIO_AF_1, TIM3},  // rgb led
     {PB_1, 4, LL_GPIO_AF_1, TIM3},  // rgb led
     {PB_8, 1, LL_GPIO_AF_2, TIM16}, // rgb led
-    {PA_10, 3, LL_GPIO_AF_2, TIM1}
+    {PA_10, 3, LL_GPIO_AF_2, TIM1}, //
+    {PA_8, 1, LL_GPIO_AF_2, TIM1},  // rotary
+    {PA_9, 2, LL_GPIO_AF_2, TIM1},  // rotary
 #elif defined(STM32F0)
 #ifdef TIM2
     {PA_1, 2, LL_GPIO_AF_2, TIM2},   // LED on jdm-v2
@@ -186,3 +188,61 @@ void pwm_enable(uint8_t pwm, bool enabled) {
     else
         pin_setup_output(pins[pwm].pin);
 }
+
+#ifdef STM32G0
+// This kind-of works, but it seems the TIM still only runs when we're not sleeping so we miss quick
+// turns Thus we just stick to software for now.
+uint8_t encoder_init(uint8_t pinA, uint8_t pinB) {
+    uint8_t idxA = pwm_init(pinA, 0x10000, 0, 1) - 1;
+    uint8_t idxB = pwm_init(pinB, 0x10000, 0, 1) - 1;
+    if (pins[idxA].tim != pins[idxB].tim)
+        jd_panic();
+    if (pins[idxA].ch != 1 || pins[idxB].ch != 2)
+        jd_panic();
+
+    TIM_TypeDef *TIMx = pins[idxA].tim;
+
+    // enable sleep-mode clock
+    const struct TimDesc *td = lookup_tim(TIMx);
+    if (td->apb == 1) {
+        SET_BIT(RCC->APBSMENR1, td->clkmask);
+        (void)READ_BIT(RCC->APBSMENR1, td->clkmask); // delay
+    } else if (td->apb == 2) {
+        SET_BIT(RCC->APBSMENR2, td->clkmask);
+        (void)READ_BIT(RCC->APBSMENR2, td->clkmask); // delay
+    } else {
+        jd_panic();
+    }
+
+    LL_TIM_CC_DisableChannel(TIMx, LL_TIM_CHANNEL_CH1 | LL_TIM_CHANNEL_CH2);
+
+    LL_TIM_DisableCounter(TIMx);
+
+    LL_TIM_SetCounter(TIMx, 0x8000);
+
+    // LL_TIM_DisableARRPreload(TIMx);
+
+    LL_TIM_SetEncoderMode(TIMx, LL_TIM_ENCODERMODE_X4_TI12);
+
+    uint32_t config = LL_TIM_ACTIVEINPUT_DIRECTTI | LL_TIM_ICPSC_DIV1 | LL_TIM_IC_FILTER_FDIV1 |
+                      LL_TIM_IC_POLARITY_RISING;
+
+    LL_TIM_IC_Config(TIMx, LL_TIM_CHANNEL_CH1, config);
+    LL_TIM_IC_Config(TIMx, LL_TIM_CHANNEL_CH2, config);
+
+    LL_TIM_CC_EnableChannel(TIMx, LL_TIM_CHANNEL_CH1 | LL_TIM_CHANNEL_CH2);
+
+    LL_TIM_EnableCounter(TIMx);
+    LL_TIM_GenerateEvent_UPDATE(TIMx);
+
+    return idxA + 1;
+}
+
+uint32_t encoder_get(uint8_t pwm) {
+    pwm--;
+    if (pwm >= sizeof(pins) / sizeof(pins[0]))
+        jd_panic();
+    return LL_TIM_GetCounter(pins[pwm].tim);
+}
+
+#endif
