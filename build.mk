@@ -327,7 +327,5 @@ ff: full-flash
 full-flash:
 ifeq ($(NOBL),)
 	$(MAKE) BL=1 r
-	# let bootloader generate device id (it's more like a millisecond, but let's be safe here)
-	@sleep 1
 endif
 	$(MAKE) r
