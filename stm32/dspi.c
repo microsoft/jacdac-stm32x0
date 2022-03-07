@@ -266,6 +266,11 @@ void px_init(int light_type) {
     SPI_CLK_ENABLE();
     DMA_CLK_ENABLE();
 
+#ifdef DISABLE_PLL
+    extern void pll_needed_for_px_init(void);
+    pll_needed_for_px_init();
+#endif
+
     px_state.type = light_type;
 
     // some pins require an alternate AF enum for specific pins.
