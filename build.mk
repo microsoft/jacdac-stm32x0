@@ -21,7 +21,7 @@ MAKE_FLAGS ?= -j8
 WARNFLAGS = -Wall -Wno-strict-aliasing
 CFLAGS = $(DEFINES) \
 	-mthumb -mfloat-abi=soft  \
-	-Os -g3 \
+	-Os -g3 -DSTM32X=1 \
 	-Wall -Wextra -Wno-unused-parameter -Wno-shift-negative-value -Wstrict-prototypes \
 	-ffunction-sections -nostartfiles \
 	$(WARNFLAGS) $(USERFLAGS)

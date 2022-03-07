@@ -3,7 +3,6 @@
 #ifdef NUM_DISPLAY_ROWS
 
 //#define DISP_DELAY_OVERRIDE 150 // for power measurements
-#define DISP_LIGHT_SENSE 1
 
 //#define DISP_LEVEL_MAX 1200 // regulate brightness here
 #define DISP_LEVEL_MAX 2000 // regulate brightness here
@@ -74,7 +73,7 @@ static void turn_off(ctx_t *ctx) {
 static void measure_light(ctx_t *ctx) {
     turn_off(ctx);
 
-#ifdef DISP_LIGHT_SENSE
+#if DISP_LIGHT_SENSE
 #if 0
     for (int i = 0; i < NUM_DISPLAY_COLS; ++i) {
         pin_set(col_pins[i], 1);
@@ -133,7 +132,8 @@ static void measure_light(ctx_t *ctx) {
 
     DMESG("disp: [%d] -> %dus", ctx->reading, ctx->target_delay >> 10);
 #else
-    ctx->target_delay = DISP_DELAY_OVERRIDE << 10;
+    ctx->target_delay =
+        (((DISP_DELAY_MAX - DISP_DELAY_MIN) * ctx->dark_level) >> 6) + (DISP_DELAY_MIN << 10);
 #endif
 
 #ifdef DISP_DELAY_OVERRIDE
@@ -187,6 +187,16 @@ void disp_show(uint8_t *img) {
     recompute_cache(ctx);
 }
 
+#if !DISP_LIGHT_SENSE
+void disp_set_brigthness(uint16_t v) {
+    ctx_.dark_level = v;
+}
+#else
+void disp_set_dark_level(int v) {
+    DMESG("set dark lvl: %d", v);
+    ctx_.dark_level = v;
+}
+
 int disp_light_level() {
     return ctx_.reading;
 }
@@ -194,17 +204,14 @@ int disp_light_level() {
 int disp_get_dark_level() {
     return ctx_.dark_level;
 }
-
-void disp_set_dark_level(int v) {
-    DMESG("set dark lvl: %d", v);
-    ctx_.dark_level = v;
-}
+#endif
 
 static void show_line(ctx_t *ctx, int i) {
     turn_off(ctx); // avoid bleeding between rows
     set_masks(ctx, ctx->cached_rows[i], ctx->cached_cols[i]);
 }
 
+#ifdef DISP_USE_TIMER
 static void finish_refresh(ctx_t *ctx) {
     turn_off(ctx);
     if (ctx->frames_until_reading-- == 0) {
@@ -213,7 +220,6 @@ static void finish_refresh(ctx_t *ctx) {
     }
 }
 
-#ifdef DISP_USE_TIMER
 static void disp_cb(void) {
     pin_pulse(PIN_P0, 3);
     ctx_t *ctx = &ctx_;
@@ -263,11 +269,8 @@ void disp_refresh() {
     for (int i = 0; i < ctx->num_cached; ++i) {
         show_line(ctx, i);
         target_wait_us(ctx->delay >> 10);
-        for (int i = 0; i < ctx->num_cached; ++i) {
-            show_line(ctx, i);
-            target_wait_us(ctx->delay >> 10);
-        }
     }
+    turn_off(ctx);
 #endif
 }
 

@@ -54,12 +54,19 @@ void pwm_set_duty(uint8_t pwm_id, uint32_t duty);
 void pwm_enable(uint8_t pwm_id, bool enabled);
 
 // display.c
+#ifndef DISP_LIGHT_SENSE
+#define DISP_LIGHT_SENSE 1
+#endif
 void disp_show(uint8_t *img);
 void disp_refresh(void);
 void disp_sleep(void);
+#if DISP_LIGHT_SENSE
 int disp_light_level(void);
 void disp_set_dark_level(int v);
 int disp_get_dark_level(void);
+#else
+void disp_set_brigthness(uint16_t v);
+#endif
 
 // target_utils.c
 void target_reset(void);
