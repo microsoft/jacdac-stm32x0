@@ -13,6 +13,7 @@ static const struct TimDesc tims[] = {
     {TIM1, 2, RCC_APBENR2_TIM1EN},   //
     {TIM14, 2, RCC_APBENR2_TIM14EN}, //
     {TIM16, 2, RCC_APBENR2_TIM16EN}, //
+    {TIM17, 2, RCC_APBENR2_TIM17EN}, //
     {TIM3, 1, RCC_APBENR1_TIM3EN},   //
 #ifdef TIM2
     {TIM2, 1, RCC_APBENR1_TIM2EN},
@@ -56,6 +57,9 @@ static const struct PinPWM pins[] = {
     {PA_7, 2, LL_GPIO_AF_1, TIM3},  // rgb led
     {PB_0, 3, LL_GPIO_AF_1, TIM3},  // rgb led
     {PB_1, 4, LL_GPIO_AF_1, TIM3},  // rgb led
+#ifdef SYSTIM_ON_TIM14
+    {PB_9, 1, LL_GPIO_AF_2, TIM17}, // rgb led
+#endif
     {PB_8, 1, LL_GPIO_AF_2, TIM16}, // rgb led
     {PA_10, 3, LL_GPIO_AF_2, TIM1}, //
     {PA_8, 1, LL_GPIO_AF_2, TIM1},  // rotary
@@ -133,7 +137,7 @@ uint8_t pwm_init(uint8_t pin, uint32_t period, uint32_t duty, uint8_t prescaler)
     LL_TIM_GenerateEvent_UPDATE(TIMx);
     LL_TIM_EnableARRPreload(TIMx);
 
-    if (TIMx == TIM1 || TIMx == TIM16)
+    if (TIMx == TIM1 || TIMx == TIM16 || TIMx == TIM17)
         TIMx->BDTR |= TIM_BDTR_MOE;
 
     uint32_t mode = LL_TIM_OCMODE_PWM1;

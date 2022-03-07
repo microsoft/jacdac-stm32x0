@@ -1,9 +1,16 @@
 #include "jdstm.h"
 
+#ifdef SYSTIM_ON_TIM14
+#define TIMx TIM14
+#define TIMx_IRQn TIM14_IRQn
+#define TIMx_IRQHandler TIM14_IRQHandler
+#define TIMx_CLK_EN() __HAL_RCC_TIM14_CLK_ENABLE()
+#else
 #define TIMx TIM17
 #define TIMx_IRQn TIM17_IRQn
 #define TIMx_IRQHandler TIM17_IRQHandler
 #define TIMx_CLK_EN() __HAL_RCC_TIM17_CLK_ENABLE()
+#endif
 
 static volatile int64_t timeoff;
 static volatile cb_t timer_cb;
