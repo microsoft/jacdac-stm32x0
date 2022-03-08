@@ -190,6 +190,8 @@ void disp_show(uint8_t *img) {
 #if !DISP_LIGHT_SENSE
 void disp_set_brigthness(uint16_t v) {
     ctx_.dark_level = v;
+    measure_light(&ctx_);
+    ctx_.delay = ctx_.target_delay;
 }
 #else
 void disp_set_dark_level(int v) {
