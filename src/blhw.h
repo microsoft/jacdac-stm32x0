@@ -6,7 +6,10 @@
 #include "hwconfig.h"
 #include "services/interfaces/jd_pins.h"
 
-#define RAM_FUNC __attribute__((noinline, long_call, section(".data")))
+// without #, GCC now appends "aw",@progbits' 
+// with the #, GCC comments out this appended directive
+// see: https://gcc.gnu.org/legacy-ml/gcc-help/2010-09/msg00088.html
+#define RAM_FUNC __attribute__((noinline, long_call, section(".data#")))
 
 // init.c
 bool clk_is_pll(void);
@@ -46,7 +49,7 @@ struct bl_info_block {
 extern struct bl_info_block bl_info;
 #define bl_dev_info bl_info.devinfo
 
-STATIC_ASSERT(sizeof(struct device_info_block) == 16);
+STATIC_ASSERT_EXT(sizeof(struct device_info_block) == 16, BL_HW);
 
 struct app_top_handlers {
     uint32_t stack_bottom;
