@@ -6,10 +6,16 @@
 #elif PIN_ASCK == PA_0
 #define SPI_IDX 2
 #else
-    #error "Please add pin mapping for STM32G0 SPI"
+#error "Please add pin mapping for STM32G0 SPI"
 #endif
 #elif defined(STM32F031x6) || defined(STM32F030x4) || !defined(SPI2)
 #define SPI_IDX 1
+#elif defined(STM32WL)
+#if PIN_ASCK == PB_13
+#define SPI_IDX 2
+#else
+#error "pin mapping missing for STM32WL"
+#endif
 #else
 #define SPI_IDX 2
 #endif
@@ -35,7 +41,6 @@
 #if PIN_ASCK == PA_5
 #define PIN_AF LL_GPIO_AF_0
 STATIC_ASSERT(PIN_ASCK == PA_5);
-
 STATIC_ASSERT(PIN_AMOSI == PA_7 || PIN_AMOSI == PA_2);
 #if SPI_RX
 STATIC_ASSERT(PIN_AMISO == PA_6);
@@ -50,9 +55,12 @@ STATIC_ASSERT(PIN_AMISO == PA_6);
 #else
 #error "not supported"
 #endif
+
 #elif SPI_IDX == 2
 #define SPI_CLK_ENABLE __HAL_RCC_SPI2_CLK_ENABLE
-#if defined(STM32G031xx)
+#if defined(STM32WL)
+#define PIN_AF LL_GPIO_AF_5
+#elif defined(STM32G031xx)
 #if PIN_ASCK == PA_0
 #define PIN_AF LL_GPIO_AF_0
 #define PIN_AF_MOSI LL_GPIO_AF_1
@@ -69,17 +77,14 @@ STATIC_ASSERT(PIN_AMISO == -1);
 #error "not supported"
 #define SPI_CLK_ENABLE __HAL_RCC_SPI2_CLK_ENABLE
 #ifdef STM32G0
-#define PIN_SCK LL_GPIO_PIN_8
-#define PIN_MOSI LL_GPIO_PIN_7
 #define PIN_AF LL_GPIO_AF_1
 #else
-#define PIN_SCK LL_GPIO_PIN_13
-#define PIN_MOSI LL_GPIO_PIN_15
 #define PIN_AF LL_GPIO_AF_0
 #endif
 #endif
+
 #else
-#error "bad spi"
+#error "bad spi IDX"
 #endif
 
 #ifdef STM32G0
@@ -93,8 +98,12 @@ STATIC_ASSERT(PIN_AMISO == -1);
 #define DMA_IRQn DMA1_Channel1_IRQn
 #define DMA_Handler DMA1_Channel1_IRQHandler
 #endif
+#elif defined(STM32WL)
+#define DMA_CH_TX LL_DMA_CHANNEL_1
+#define DMA_CH_RX LL_DMA_CHANNEL_2
+#define DMA_IRQn DMA1_Channel1_IRQn
+#define DMA_Handler DMA1_Channel1_IRQHandler
 #else
-
 #if SPI_IDX == 1
 #define DMA_CH_RX LL_DMA_CHANNEL_2
 #define DMA_CH_TX LL_DMA_CHANNEL_3
@@ -115,13 +124,13 @@ STATIC_ASSERT(PIN_AMISO == -1);
 #define DMA_FLAG_HT DMA_ISR_HTIF1
 #define DMA_FLAG_TE DMA_ISR_TEIF1
 
-#ifdef STM32G0
+#if defined(STM32G0) || defined(STM32WL)
 static inline void dma_clear_flag(int flag) {
-    WRITE_REG(DMA1->IFCR, flag << ((DMA_CH_TX) * 4));
+    WRITE_REG(DMA1->IFCR, flag << ((DMA_CH_TX)*4));
 }
 
 static inline bool dma_has_flag(int flag) {
-    return (READ_BIT(DMA1->ISR, flag << ((DMA_CH_TX) * 4)) != 0);
+    return (READ_BIT(DMA1->ISR, flag << ((DMA_CH_TX)*4)) != 0);
 }
 #else
 static inline void dma_clear_flag(int flag) {
@@ -138,7 +147,8 @@ static inline void spi_init0(void) {
     DMA_CLK_ENABLE();
 
     LL_SPI_Disable(SPIx);
-    while(LL_SPI_IsEnabled(SPIx) == 1);
+    while (LL_SPI_IsEnabled(SPIx) == 1)
+        ;
 
     pin_setup_output_af(PIN_ASCK, PIN_AF);
 
@@ -191,4 +201,3 @@ static inline void spi_init1(void) {
     NVIC_SetPriority(IRQn, IRQ_PRIORITY_DMA);
     NVIC_EnableIRQ(IRQn);
 }
-

@@ -20,11 +20,6 @@ void dspi_init(bool slow, int cpol, int cpha);
 void dspi_tx(const void *data, uint32_t numbytes, cb_t doneHandler);
 void dspi_xfer(const void *txdata, void *rxdata, uint32_t numbytes, cb_t doneHandler);
 
-// sspi.c (sync-SPI)
-void sspi_init(void);
-void sspi_tx(uint8_t *data, uint32_t numbytes);
-void sspi_rx(uint8_t *buf, uint32_t numbytes);
-
 #define LIGHT_TYPE_APA_MASK 0x10
 #define LIGHT_TYPE_WS2812B_GRB 0x00
 #define LIGHT_TYPE_APA102 0x10
