@@ -161,6 +161,13 @@ flash: prep-built-gdb
 ifeq ($(BMP),)
 	$(OPENOCD) -c "program $(ELF) verify reset exit"
 else
+ifneq ($(HARD_ERASE),)
+	#echo "monitor option erase" >> built/debug.gdb
+	echo "monitor option write 0x3FFFF0AA" >> built/debug.gdb
+	echo "detach" >> built/debug.gdb
+	echo "monitor swdp_scan" >> built/debug.gdb
+	echo "attach 1" >> built/debug.gdb
+endif
 ifeq ($(ONCE),)
 	echo "set {int}0xe000ed0c = 0x5fa0004" >> built/debug.gdb
 	echo "detach" >> built/debug.gdb
@@ -191,6 +198,11 @@ ifeq ($(BMP),)
 	echo "target extended-remote | $(OPENOCD) -f $(SCRIPTS)/gdbdebug.cfg" >> built/debug.gdb
 else
 	echo "target extended-remote $(BMP_PORT)" >> built/debug.gdb
+ifneq ($(HARD_ERASE),)
+	echo "monitor connect_srst enable" >> built/debug.gdb
+else
+	echo "monitor connect_srst disable" >> built/debug.gdb
+endif
 	echo "monitor swdp_scan" >> built/debug.gdb
 	echo "attach 1" >> built/debug.gdb
 endif

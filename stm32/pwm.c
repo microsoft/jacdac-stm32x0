@@ -82,6 +82,8 @@ static const struct PinPWM pins[] = {
     {PA_7, 1, LL_GPIO_AF_4, TIM14}, // servo
 #elif defined(STM32WL)
     {PA_0, 1, LL_GPIO_AF_1, TIM2},
+    {PA_3, 4, LL_GPIO_AF_1, TIM2},
+    {PB_10, 3, LL_GPIO_AF_1, TIM2},
 // ...
 #else
 #error "missing"
