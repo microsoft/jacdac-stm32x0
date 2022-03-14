@@ -7,7 +7,7 @@
 #include "services/interfaces/jd_pins.h"
 #include "services/interfaces/jd_flash.h"
 
-// without #, GCC now appends "aw",@progbits' 
+// without #, GCC now appends "aw",@progbits'
 // with the #, GCC comments out this appended directive
 // see: https://gcc.gnu.org/legacy-ml/gcc-help/2010-09/msg00088.html
 #define RAM_FUNC __attribute__((noinline, long_call, section(".data#")))
@@ -17,8 +17,8 @@ bool clk_is_pll(void);
 void clk_set_pll(int on);
 void clk_setup_pll(void);
 
-void jd_panic(void);
-void target_reset(void);
+__attribute__((noreturn)) void jd_panic(void);
+__attribute__((noreturn)) void target_reset(void);
 void target_wait_us(uint32_t n);
 
 #define DEV_INFO_MAGIC 0xf6a0e4b6
