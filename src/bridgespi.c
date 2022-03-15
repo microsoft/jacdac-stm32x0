@@ -8,7 +8,7 @@
 #define TXQ_SIZE 1024
 #define RXQ_SIZE 1024
 
-static queue_t tx_q;
+static jd_queue_t tx_q;
 
 #if JD_RAW_FRAME
 uint8_t rawFrameSending;
@@ -27,7 +27,7 @@ struct srv_state {
     uint32_t connected_blink_end;
 
     // uint8_t rx_size, shift, skip_one;
-    queue_t rx_q;
+    jd_queue_t rx_q;
 
     uint8_t spi_host[XFER_SIZE];   // host sends it
     uint8_t spi_bridge[XFER_SIZE]; // we send it
@@ -74,14 +74,14 @@ static void setup_xfer(srv_t *state) {
     int dst = 0;
     jd_frame_t *frame = NULL;
     while (dst < XFER_SIZE) {
-        frame = queue_front(state->rx_q);
+        frame = jd_queue_front(state->rx_q);
         if (!frame)
             break;
         int sz = JD_FRAME_SIZE(frame);
         sz = (sz + 3) & ~3;
         memcpy(&state->spi_bridge[dst], frame, sz);
         dst += sz;
-        queue_shift(state->rx_q);
+        jd_queue_shift(state->rx_q);
         has_rx = 1;
     }
 
@@ -104,7 +104,7 @@ static void setup_xfer(srv_t *state) {
     state->spi_host[2] = 0xff;
     spis_xfer(state->spi_bridge, state->spi_host, XFER_SIZE, spi_done_handler);
 
-    pin_set(PIN_BR_TX_READY, queue_will_fit(tx_q, sizeof(XFER_SIZE)));
+    pin_set(PIN_BR_TX_READY, jd_queue_will_fit(tx_q, sizeof(XFER_SIZE)));
     pin_set(PIN_BR_RX_READY, has_rx);
     target_enable_irq();
 }
@@ -124,7 +124,7 @@ void bridge_forward_frame(jd_frame_t *frame) {
     target_disable_irq();
     if (state->rx_dst + sz > XFER_SIZE || state->spi_host[2] != 0xff) {
         state->rx_dst = XFER_SIZE;
-        queue_push(state->rx_q, frame);
+        jd_queue_push(state->rx_q, frame);
     } else {
         sz = (sz + 3) & ~3;
         memcpy(&state->spi_bridge[state->rx_dst], frame, sz);
@@ -164,7 +164,7 @@ void bridge_init(void) {
     pin_setup_output(PIN_BR_TX_READY);
     pin_setup_output(PIN_BR_RX_READY);
 
-    state->rx_q = queue_alloc(RXQ_SIZE);
+    state->rx_q = jd_queue_alloc(RXQ_SIZE);
     state->enabled = 1;
     _state = state;
 
@@ -175,16 +175,16 @@ void bridge_init(void) {
 static bool isSending;
 
 int jd_tx_is_idle() {
-    return !isSending && queue_front(tx_q) == NULL;
+    return !isSending && jd_queue_front(tx_q) == NULL;
 }
 
 void jd_tx_init(void) {
-    tx_q = queue_alloc(TXQ_SIZE);
+    tx_q = jd_queue_alloc(TXQ_SIZE);
 }
 
 void jd_send_low(jd_frame_t *f) {
     jd_compute_crc(f);
-    queue_push(tx_q, f);
+    jd_queue_push(tx_q, f);
     jd_packet_ready();
 }
 
@@ -218,7 +218,7 @@ jd_frame_t *jd_tx_get_frame(void) {
         return r;
     }
 #endif
-    jd_frame_t *f = queue_front(tx_q);
+    jd_frame_t *f = jd_queue_front(tx_q);
     if (f)
         isSending = true;
     return f;
@@ -233,8 +233,8 @@ void jd_tx_frame_sent(jd_frame_t *pkt) {
     }
 #endif
     isSending = false;
-    queue_shift(tx_q);
-    if (queue_front(tx_q))
+    jd_queue_shift(tx_q);
+    if (jd_queue_front(tx_q))
         jd_packet_ready(); // there's more to do
 }
 

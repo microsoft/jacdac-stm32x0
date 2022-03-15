@@ -14,7 +14,7 @@ struct _queue {
 
 #define FRM_SIZE(f) ((JD_FRAME_SIZE(f) + 3) & ~3)
 
-int queue_will_fit(queue_t q, unsigned size) {
+int jd_queue_will_fit(jd_queue_t q, unsigned size) {
     int ret;
     target_disable_irq();
     if (q->front <= q->back) {
@@ -26,7 +26,7 @@ int queue_will_fit(queue_t q, unsigned size) {
     return ret;
 }
 
-int queue_push(queue_t q, jd_frame_t *pkt) {
+int jd_queue_push(jd_queue_t q, jd_frame_t *pkt) {
     if (pkt->size == 0)
         jd_panic();
 
@@ -62,7 +62,7 @@ int queue_push(queue_t q, jd_frame_t *pkt) {
     return ret;
 }
 
-jd_frame_t *queue_front(queue_t q) {
+jd_frame_t *jd_queue_front(jd_queue_t q) {
     if (q->front != q->back) {
         if (q->front >= q->curr_size)
             return (jd_frame_t *)(q->data);
@@ -72,8 +72,8 @@ jd_frame_t *queue_front(queue_t q) {
         return NULL;
 }
 
-void queue_shift(queue_t q) {
-    jd_frame_t *pkt = queue_front(q);
+void jd_queue_shift(jd_queue_t q) {
+    jd_frame_t *pkt = jd_queue_front(q);
     ASSERT(pkt != NULL);
     unsigned size = FRM_SIZE(pkt);
     if (q->front >= q->curr_size) {
@@ -85,16 +85,16 @@ void queue_shift(queue_t q) {
     }
 }
 
-queue_t queue_alloc(unsigned size) {
-    queue_t q = jd_alloc(sizeof(*q) + size);
+jd_queue_t jd_queue_alloc(unsigned size) {
+    jd_queue_t q = jd_alloc(sizeof(*q) + size);
     q->size = q->curr_size = size;
     q->front = q->back = 0;
     return q;
 }
 
 #define TEST_SIZE 512
-void queue_test() {
-    queue_t q = queue_alloc(TEST_SIZE);
+void jd_queue_test() {
+    jd_queue_t q = jd_queue_alloc(TEST_SIZE);
     int push = 0;
     int shift = 0;
     int len = 0;
@@ -108,7 +108,7 @@ void queue_test() {
                 sz = 12;
             frm.size = sz;
             DMESG("push %d %d", push, frm.size);
-            if (queue_push(q, &frm) == 0) {
+            if (jd_queue_push(q, &frm) == 0) {
                 push++;
                 len += FRM_SIZE(&frm);
             } else {
@@ -116,7 +116,7 @@ void queue_test() {
                 ASSERT(len + JD_FRAME_SIZE(&frm) > TEST_SIZE - 255);
             }
         } else {
-            jd_frame_t *f = queue_front(q);
+            jd_frame_t *f = jd_queue_front(q);
             if (shift == push) {
                 ASSERT(f == NULL);
             } else {
@@ -126,7 +126,7 @@ void queue_test() {
                 shift++;
                 for (int i = 0; i < f->size; ++i)
                     ASSERT(f->data[i] == 0);
-                queue_shift(q);
+                jd_queue_shift(q);
             }
         }
     }

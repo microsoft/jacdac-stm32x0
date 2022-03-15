@@ -10,7 +10,7 @@ struct srv_state {
 
     uint8_t pin_cs, pin_txrq;
     uint8_t rx_size, shift, skip_one;
-    queue_t rx_q;
+    jd_queue_t rx_q;
     uint32_t next_send;
     jd_frame_t spi_rx;
 };
@@ -51,7 +51,7 @@ static void spi_done_handler(void) {
         pwr_leave_tim();
 
         if (state->shift)
-            queue_shift(state->rx_q);
+            jd_queue_shift(state->rx_q);
 
         if (4 <= state->spi_rx.size && state->spi_rx.size <= 240) {
             if (state->spi_rx.flags & JD_FRAME_FLAG_LOOPBACK) {
@@ -92,7 +92,7 @@ static void xchg(srv_t *state) {
     }
 
     // tim_max_sleep = 0; // TODO work on power consumption
-    jd_frame_t *fwd = queue_front(state->rx_q);
+    jd_frame_t *fwd = jd_queue_front(state->rx_q);
     int size = 32;
     if (fwd && JD_FRAME_SIZE(fwd) > size)
         size = JD_FRAME_SIZE(fwd);
@@ -131,12 +131,12 @@ void bridge_forward_frame(jd_frame_t *frame) {
                 }
             }
         }
-        queue_push(_state->rx_q, frame);
+        jd_queue_push(_state->rx_q, frame);
     }
 }
 
 void bridge_process(srv_t *state) {
-    if (queue_front(state->rx_q) || (!in_future(state->next_send) && pin_get(state->pin_txrq) == 0))
+    if (jd_queue_front(state->rx_q) || (!in_future(state->next_send) && pin_get(state->pin_txrq) == 0))
         xchg(state);
 }
 
@@ -154,25 +154,25 @@ void bridge_init(uint8_t pin_cs, uint8_t pin_txrq) {
     pin_setup_output(pin_cs);
     state->pin_txrq = pin_txrq;
     pin_setup_input(pin_txrq, PIN_PULL_UP);
-    state->rx_q = queue_alloc(512);
+    state->rx_q = jd_queue_alloc(512);
     _state = state;
 }
 
 // alternative tx_Q impl.
-static queue_t tx_q;
+static jd_queue_t tx_q;
 static bool isSending;
 
 int jd_tx_is_idle() {
-    return !isSending && queue_front(tx_q) == NULL;
+    return !isSending && jd_queue_front(tx_q) == NULL;
 }
 
 void jd_tx_init(void) {
-    tx_q = queue_alloc(512);
+    tx_q = jd_queue_alloc(512);
 }
 
 void jd_send_low(jd_frame_t *f) {
     jd_compute_crc(f);
-    queue_push(tx_q, f);
+    jd_queue_push(tx_q, f);
     jd_packet_ready();
 }
 
@@ -190,7 +190,7 @@ int jd_send(unsigned service_num, unsigned service_cmd, const void *data, unsign
     f->device_identifier = jd_device_id();
     jd_send_low(f);
     if (_state) {
-        queue_push(_state->rx_q, f); // also forward packets we generate ourselves
+        jd_queue_push(_state->rx_q, f); // also forward packets we generate ourselves
         _state->skip_one = 1;
     }
 
@@ -207,7 +207,7 @@ void jd_send_event_ext(srv_t *srv, uint32_t eventid, uint32_t arg) {
 
 // bridge between phys and queue imp, phys calls this to get the next frame.
 jd_frame_t *jd_tx_get_frame(void) {
-    jd_frame_t *f = queue_front(tx_q);
+    jd_frame_t *f = jd_queue_front(tx_q);
     if (f)
         isSending = true;
     return f;
@@ -216,8 +216,8 @@ jd_frame_t *jd_tx_get_frame(void) {
 // bridge between phys and queue imp, marks as sent.
 void jd_tx_frame_sent(jd_frame_t *pkt) {
     isSending = false;
-    queue_shift(tx_q);
-    if (queue_front(tx_q))
+    jd_queue_shift(tx_q);
+    if (jd_queue_front(tx_q))
         jd_packet_ready(); // there's more to do
 }
 
