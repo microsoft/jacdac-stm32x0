@@ -23,6 +23,7 @@ CFLAGS = $(DEFINES) \
 	-mthumb -mfloat-abi=soft  \
 	-Os -g3 -DSTM32X=1 \
 	-Wall -Wextra -Wno-unused-parameter -Wno-shift-negative-value -Wstrict-prototypes \
+	-Wno-zero-length-bounds \
 	-ffunction-sections -nostartfiles \
 	$(WARNFLAGS) $(USERFLAGS)
 CONFIG_DEPS = \
@@ -107,6 +108,15 @@ C_SRC += $(JD_STM)/bl/blutils.c
 C_SRC += $(JD_STM)/bl/blpwm.c
 C_SRC += $(JD_STM)/bl/blled.c
 C_SRC += $(wildcard $(JD_STM)/blup/*.c)
+endif
+
+ifeq ($(APP)$(JD_CLIENT),11)
+DEFINES += -DJD_CLIENT=1
+C_SRC += $(wildcard $(JD_CORE)/client/*.c)
+C_SRC += $(wildcard $(JD_CORE)/jacscript/*.c)
+CONFIG_DEPS += \
+	$(wildcard $(JD_CORE)/client/*.h) \
+	$(wildcard $(JD_CORE)/jacscript/*.h)
 endif
 
 ELF = $(BUILT_BIN)/$(PREF)-$(PROF).elf
