@@ -37,15 +37,6 @@ inline int min(int v1, int v2) {
         jd_panic()
 
 
-typedef struct _queue *jd_queue_t;
-
-jd_queue_t jd_queue_alloc(unsigned size);
-int jd_queue_push(jd_queue_t q, jd_frame_t *pkt);
-jd_frame_t *jd_queue_front(jd_queue_t q);
-void jd_queue_shift(jd_queue_t q);
-void jd_queue_test(void);
-int jd_queue_will_fit(jd_queue_t q, unsigned size);
-
 void ns_init(void);
 void ns_set(uint64_t key, const char *name);
 const char *ns_get(uint64_t key);
