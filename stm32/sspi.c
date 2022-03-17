@@ -8,8 +8,12 @@
 #ifdef PIN_SSCK
 
 #define PIN_ASCK PIN_SSCK
-#define PIN_AMISO PIN_SMISO
 #define PIN_AMOSI PIN_SMOSI
+
+#if SPI_RX
+#define PIN_AMISO PIN_SMISO
+#endif
+
 #include "spidef.h"
 
 // this is only enabled for error events
@@ -31,7 +35,10 @@ void sspi_init(bool slow, int cpol, int cpha) {
     pin_setup_output_af(PIN_SMOSI, PIN_AF);
 #endif
 
+#if SPI_RX
     pin_setup_output_af(PIN_SMISO, PIN_AF);
+#endif
+
     LL_SPI_Disable(SPIx);
 
     uint32_t params = 0;
@@ -67,6 +74,7 @@ void sspi_tx(const uint8_t *data, uint32_t numbytes) {
         ;
 }
 
+#if SPI_RX
 void sspi_rx(uint8_t *buf, uint32_t numbytes) {
     // flush input fifo
     while (LL_SPI_GetRxFIFOLevel(SPIx) != LL_SPI_RX_FIFO_EMPTY)
@@ -90,4 +98,5 @@ void sspi_rx(uint8_t *buf, uint32_t numbytes) {
     if (buf - buf0 != (int)numbytes0)
         hw_panic();
 }
+#endif
 #endif
