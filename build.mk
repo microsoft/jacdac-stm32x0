@@ -7,6 +7,8 @@ ifeq ($(TARGET),)
 $(error Define 'TRG = jm-v2.0 npx' or similar, best in Makefile.user)
 endif
 
+UNAME:=$(shell uname -m)
+
 FORCE ?=
 
 SCRIPTS = $(JD_STM)/scripts
@@ -307,7 +309,12 @@ endif
 
 $(BUILT_BIN)/$(PREF)-%.elf: $(PROF_DEP)-%.o $(OBJ) Makefile $(LD_SCRIPT) $(SCRIPTS)/patch-bin.js $(FORCE)
 	@echo LD $@
-	$(V)$(CC) $(CFLAGS) $(LDFLAGS) -Wl,-Map=$@.map  -o $@ $(OBJ) $< -lm
+ifeq ($(UNAME), x86_64)
+	@echo $(CFLAGS) $(LDFLAGS) -Wl,-Map=$@.map $(OBJ) $< > built/comp-flags.txt
+	$(V)$(CC) @built/comp-flags.txt -o $@  -lm
+else
+	$(V)$(CC) $(CFLAGS) $(LDFLAGS) -Wl,-Map=$@.map  -o $@ $(OBJ) $< -lm;
+endif
 ifeq ($(NOBL),)
 	@echo BIN-PATCH $@
 	$(V)node $(SCRIPTS)/patch-bin.js -q $@ $(FLASH_SIZE) $(BL_SIZE) targets/$(TARGET)/profile $(PAGE_SIZE) blup=$(BLUP)
