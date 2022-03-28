@@ -313,7 +313,7 @@ ifeq ($(UNAME), x86_64)
 	@echo $(CFLAGS) $(LDFLAGS) -Wl,-Map=$@.map $(OBJ) $< > built/comp-flags.txt
 	$(V)$(CC) @built/comp-flags.txt -o $@  -lm
 else
-	$(V)$(CC) $(CFLAGS) $(LDFLAGS) -Wl,-Map=$@.map  -o $@ $(OBJ) $< -lm;
+	$(V)$(CC) $(CFLAGS) $(LDFLAGS) -Wl,-Map=$@.map  -o $@ $(OBJ) $< -lm
 endif
 ifeq ($(NOBL),)
 	@echo BIN-PATCH $@
