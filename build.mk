@@ -307,7 +307,12 @@ endif
 
 $(BUILT_BIN)/$(PREF)-%.elf: $(PROF_DEP)-%.o $(OBJ) Makefile $(LD_SCRIPT) $(SCRIPTS)/patch-bin.js $(FORCE)
 	@echo LD $@
+ifeq ($(OS), Windows_NT)
+	@echo $(OBJ) $< -lm > built/comp-flags.txt
+	$(V)$(CC) $(CFLAGS) $(LDFLAGS) -Wl,-Map=$@.map -o $@ @built/comp-flags.txt
+else
 	$(V)$(CC) $(CFLAGS) $(LDFLAGS) -Wl,-Map=$@.map  -o $@ $(OBJ) $< -lm
+endif
 ifeq ($(NOBL),)
 	@echo BIN-PATCH $@
 	$(V)node $(SCRIPTS)/patch-bin.js -q $@ $(FLASH_SIZE) $(BL_SIZE) targets/$(TARGET)/profile $(PAGE_SIZE) blup=$(BLUP)
