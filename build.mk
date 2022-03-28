@@ -7,8 +7,6 @@ ifeq ($(TARGET),)
 $(error Define 'TRG = jm-v2.0 npx' or similar, best in Makefile.user)
 endif
 
-UNAME:=$(shell uname -m)
-
 FORCE ?=
 
 SCRIPTS = $(JD_STM)/scripts
