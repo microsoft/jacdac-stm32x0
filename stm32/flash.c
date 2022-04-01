@@ -20,7 +20,7 @@ static void unlock(void) {
         FLASH->KEYR = 0x45670123;
         FLASH->KEYR = 0xCDEF89AB;
     }
-    FLASH->SR = FLASH_SR_EOP;
+    FLASH->SR = FLASH_SR_EOP; // write to clear
     FLASH->CR &= ~(FLASH_CR_PG | FLASH_CR_PER | FLASH_CR_STRT);
 #if NEW_FLASH
     // this is required for the EOP/error bit to be set
@@ -35,17 +35,20 @@ static void lock(void) {
 
 static void check_eop(void) {
     WAIT_BUSY();
+    // EOP should be set when not busy anymore
     if (FLASH->SR & FLASH_SR_EOP)
-        FLASH->SR = FLASH_SR_EOP;
+        FLASH->SR = FLASH_SR_EOP; // OK, write to clear
     else
-        jd_panic();
+        jd_panic(); // otherwise, whoops!
 }
 
 void flash_program(void *dst, const void *src, uint32_t len) {
 #if NEW_FLASH
+    // G0/WL flash requires 64 bit writes
     if ((((uint32_t)dst) & 7) || (((uint32_t)src) & 3) || (len & 7))
         jd_panic();
 #else
+    // F0 flash can handle 16 bit writes
     if ((((uint32_t)dst) & 1) || (((uint32_t)src) & 1) || (len & 1))
         jd_panic();
 #endif
@@ -58,6 +61,7 @@ void flash_program(void *dst, const void *src, uint32_t len) {
     __IO uint32_t *dp = dst;
     const uint32_t *sp = src;
     while (len--) {
+        // check if dp[0/1] == 0xffffffff
         int erased = dp[0] + 1 == 0 && dp[1] + 1 == 0;
         if (!erased && (sp[0] || sp[1]))
             jd_panic();
