@@ -49,7 +49,7 @@ void codal_vdmesg(const char *format, va_list ap) {
     // if (format[0] == '!')
     //    pin_pulse(PIN_X0, 1);
     char tmp[80];
-    codal_vsprintf(tmp, sizeof(tmp) - 1, format, ap);
+    jd_vsprintf(tmp, sizeof(tmp) - 1, format, ap);
     int len = strlen(tmp);
 #if JD_LORA
     while (len && (tmp[len - 1] == '\r' || tmp[len - 1] == '\n'))
@@ -62,94 +62,4 @@ void codal_vdmesg(const char *format, va_list ap) {
 
 #endif
 
-static void writeNum(char *buf, uint32_t n, bool full) {
-    int i = 0;
-    int sh = 28;
-    while (sh >= 0) {
-        int d = (n >> sh) & 0xf;
-        if (full || d || sh == 0 || i) {
-            buf[i++] = d > 9 ? 'A' + d - 10 : '0' + d;
-        }
-        sh -= 4;
-    }
-    buf[i] = 0;
-}
 
-#define WRITEN(p, sz_)                                                                             \
-    do {                                                                                           \
-        sz = sz_;                                                                                  \
-        ptr += sz;                                                                                 \
-        if (ptr < dstsize) {                                                                       \
-            memcpy(dst + ptr - sz, p, sz);                                                         \
-            dst[ptr] = 0;                                                                          \
-        }                                                                                          \
-    } while (0)
-
-int codal_vsprintf(char *dst, unsigned dstsize, const char *format, va_list ap) {
-    const char *end = format;
-    unsigned ptr = 0, sz;
-    char buf[16];
-
-    for (;;) {
-        char c = *end++;
-        if (c == 0 || c == '%') {
-            if (format != end)
-                WRITEN(format, end - format - 1);
-            if (c == 0)
-                break;
-
-            uint32_t val = va_arg(ap, uint32_t);
-#if JD_LORA
-            uint8_t fmtc = 0;
-            while ('0' <= *end && *end <= '9')
-                fmtc = *end++;
-#endif
-            c = *end++;
-            buf[1] = 0;
-            switch (c) {
-            case 'c':
-                buf[0] = val;
-                break;
-            case 'd':
-                itoa10(val, buf);
-                break;
-            case 'x':
-            case 'p':
-            case 'X':
-                buf[0] = '0';
-                buf[1] = 'x';
-                writeNum(buf + 2, val, c != 'x');
-#if JD_LORA
-                if (c == 'X' && fmtc == '2') {
-                    buf[0] = buf[8];
-                    buf[1] = buf[9];
-                    buf[2] = 0;
-                }
-#endif
-                break;
-            case 's':
-                WRITEN((char *)(void *)val, strlen((char *)(void *)val));
-                buf[0] = 0;
-                break;
-            case '%':
-                buf[0] = c;
-                break;
-            default:
-                buf[0] = '?';
-                break;
-            }
-            format = end;
-            WRITEN(buf, strlen(buf));
-        }
-    }
-
-    return ptr;
-}
-
-int codal_sprintf(char *dst, unsigned dstsize, const char *format, ...) {
-    va_list arg;
-    va_start(arg, format);
-    int r = codal_vsprintf(dst, dstsize, format, arg);
-    va_end(arg);
-    return r;
-}

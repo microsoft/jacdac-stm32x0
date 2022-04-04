@@ -22,8 +22,6 @@ void tim_set_timer(int delta, cb_t cb);
 #define RTC_ALRM_US 10000
 
 // utils.c
-int itoa10(int n, char *s);
-int string_reverse(char *s);
 uint32_t random_int(uint32_t max);
 inline int max(int v1, int v2) {
     return (v1 > v2) ? v1 : v2;

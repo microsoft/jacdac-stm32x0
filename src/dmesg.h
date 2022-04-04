@@ -70,7 +70,4 @@ void codal_vdmesg(const char *format, va_list ap);
 
 #endif
 
-int codal_vsprintf(char *dst, unsigned dstsize, const char *format, va_list ap);
-int codal_sprintf(char *dst, unsigned dstsize, const char *format, ...);
-
 #endif
