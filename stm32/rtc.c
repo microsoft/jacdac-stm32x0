@@ -47,7 +47,7 @@ static ctx_t ctx_;
 uint32_t rtc_get_seconds(void) {
     uint32_t t = RTC->TR;
     uint32_t d = RTC->DR;
-    DMESG("rtc %x %x", d, t);
+    DMESG("rtc %x %x", (unsigned)d, (unsigned)t);
     uint32_t d0 = (BCD(d >> 0, 2) - 1) + 30 * (BCD(d >> 8, 1) - 1) + 365 * BCD(d >> 16, 4);
     uint32_t r = BCD(t >> 0, 3) + 60 * (BCD(t >> 8, 3) + 60 * (BCD(t >> 16, 2) + 24 * d0));
     return r;
@@ -254,7 +254,7 @@ void rtc_init() {
     tmp++;
 #endif
     uint32_t h_ms = US_TO_TICKS(1000000);
-    DMESG("rtc: 1s=%d ticks; presc=%d", h_ms, tmp);
+    DMESG("rtc: 1s=%d ticks; presc=%d", (unsigned)h_ms, tmp);
     // we're expecting around 40000, but there's large drift possible
     if (!(30000 <= h_ms && h_ms <= 50000))
         jd_panic();

@@ -27,6 +27,8 @@ struct CodalLogStore
 };
 extern struct CodalLogStore codalLogStore;
 
+#define DMESG_PRINTF_ATTR __attribute__ ((format (printf, 1, 2)))
+
 /**
   * Log formatted message to an internal buffer.
   *
@@ -49,8 +51,8 @@ extern struct CodalLogStore codalLogStore;
   * DMESG("USB: Error #%d at %X", k, ptr);
   * @endcode
   */
-void codal_dmesg(const char *format, ...);
-void codal_dmesgf(const char *format, ...);
+void codal_dmesg(const char *format, ...) DMESG_PRINTF_ATTR;
+void codal_dmesgf(const char *format, ...) DMESG_PRINTF_ATTR;
 
 void codal_dmesg_set_flush_fn(void (*fn)(void));
 void codal_dmesg_flush(void);

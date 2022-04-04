@@ -239,7 +239,7 @@ static void init_lookup(void) {
 
 // this is only enabled for error events
 void IRQHandler(void) {
-    ERROR("SPI %x %x", SPIx->DR, SPIx->SR);
+    ERROR("SPI %x %x", (unsigned)SPIx->DR, (unsigned)SPIx->SR);
 }
 
 void DMA_Handler(void) {

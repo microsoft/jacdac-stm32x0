@@ -88,7 +88,7 @@ static void set_channel(uint32_t chan) {
         while (LL_ADC_IsCalibrationOnGoing(ADC1) != 0)
             ;
         target_wait_us(5); // ADC_DELAY_CALIB_ENABLE_CPU_CYCLES
-        DMESG("ADC calib: %x", ADC1->DR);
+        DMESG("ADC calib: %x", (unsigned)ADC1->DR);
     }
 
     // LL_ADC_SetLowPowerMode(ADC1, LL_ADC_LP_AUTOWAIT_AUTOPOWEROFF);
