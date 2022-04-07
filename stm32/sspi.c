@@ -64,23 +64,24 @@ void sspi_init(bool slow, int cpol, int cpha) {
     LL_SPI_Enable(SPIx);
 }
 
-void sspi_tx(const uint8_t *data, uint32_t numbytes) {
+void sspi_tx(const void *data, uint32_t numbytes) {
+    const uint8_t *p = data;
     while (numbytes--) {
         while (LL_SPI_IsActiveFlag_TXE(SPIx) == 0)
             ;
-        LL_SPI_TransmitData8(SPIx, (uint8_t) * (data++));
+        LL_SPI_TransmitData8(SPIx, *p++);
     }
     while (LL_SPI_IsActiveFlag_BSY(SPIx))
         ;
 }
 
 #if SPI_RX
-void sspi_rx(uint8_t *buf, uint32_t numbytes) {
+void sspi_rx(void *buf0, uint32_t numbytes) {
     // flush input fifo
     while (LL_SPI_GetRxFIFOLevel(SPIx) != LL_SPI_RX_FIFO_EMPTY)
         LL_SPI_ReceiveData8(SPIx);
 
-    uint8_t *buf0 = buf;
+    uint8_t *buf = buf0;
     uint32_t numbytes0 = numbytes;
 
     while (numbytes--) {
