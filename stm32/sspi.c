@@ -23,7 +23,7 @@ void IRQHandler(void) {
     // ERROR("SPI %x %x", SPIx->DR, SPIx->SR);
 }
 
-void sspi_init(bool slow, int cpol, int cpha) {
+void sspi_init(int slow, int cpol, int cpha) {
     SPI_CLK_ENABLE();
 
     pin_setup_output_af(PIN_SSCK, PIN_AF);
@@ -96,7 +96,7 @@ void sspi_rx(void *buf0, uint32_t numbytes) {
     while (LL_SPI_GetRxFIFOLevel(SPIx) != LL_SPI_RX_FIFO_EMPTY)
         *(buf++) = LL_SPI_ReceiveData8(SPIx);
 
-    if (buf - buf0 != (int)numbytes0)
+    if (buf - (uint8_t *)buf0 != (int)numbytes0)
         hw_panic();
 }
 #endif
