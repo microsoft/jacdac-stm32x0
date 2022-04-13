@@ -19,10 +19,7 @@
                 .device_id = 0xffffffffffffffffULL,                                                \
                 .device_class = dev_class,                                                         \
             },                                                                                     \
-        .random_seed0 = 0xffffffff,                                                                \
-        .random_seed1 = 0xffffffff,                                                                \
-        .reserved0 = 0xffffffff,                                                                   \
-        .reserved1 = 0xffffffff,                                                                   \
+        .reserved = {0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff},                              \
     };
 #else
 #define FIRMWARE_IDENTIFIER(dev_class, dev_class_name)                                             \

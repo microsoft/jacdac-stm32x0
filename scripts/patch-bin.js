@@ -99,8 +99,9 @@ if ((w0 & 0xff000000) == 0x20000000) {
     }))
 
 } else if (w0 == DEV_INFO_MAGIC) {
-    log("setting random seed")
-    require("crypto").randomFillSync(buf, pos + 16, 8)
+    // no longer needed
+    // log("setting random seed")
+    // require("crypto").randomFillSync(buf, pos + 16, 8)
 } else {
     throw "can't detect file type"
 }

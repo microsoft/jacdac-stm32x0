@@ -37,10 +37,7 @@ struct device_info_block {
 
 struct bl_info_block {
     struct device_info_block devinfo;
-    uint32_t random_seed0;
-    uint32_t random_seed1;
-    uint32_t reserved0;
-    uint32_t reserved1;
+    uint32_t reserved[4];
 } __attribute__((packed, aligned(4)));
 
 extern struct bl_info_block bl_info;
