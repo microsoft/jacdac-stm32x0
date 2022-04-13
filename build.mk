@@ -194,7 +194,7 @@ endif
 	@echo
 
 flash-loop: all
-	while : ; do make ff && say done ; sleep 2 ; done
+	while : ; do make rc && say done ; sleep 2 ; done
 
 flash-loop-bl: all
 	while : ; do make BL=1 r && sleep 2 && say done ; done
@@ -326,12 +326,8 @@ $(BUILT_BIN)/combined-%.hex: $(BUILT_BIN)/$(PREF)-%.hex
 	@echo COMBINE $@
 	@(cat $< | grep -v '^:0.00000[51]' ; cat $(subst app-,bl-,$<)) > $@
 
-# make sure we re-binary-patch the bootloader on every flash, to get different random seed
 rc: run-combined
-run-combined:
-	touch $(SCRIPTS)/patch-bin.js
-	$(MAKE) $(MAKE_FLAGS) BL=1 $(BUILT_BIN)/combined-$(PROF).hex
-	$(MAKE) $(MAKE_FLAGS) $(BUILT_BIN)/combined-$(PROF).hex
+run-combined: $(BUILT_BIN)/combined-$(PROF).hex
 	$(MAKE) ELF=$(BUILT_BIN)/combined-$(PROF).hex flash
 
 force:
