@@ -20,11 +20,6 @@ void dspi_init(bool slow, int cpol, int cpha);
 void dspi_tx(const void *data, uint32_t numbytes, cb_t doneHandler);
 void dspi_xfer(const void *txdata, void *rxdata, uint32_t numbytes, cb_t doneHandler);
 
-#define LIGHT_TYPE_APA_MASK 0x10
-#define LIGHT_TYPE_WS2812B_GRB 0x00
-#define LIGHT_TYPE_APA102 0x10
-#define LIGHT_TYPE_SK9822 0x11
-
 // spis.c (slave SPI)
 bool spis_seems_connected(void);
 void spis_init(void);

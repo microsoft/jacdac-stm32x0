@@ -1,6 +1,7 @@
 #include "jdstm.h"
 
 #include "services/interfaces/jd_pixel.h"
+#include "services/jd_services.h"
 
 #define CHUNK_LEN 3 * 4 * 2
 #define PX_SCRATCH_LEN (6 * CHUNK_LEN) // 144 bytes
