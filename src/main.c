@@ -77,7 +77,6 @@ void log_pin_set(int line, int v) {
 static void do_nothing(void) {}
 void sleep_forever(void) {
     target_wait_us(500000);
-    jd_status(JD_STATUS_OFF);
     int cnt = 0;
     for (;;) {
         pin_pulse(PIN_P0, 2);

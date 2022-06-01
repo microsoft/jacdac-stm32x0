@@ -271,7 +271,7 @@ $(BUILT)/jd/prof-%.o: targets/$(TARGET)/profile/%.c
 	@mkdir -p $(BUILT)/jd
 	$(V)$(CC) $(CFLAGS) $(CPPFLAGS) -o $@ -c $<
 
-FW_VERSION = $(shell git describe --dirty --tags --match 'v[0-9]*' --always | sed -e 's/^v//; s/-dirty/-'"`date +%Y%m%d-%H%M`/")
+FW_VERSION = $(shell $(JD_CORE)/scripts/git-version.sh)
 
 bump:
 	sh $(SCRIPTS)/bump.sh
