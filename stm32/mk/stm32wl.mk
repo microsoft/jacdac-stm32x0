@@ -27,6 +27,7 @@ $(HALPREF)/stm32wlxx_ll_usart.c \
 $(HALPREF)/stm32wlxx_ll_utils.c \
 
 BMP ?= 1
+FLASH_SETTINGS_SIZE ?= 0
 
 LD_FLASH_SIZE ?= $(FLASH_SIZE)
 
@@ -37,7 +38,7 @@ CPPFLAGS += 	\
 	-I$(PLATFORM)/STM32CubeWL/Drivers/CMSIS/Device/ST/STM32WLxx/Include \
 	-I$(PLATFORM)/cmsis_core/Include
 DEFINES += -DUSE_FULL_LL_DRIVER -DSTM32$(SERIES)
-DEFINES += -D$(MCU) -DJD_FLASH_SIZE="1024*$(FLASH_SIZE)" -DJD_FLASH_PAGE_SIZE=$(PAGE_SIZE) -DBL_SIZE="1024*$(BL_SIZE)"
+DEFINES += -D$(MCU) -DJD_FLASH_SIZE="1024*$(FLASH_SIZE)" -DJD_FLASH_PAGE_SIZE=$(PAGE_SIZE) -DBL_SIZE="1024*$(BL_SIZE)" -DJD_FLASH_SETTINGS_SIZE="1024*$(FLASH_SETTINGS_SIZE)" 
 
 include $(PLATFORM)/mk/lora.mk
 
@@ -46,14 +47,14 @@ include $(PLATFORM)/mk/$(MCU).mk
 CONFIG_DEPS += $(wildcard $(PLATFORM)/mk/*.mk)
 
 LD_SCRIPT = $(BUILT)/linker.ld
-$(BUILT)/linker.ld: $(wildcard $(PLATFORM)/mk/*.mk) Makefile
+$(BUILT)/linker.ld: $(wildcard $(PLATFORM)/mk/*.mk) Makefile targets/$(TARGET)/config.mk
 	mkdir -p $(BUILT)
 	: > $@
 	echo "MEMORY {" >> $@
 	echo "RAM (rwx)   : ORIGIN = 0x20000000, LENGTH = $(RAM_SIZE)K" >> $@
 ifeq ($(BL),)
 # The -12 bytes is required by the flashing process, at least with BMP
-	echo "FLASH (rx)  : ORIGIN = 0x8000000, LENGTH = $(LD_FLASH_SIZE)K - $(BL_SIZE)K - 12" >> $@
+	echo "FLASH (rx)  : ORIGIN = 0x8000000, LENGTH = $(LD_FLASH_SIZE)K - $(BL_SIZE)K - $(FLASH_SETTINGS_SIZE)K - 12" >> $@
 	echo "}" >> $@
 	echo "INCLUDE $(JD_STM)/ld/gcc_arm.ld" >> $@
 else
