@@ -114,6 +114,8 @@ ifeq ($(APP)$(JD_CLIENT),11)
 DEFINES += -DJD_CLIENT=1
 C_SRC += $(wildcard $(JD_CORE)/client/*.c)
 C_SRC += $(wildcard $(JD_CORE)/jacscript/*.c)
+C_SRC += $(JD_CORE)/jacdac/dist/c/jd_spec_pack.c
+CPPFLAGS += -I$(JD_CORE)/jacscript
 CONFIG_DEPS += \
 	$(wildcard $(JD_CORE)/client/*.h) \
 	$(wildcard $(JD_CORE)/jacscript/*.h)

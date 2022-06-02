@@ -99,3 +99,7 @@ void flash_erase(void *page_addr) {
     check_eop();
     lock();
 }
+
+void flash_sync() {
+    // do nothing
+}
