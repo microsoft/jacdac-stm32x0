@@ -245,13 +245,13 @@ uint16_t adc_read_temp(void) {
 #elif defined(STM32F031x6) || defined(STM32F042x6)
     return ((110 - 30) * (r - TS_CAL1)) / (TS_CAL2 - TS_CAL1) + 30;
 #elif defined(STM32G031xx)
-    // 33/30 - because factory measurements are done at 3.0V and we're running at 3.3V
-    return ((130 - 30) * 33 * (r - TS_CAL1)) / (30 * TS_CAL2 - TS_CAL1) + 30;
+    return __LL_ADC_CALC_TEMPERATURE(3300, r, LL_ADC_RESOLUTION_12B);
+    // return ((130 - 30) * 33 * (r - TS_CAL1)) / (30 * TS_CAL2 - TS_CAL1) + 30;
 #elif defined(STM32G0)
-    // copied TEMP slope from G031; hopefully that works for G030
-    return ((130 - 30) * 33 * (r - TS_CAL1)) / (30 * 343) + 30;
+    // 310 = 2.5mV/C * 100C * (1<<12) / 3300mV
+    // 30/33 is because the TS_CAL1 is taken at 3.0V VCC and we run at 3.3V
+    return ((130 - 30) * (r - (TS_CAL1 * 30 / 33))) / 310 + 30;
 #elif defined(STM32WL)
-    // TODO use this macro on other chips as well?
     return __LL_ADC_CALC_TEMPERATURE(3300, r, LL_ADC_RESOLUTION_12B);
 #else
 #error "no temp"
