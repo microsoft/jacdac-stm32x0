@@ -38,7 +38,7 @@ static void on_tx_data(LmHandlerTxParams_t *params) {
         return;
 
     if (params->IsMcpsConfirm) {
-        DMESG("MCPS-Confirm: U/L FRAME:%04d | PORT:%d | DR:%d | PWR:%d", params->UplinkCounter,
+        DMESG("MCPS-Confirm: U/L FRAME:%04d | PORT:%d | DR:%d | PWR:%d", (int)params->UplinkCounter,
               params->AppData.Port, params->Datarate, params->TxPower);
         if (params->MsgType == LORAMAC_HANDLER_CONFIRMED_MSG)
             DMESG("CONFIRMED [%s]", (params->AckReceived != 0) ? "ACK" : "NACK");
@@ -67,8 +67,8 @@ static void on_rx_data(LmHandlerAppData_t *appData, LmHandlerRxParams_t *params)
                                         "C Multicast", "B Ping-Slot", "B Multicast Ping-Slot"};
 
     DMESG("MCPS-Indication: D/L FRAME:%04d | SLOT:%s | PORT:%d | DR:%d | RSSI:%d | SNR:%d",
-          params->DownlinkCounter, slotStrings[params->RxSlot], appData->Port, params->Datarate,
-          params->Rssi, params->Snr);
+          (int)params->DownlinkCounter, slotStrings[params->RxSlot], appData->Port,
+          params->Datarate, params->Rssi, params->Snr);
 
     switch (appData->Port) {
     case LORAWAN_SWITCH_CLASS_PORT:
@@ -170,7 +170,7 @@ int jd_lora_send(const void *data, uint32_t datalen) {
 
     // this copies data into internal buffers
     int r = LmHandlerSend(&app_data, is_confirmed, &next_tx_ms, false);
-    DMESG("send -> %d; next tx %d ms", r, next_tx_ms);
+    DMESG("send -> %d; next tx %d ms", r, (int)next_tx_ms);
     return r;
 }
 

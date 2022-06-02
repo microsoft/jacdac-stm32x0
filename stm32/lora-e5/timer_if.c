@@ -168,9 +168,9 @@ void LPTIM1_IRQHandler(void) {
         if (timeout_status == TIMEOUT_ENABLED && is_before(user_timeout, now)) {
             timeout_status = TIMEOUT_DISABLED;
             uint32_t st = tim_get_micros();
-            LOG("run at %d (%d ms late)", now, now - user_timeout);
+            LOG("run at %d (%d ms late)", (int)now, (int)now - (int)user_timeout);
             UTIL_TIMER_IRQ_Handler();
-            LOG("duration %d us", (uint32_t)tim_get_micros() - st);
+            LOG("duration %d us", (int)((uint32_t)tim_get_micros() - st));
         }
         set_hw_alarm();
     }
