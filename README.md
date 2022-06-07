@@ -23,7 +23,7 @@ or using the green "Use this template" button in top-right corner at https://git
 If you're just playing around, you can simply clone `jacdac-module-template`.
 
 All the instructions below use your copy of `jacdac-module-template` as the root folder.
-You typically will not need to fork `jacdac-stm32x0` nor `jacdac-c`.
+**You typically will NOT need to fork `jacdac-stm32x0` nor `jacdac-c`.**
 
 The build instructions are here, and not in `jacdac-module-template`, to avoid them getting stale in its various copies.
 
