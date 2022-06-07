@@ -62,8 +62,8 @@ endif
 BUILT_BIN = built/$(TARGET)
 BUILT = $(BUILT_BIN)/$(PREF)
 
-ifeq ($(DROP_TARGETS),acme-corp-servo)
-_IGNORE_DROP := $(shell test -d targets/acme-corp-servo || cp -r targets/_example targets/acme-corp-servo)
+ifeq ($(DROP_TARGETS),acme-corp-button)
+_IGNORE_DROP := $(shell test -d targets/acme-corp-button || cp -r targets/_example targets/acme-corp-button)
 endif
 
 include targets/$(TARGET)/config.mk
@@ -358,3 +358,7 @@ ifeq ($(NOBL),)
 	$(MAKE) BL=1 r
 endif
 	$(MAKE) r
+
+update-submodules:
+	cd $(JD_STM) && git checkout main && git pull
+	cd $(JD_CORE) && git checkout main && git pull

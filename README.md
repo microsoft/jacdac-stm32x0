@@ -135,7 +135,7 @@ Other than the building/deployment targets, the following might be of note:
 
 * [create a new repo](https://github.com/microsoft/jacdac-module-template/generate) from `jacdac-module-template`;
   let's say the new repo is called `jacdac-acme-corp-modules`
-* update `jacdac-stm32` and `jacdac-c` submodules (eg., with `git submodule update --remote`)
+* update `jacdac-stm32` and `jacdac-c` submodules (eg., with `make update-submodules`)
 * copy `targets/_example/` to `targets/acme-corp-buzzer-v1.0/` (replaceing `acme-corp-buzzer-v1.0` with the name of the module or series of modules)
 * edit [targets/acme-corp-buzzer-v1.0/board.h](targets/_example/board.h) to match your module
 * you likely do not need to edit [targets/acme-corp-buzzer-v1.0/config.mk](targets/_example/config.mk),
@@ -159,7 +159,7 @@ This way, the build process will generate a new firmware identifier.
 
 Now, edit `DROP_TARGETS` in `Makefile` to only include your `acme-corp-buzzer-v1.0` folder
 (and in future `acme-corp-thermocouple-v1.0` etc.).
-Make sure to remove the string `acme-corp-servo` from `DROP_TARGETS`.
+Make sure to remove the string `acme-corp-button` from `DROP_TARGETS`.
 
 When you run `make drop` now, you should get a `.uf2` file combining firmware for all your modules.
 
