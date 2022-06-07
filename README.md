@@ -12,20 +12,20 @@ This update process can be performed by the user from the [Jacdac website](https
 
 ## Development
 
-The top-level repo to build is [jacdac-msr-modules](https://github.com/microsoft/jacdac-msr-modules).
+The top-level repo to build is [jacdac-module-template](https://github.com/microsoft/jacdac-module-template).
 It imports as submodules [this repo (jacdac-stm32x0)](https://github.com/microsoft/jacdac-stm32x0) 
 and [jacdac-c](https://github.com/microsoft/jacdac-c)
 (which contains platform-independent code implementing Jacdac services, as well as various I2C drivers).
 
-When building your own firmware, you will need to create your own repository from `jacdac-msr-modules` template.
-You can do it by following this link https://github.com/microsoft/jacdac-msr-modules/generate
-or using the green "Use this template" button in top-right corner at https://github.com/microsoft/jacdac-msr-modules
-If you're just playing around, you can simply clone `jacdac-msr-modules`.
+When building your own firmware, you will need to create your own repository from `jacdac-module-template` template.
+You can do it by following this link https://github.com/microsoft/jacdac-module-template/generate
+or using the green "Use this template" button in top-right corner at https://github.com/microsoft/jacdac-module-template
+If you're just playing around, you can simply clone `jacdac-module-template`.
 
-All the instructions below use your copy of `jacdac-msr-modules` as the root folder.
+All the instructions below use your copy of `jacdac-module-template` as the root folder.
 You typically will not need to fork `jacdac-stm32x0` nor `jacdac-c`.
 
-The build instructions are here, and not in `jacdac-msr-modules`, to avoid them getting stale in its various copies.
+The build instructions are here, and not in `jacdac-module-template`, to avoid them getting stale in its various copies.
 
 
 ## Setup
@@ -133,32 +133,32 @@ Other than the building/deployment targets, the following might be of note:
 
 ## Adding new modules
 
-* [create a new repo](https://github.com/microsoft/jacdac-msr-modules/generate) from `jacdac-msr-modules`;
+* [create a new repo](https://github.com/microsoft/jacdac-module-template/generate) from `jacdac-module-template`;
   let's say the new repo is called `jacdac-acme-corp-modules`
-* copy `targets/_example/` to `targets/acme-corp/` (replaceing `acme-corp` with the name of the series of modules)
-* edit [targets/acme-corp/board.h](targets/_example/board.h) to match your module
-* you likely do not need to edit [targets/acme-corp/config.mk](targets/_example/config.mk), even if using
-  a beefier MCU from the F03x family - they should be backward-compatible;
-  you do need to update it when using G0 series chip!
-* edit [targets/acme-corp/profile/module.c](targets/_example/profile/module.c) 
+* copy `targets/_example/` to `targets/acme-corp-buzzer-v1.0/` (replaceing `acme-corp-buzzer-v1.0` with the name of the module or series of modules)
+* edit [targets/acme-corp-buzzer-v1.0/board.h](targets/_example/board.h) to match your module
+* you likely do not need to edit [targets/acme-corp-buzzer-v1.0/config.mk](targets/_example/config.mk),
+  unless using F0 chip
+* edit [targets/acme-corp-buzzer-v1.0/profile/module.c](targets/_example/profile/module.c) 
   to include your module name and used services (follow comments in `module.c`);
   see [jd_services.h](https://github.com/microsoft/jacdac-c/blob/master/services/jd_services.h)
   for list of services
 * rename `module.c` to match the type of module (eg. `servo.c`)
 * if you have several modules with non-conflicting `board.h` definitions,
-  you can create more files under `targets/acme-corp/profile/`;
-  otherwise you'll need to create `targets/acme-corp-2` or something similar
-* edit `Makefile.user` to set `TRG`, eg. `TRG = acme-corp servo`
+  you can create more files under `targets/acme-corp-buzzer-v1.0/profile/`;
+  otherwise you'll need to create `targets/acme-corp-thermocouple-v1.0` or something similar
+* edit `Makefile.user` to set `TRG`, eg. `TRG = acme-corp-buzzer-v1.0 servo`
 * run `make`; this will generate a new unique identifier and place as an argument of `FIRMWARE_IDENTIFIER` macro
 * make sure to never change the firmware identifier number, as that will break future firmware updates
 
-If you copy `targets/jm-*/profiles/something.c` to start your own module, remember to rename it, and
+If you copy `targets/jm-*/profiles/something.c` from
+[jacdac-msr-modules](https://github.com/microsoft/jacdac-msr-modules) to start your own module, remember to rename it, and
 set the `FIRMWARE_IDENTIFIER` to `0` (the one in `targets/_examples` already has it set to `0`).
 This way, the build process will generate a new firmware identifier.
 
-Now, edit `DROP_TARGETS` in `Makefile` to only include your `acme-corp` folder
-(and in future `acme-corp-v2` etc.).
-You don't need to build `jm-*` modules, so remove them from `DROP_TARGETS`.
+Now, edit `DROP_TARGETS` in `Makefile` to only include your `acme-corp-buzzer-v1.0` folder
+(and in future `acme-corp-thermocouple-v1.0` etc.).
+Make sure to remove the string `acme-corp-servo` from `DROP_TARGETS`.
 
 When you run `make drop` now, you should get a `.uf2` file combining firmware for all your modules.
 

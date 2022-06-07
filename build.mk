@@ -62,6 +62,10 @@ endif
 BUILT_BIN = built/$(TARGET)
 BUILT = $(BUILT_BIN)/$(PREF)
 
+ifeq ($(DROP_TARGETS),acme-corp-servo)
+_IGNORE_DROP := $(shell test -d targets/acme-corp-servo || cp -r targets/_example targets/acme-corp-servo)
+endif
+
 include targets/$(TARGET)/config.mk
 BASE_TARGET ?= $(TARGET)
 
