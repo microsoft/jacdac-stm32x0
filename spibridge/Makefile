@@ -1,2 +1,2 @@
 all:
-	gcc -W -Wall pibridge.c -lwiringPi -lpthread -o pibridge
+	gcc -W -Wall pibridge.c -lpthread -o pibridge

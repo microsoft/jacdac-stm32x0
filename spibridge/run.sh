@@ -3,5 +3,7 @@
 set -x
 set -e
 
-scp pibridge.c pi:spi/
-ssh pi 'cd spi && gcc -W -Wall pibridge.c -lwiringPi -lpthread && sudo ./a.out'
+host=pi@${RPI_HOST:-raspberrypi.local}
+
+scp pibridge.c $host:spi/
+ssh $host 'cd spi && gcc -W -Wall pibridge.c -lpthread && sudo ./a.out'
