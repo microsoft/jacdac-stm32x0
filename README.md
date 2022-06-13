@@ -131,6 +131,22 @@ Other than the building/deployment targets, the following might be of note:
 * `make clean` - clean (duh!)
 * `make drop` - build all firmware images specified in `DROP_TARGETS`
 
+### Manual deploy using JLink/STLINK etc.
+
+If you do not want to use Black Magic Probe, you can use `combined-*.hex` and flash with Sagger or STLINK software.
+When run you build, it will print out something like this:
+
+```
+COMBINE built/touch-sensor-1.0/combined-touch.hex
+   text	   data	    bss	    dec	    hex	filename
+  14468	      0	   1824	  16292	   3fa4	built/touch-sensor-1.0/app-touch.elf
+   3296	      0	   2616	   5912	   1718	built/touch-sensor-1.0/bl-touch.elf
+```
+
+There are two ELF files - one for the application and one for bootloader.
+Before listing sizes, the Makefile gives path of an Intel HEX file combining both
+which can be flashed with any software, in this case `built/touch-sensor-1.0/combined-touch.hex`.
+
 ## Adding new modules
 
 * [create a new repo](https://github.com/microsoft/jacdac-module-template/generate) from `jacdac-module-template`;
