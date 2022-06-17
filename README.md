@@ -85,8 +85,9 @@ If you run Git Bash again (it has to be restarted to see change in `PATH`), and 
 and if you type `node --version` you should get its version number.
 
 If using Black Magic Probe, connect it to your computer.
-You should see two COM ports that correspond to it in Device Manager (for example `COM7` and `COM8`)
-You will want to use the lower numbered one (for example `COM7`).
+You should see two COM ports that correspond to it in Device Manager (for example `COM7` and `COM8`).
+First try the lower numbered one, and if it doesn't work try the other one.
+In `Makefile.user` set `BMP_PORT = //./COM7` - make sure to add `//./`.
 
 Now, follow the usual build instructions above.
 
