@@ -84,6 +84,7 @@ void pin_setup_output_af(int pin, int af) {
 void pin_pulse(int pin, int times) {
     if ((uint8_t)pin == NO_PIN)
         return;
+    LL_GPIO_SetPinMode(PIN_PORT(pin), PIN_MASK(pin), LL_GPIO_MODE_OUTPUT);
     while (times--) {
         LL_GPIO_SetOutputPin(PIN_PORT(pin), PIN_MASK(pin));
         LL_GPIO_ResetOutputPin(PIN_PORT(pin), PIN_MASK(pin));
