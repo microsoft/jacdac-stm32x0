@@ -2,18 +2,15 @@
 
 // SPI-Jacdac bridge for RPi
 
-#ifdef BRIDGESPI
+#ifdef PIN_BR_TX_READY
+
+#if !JD_BRIDGE || !JD_SEND_FRAME
+#error "JD_BRIDGE reqd"
+#endif
 
 #define XFER_SIZE 256
 #define TXQ_SIZE 1024
 #define RXQ_SIZE 1024
-
-static jd_queue_t tx_q;
-
-#if JD_RAW_FRAME
-uint8_t rawFrameSending;
-jd_frame_t *rawFrame;
-#endif
 
 #define JD_SERVICE_CLASS_BRIDGE 0x1fe5b46f
 
@@ -39,8 +36,6 @@ REG_DEFINITION(               //
     REG_U8(JD_REG_INTENSITY), //
 )
 
-void jd_send_low(jd_frame_t *f);
-
 static srv_t *_state;
 
 static inline bool is_host_frame(jd_frame_t *f) {
@@ -52,7 +47,7 @@ static void spi_done_handler(void) {
     srv_t *state = _state;
 
     if (jd_should_sample(&state->connected_blink, 2 * 512 * 1024)) {
-        jd_status_set_ch(2, 150);
+        // jd_status_set_ch(2, 150);
         state->connected_blink_end = tim_get_micros() + 50 * 1024;
     }
 
@@ -60,9 +55,7 @@ static void spi_done_handler(void) {
 
     while (frame->size && (uint8_t *)frame < &_state->spi_host[XFER_SIZE]) {
         unsigned frmsz = JD_FRAME_SIZE(frame);
-        jd_send_low(frame);
-        // also process packets ourselves - RPi might be talking to us
-        jd_services_process_frame(frame);
+        jd_send_frame_raw(frame);
         frame = (jd_frame_t *)((uint8_t *)frame + ((frmsz + 3) & ~3));
     }
 
@@ -104,7 +97,7 @@ static void setup_xfer(srv_t *state) {
     state->spi_host[2] = 0xff;
     spis_xfer(state->spi_bridge, state->spi_host, XFER_SIZE, spi_done_handler);
 
-    pin_set(PIN_BR_TX_READY, jd_queue_will_fit(tx_q, sizeof(XFER_SIZE)));
+    pin_set(PIN_BR_TX_READY, jd_tx_will_fit(XFER_SIZE));
     pin_set(PIN_BR_RX_READY, has_rx);
     target_enable_irq();
 }
@@ -112,7 +105,7 @@ static void setup_xfer(srv_t *state) {
 // called when physical layer received a frame
 void bridge_forward_frame(jd_frame_t *frame) {
     if (is_host_frame(frame))
-        return; // ignore stuff we sent ourselves
+        jd_panic(); // loop?
 
     srv_t *state = _state;
 
@@ -139,7 +132,7 @@ void bridge_forward_frame(jd_frame_t *frame) {
 void bridge_process(srv_t *state) {
     if (state->connected_blink_end && in_past(state->connected_blink_end)) {
         state->connected_blink_end = 0;
-        jd_status_set_ch(2, 0);
+        // jd_status_set_ch(2, 0);
     }
 }
 
@@ -169,77 +162,6 @@ void bridge_init(void) {
     _state = state;
 
     setup_xfer(state);
-}
-
-// alternative tx_Q impl.
-static bool isSending;
-
-int jd_tx_is_idle() {
-    return !isSending && jd_queue_front(tx_q) == NULL;
-}
-
-void jd_tx_init(void) {
-    tx_q = jd_queue_alloc(TXQ_SIZE);
-}
-
-void jd_send_low(jd_frame_t *f) {
-    jd_compute_crc(f);
-    jd_queue_push(tx_q, f);
-    jd_packet_ready();
-}
-
-int jd_send(unsigned service_num, unsigned service_cmd, const void *data, unsigned service_size) {
-    if (service_size > 64)
-        jd_panic();
-
-    uint32_t buf[(service_size + 16 + 3) / 4];
-    jd_frame_t *f = (jd_frame_t *)buf;
-
-    jd_reset_frame(f);
-    void *trg = jd_push_in_frame(f, service_num, service_cmd, service_size);
-    memcpy(trg, data, service_size);
-
-    f->device_identifier = jd_device_id();
-    jd_send_low(f);
-    if (_state) {
-        bridge_forward_frame(f); // also forward packets we generate ourselves
-    }
-
-    return 0;
-}
-
-// bridge between phys and queue imp, phys calls this to get the next frame.
-jd_frame_t *jd_tx_get_frame(void) {
-#if JD_RAW_FRAME
-    if (rawFrame) {
-        jd_frame_t *r = rawFrame;
-        rawFrame = NULL;
-        rawFrameSending = true;
-        return r;
-    }
-#endif
-    jd_frame_t *f = jd_queue_front(tx_q);
-    if (f)
-        isSending = true;
-    return f;
-}
-
-// bridge between phys and queue imp, marks as sent.
-void jd_tx_frame_sent(jd_frame_t *pkt) {
-#if JD_RAW_FRAME
-    if (rawFrameSending) {
-        rawFrameSending = false;
-        return;
-    }
-#endif
-    isSending = false;
-    jd_queue_shift(tx_q);
-    if (jd_queue_front(tx_q))
-        jd_packet_ready(); // there's more to do
-}
-
-void jd_tx_flush() {
-    // do nothing
 }
 
 #endif
