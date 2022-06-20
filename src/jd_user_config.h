@@ -1,11 +1,14 @@
 #ifndef JD_USER_CONFIG_H
 #define JD_USER_CONFIG_H
 
-#define JD_CONFIG_TEMPERATURE 1
 
 #include "pinnames.h"
 #include "board.h"
 #include "dmesg.h"
+
+#ifndef JD_CONFIG_TEMPERATURE
+#define JD_CONFIG_TEMPERATURE 1
+#endif
 
 #define JD_LOG DMESG
 
