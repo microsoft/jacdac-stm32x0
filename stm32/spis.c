@@ -88,8 +88,8 @@ void spis_xfer(const void *txdata, void *rxdata, uint32_t numbytes, cb_t doneHan
 }
 
 void spis_log() {
-    DMESG("%d %x %d/%d", (int)tim_get_micros(), SPIx->SR, LL_DMA_GetDataLength(DMA1, DMA_CH_TX),
-          LL_DMA_GetDataLength(DMA1, DMA_CH_RX));
+    DMESG("%d %x %d/%d", (int)tim_get_micros(), (unsigned)SPIx->SR,
+          (int)LL_DMA_GetDataLength(DMA1, DMA_CH_TX), (int)LL_DMA_GetDataLength(DMA1, DMA_CH_RX));
 }
 
 static void shutdown_dma(void) {
@@ -102,8 +102,8 @@ static void shutdown_dma(void) {
 
 // this is only enabled for error events
 void IRQHandler(void) {
-    DMESG("SPI-S handler! %x %d/%d", SPIx->SR, LL_DMA_GetDataLength(DMA1, DMA_CH_TX),
-          LL_DMA_GetDataLength(DMA1, DMA_CH_RX));
+    DMESG("SPI-S handler! %x %d/%d", (unsigned)SPIx->SR, (int)LL_DMA_GetDataLength(DMA1, DMA_CH_TX),
+          (int)LL_DMA_GetDataLength(DMA1, DMA_CH_RX));
     if (!spis_error_cb)
         hw_panic();
     shutdown_dma();
