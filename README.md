@@ -132,9 +132,10 @@ Other than the building/deployment targets, the following might be of note:
 * `make clean` - clean (duh!)
 * `make drop` - build all firmware images specified in `DROP_TARGETS`
 
-### Manual deploy using JLink/STLINK etc.
+### Manual deployment using J-Link/ST-LINK etc.
 
-If you do not want to use Black Magic Probe, you can use `combined-*.hex` and flash with Sagger or STLINK software.
+If you do not want to use Black Magic Probe, you can use `combined-*.hex` and flash with other tools. We have successfully used a [Segger J-Link](https://www.segger.com/products/debug-probes/j-link) with [J-Flash](https://www.segger.com/downloads/flasher/) software; make sure the code is flashed to address 0x8000000. We have also used an original [ST-LINK/V2](https://www.st.com/en/development-tools/st-link-v2.html) with the [ST-LINK utility](https://www.st.com/content/st_com/en/products/development-tools/software-development-tools/stm32-software-development-tools/stm32-programmers/stsw-link004.html). When using these tools you will have to ensure that the target MCU is powered, and that **pin 1 on the JTAG/SWD interface is connected to the target programming voltage**, otherwise the software may report that it cannot detect the target at all. 
+
 When run you build, it will print out something like this:
 
 ```
