@@ -255,7 +255,9 @@ void rtc_init() {
 #endif
     uint32_t h_ms = US_TO_TICKS(1000000);
     DMESG("rtc: 1s=%d ticks; presc=%d", (unsigned)h_ms, tmp);
-    // we're expecting around 40000, but there's large drift possible
+    // We're expecting around 40000, but there's large drift possible.
+    // Values of 32500 and 51500 observed on the *same device* between power cycles,
+    // however the value is stable between resets and while running.
     if (!(30000 <= h_ms && h_ms <= 55000))
         jd_panic();
     if (tmp > 0x7f00)
