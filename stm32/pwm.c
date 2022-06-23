@@ -106,7 +106,7 @@ static const struct TimDesc *lookup_tim(TIM_TypeDef *tim) {
 }
 
 // prescaler=1 -> 8MHz; prescaler=8 -> 1MHz
-uint8_t pwm_init(uint8_t pin, uint32_t period, uint32_t duty, uint8_t prescaler) {
+uint8_t jd_pwm_init(uint8_t pin, uint32_t period, uint32_t duty, uint8_t prescaler) {
     const struct PinPWM *pwm = lookup_pwm(pin);
     if (!pwm)
         jd_panic();
@@ -178,14 +178,14 @@ uint8_t pwm_init(uint8_t pin, uint32_t period, uint32_t duty, uint8_t prescaler)
     return pwm - pins + 1;
 }
 
-void pwm_set_duty(uint8_t pwm, uint32_t duty) {
+void jd_pwm_set_duty(uint8_t pwm, uint32_t duty) {
     pwm--;
     if (pwm >= sizeof(pins) / sizeof(pins[0]))
         jd_panic();
     WRITE_REG(*(&pins[pwm].tim->CCR1 + pins[pwm].ch - 1), duty);
 }
 
-void pwm_enable(uint8_t pwm, bool enabled) {
+void jd_pwm_enable(uint8_t pwm, bool enabled) {
     pwm--;
     if (pwm >= sizeof(pins) / sizeof(pins[0]))
         jd_panic();
@@ -199,8 +199,8 @@ void pwm_enable(uint8_t pwm, bool enabled) {
 // This kind-of works, but it seems the TIM still only runs when we're not sleeping so we miss quick
 // turns Thus we just stick to software for now.
 uint8_t encoder_init(uint8_t pinA, uint8_t pinB) {
-    uint8_t idxA = pwm_init(pinA, 0x10000, 0, 1) - 1;
-    uint8_t idxB = pwm_init(pinB, 0x10000, 0, 1) - 1;
+    uint8_t idxA = jd_pwm_init(pinA, 0x10000, 0, 1) - 1;
+    uint8_t idxB = jd_pwm_init(pinB, 0x10000, 0, 1) - 1;
     if (pins[idxA].tim != pins[idxB].tim)
         jd_panic();
     if (pins[idxA].ch != 1 || pins[idxB].ch != 2)

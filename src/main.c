@@ -101,7 +101,7 @@ int main(void) {
     tim_init();
     adc_init_random(); // 300b
     rtc_init();
-    uart_init();
+    uart_init_();
 
     jd_init();
 

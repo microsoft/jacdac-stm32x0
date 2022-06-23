@@ -38,11 +38,6 @@ void rtc_set_to_seconds_and_standby(void);
 uint32_t rtc_get_seconds(void);
 bool rtc_check_standby(void);
 
-// pwm.c
-uint8_t pwm_init(uint8_t pin, uint32_t period, uint32_t duty, uint8_t prescaler);
-void pwm_set_duty(uint8_t pwm_id, uint32_t duty);
-void pwm_enable(uint8_t pwm_id, bool enabled);
-
 // display.c
 #ifndef DISP_LIGHT_SENSE
 #define DISP_LIGHT_SENSE 1

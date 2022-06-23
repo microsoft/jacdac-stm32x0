@@ -226,7 +226,7 @@ static void USART_UART_Init(void) {
     exti_set_callback(UART_PIN, jd_line_falling, EXTI_FALLING);
 }
 
-void uart_init() {
+void uart_init_() {
     DMA_Init();
     USART_UART_Init();
 }
