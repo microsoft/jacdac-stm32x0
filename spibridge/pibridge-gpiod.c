@@ -29,7 +29,8 @@ int txq_ptr;
 pthread_mutex_t sendmut;
 pthread_cond_t txfree;
 
-struct gpiod_line_bulk *rxtx_lines;
+struct gpiod_line *rx_line;
+struct gpiod_line *tx_line;
 
 // https://wiki.nicksoft.info/mcu:pic16:crc-16:home
 uint16_t jd_crc16(const void *data, uint32_t size) {
@@ -92,14 +93,9 @@ static void queuetx(const uint8_t *ptr, int len) {
 }
 
 void xfer() {
-    printf("xfer ON\n");
     pthread_mutex_lock(&sendmut);
-    int vals[2];
-    if (gpiod_line_get_value_bulk(rxtx_lines, vals) != 0) {
-        fatal("can't get values");
-    }
-    int rx_val = vals[0];
-    int tx_val = vals[1];
+    int rx_val = gpiod_line_get_value(rx_line);
+    int tx_val = gpiod_line_get_value(tx_line);
 
     int sendtx = txq_ptr && tx_val;
     if (rx_val || sendtx) {
@@ -156,7 +152,6 @@ void xfer() {
         }
     }
     pthread_mutex_unlock(&sendmut);
-    printf("xfer OFF\n");
 }
 
 int hexdig(char c) {
@@ -168,30 +163,13 @@ int hexdig(char c) {
     return -1;
 }
 
-static void *wait_io(void *dummy) {
-    (void)dummy;
-    struct gpiod_line_bulk *outp = calloc(1, sizeof(*outp));
+static void *wait_io(void *line0) {
+    struct gpiod_line *line = line0;
     while (true) {
-        struct timespec ts = {1, 0};
-        printf("wait\n");
-        if (gpiod_line_event_wait_bulk(rxtx_lines, &ts, outp) == 1) {
-            // read all events, otherwise we get woken up again
-            struct gpiod_line *line;
-            unsigned idx = 0;
-            for (;;) {
-                line = gpiod_line_bulk_get_line(outp, idx++);
-                if (!line)
-                    break;
-                printf("read\n");
-                struct gpiod_line_event ev;
-                gpiod_line_event_read(line, &ev);
-                printf("read done\n");
-            }
-        }
-
+        struct gpiod_line_event ev;
+        gpiod_line_event_read(line, &ev);
         xfer();
     }
-
     return NULL;
 }
 
@@ -206,9 +184,8 @@ int main(void) {
         return 1;
     }
 
-    unsigned txrxpins[] = {PIN_RX_READY, PIN_TX_READY};
-    rxtx_lines = calloc(1, sizeof(*rxtx_lines));
-    gpiod_chip_get_lines(chip, txrxpins, 2, rxtx_lines);
+    rx_line = gpiod_chip_get_line(chip, PIN_RX_READY);
+    tx_line = gpiod_chip_get_line(chip, PIN_TX_READY);
 
     struct gpiod_line_request_config config = {
         .consumer = "pibridge",
@@ -216,9 +193,10 @@ int main(void) {
         .flags = GPIOD_LINE_REQUEST_FLAG_BIAS_PULL_DOWN,
     };
 
-    int r = gpiod_line_request_bulk(rxtx_lines, &config, NULL);
-    if (r != 0) {
-        printf("failed to req lines %d: %s\n", r, strerror(errno));
+    int r = gpiod_line_request(rx_line, &config, 0);
+    int r2 = gpiod_line_request(tx_line, &config, 0);
+    if (r != 0 || r2 != 0) {
+        printf("failed to req lines %d: %s\n", r + r2, strerror(errno));
         return 1;
     }
 
@@ -243,7 +221,8 @@ int main(void) {
         fatal("can't WR_MODE on SPI");
 
     pthread_t t;
-    pthread_create(&t, NULL, wait_io, NULL);
+    pthread_create(&t, NULL, wait_io, rx_line);
+    pthread_create(&t, NULL, wait_io, tx_line);
 
     fprintf(stderr, "starting...\n");
 
