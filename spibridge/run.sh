@@ -3,5 +3,5 @@
 set -x
 set -e
 
-scp pibridge.c pi:spi/
-ssh pi 'cd spi && gcc -W -Wall pibridge.c -lwiringPi -lpthread && sudo ./a.out'
+scp pibridge-gpiod.c pi:spi/
+ssh pi 'cd spi && gcc -W -Wall pibridge.c -lgpiod -pthread && ./a.out'
