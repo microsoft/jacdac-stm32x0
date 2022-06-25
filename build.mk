@@ -216,7 +216,7 @@ ifeq ($(BMP),)
 	echo "target extended-remote | $(OPENOCD) -f $(SCRIPTS)/gdbdebug.cfg" >> built/debug.gdb
 else
 	echo "target extended-remote $(BMP_PORT)" >> built/debug.gdb
-ifneq ($(HARD_ERASE),)
+ifneq ($(HARD_ERASE)$(SRST),)
 	echo "monitor connect_srst enable" >> built/debug.gdb
 else
 	echo "monitor connect_srst disable" >> built/debug.gdb
