@@ -154,19 +154,19 @@ which can be flashed with any software, in this case `built/touch-sensor-1.0/com
 * [create a new repo](https://github.com/microsoft/jacdac-module-template/generate) from `jacdac-module-template`;
   let's say the new repo is called `jacdac-acme-corp-modules`
 * update `jacdac-stm32` and `jacdac-c` submodules (eg., with `make update-submodules`)
-* copy `targets/_example/` to `targets/acme-corp-buzzer-v1.0/` (replaceing `acme-corp-buzzer-v1.0` with the name of the module or series of modules)
-* edit [targets/acme-corp-buzzer-v1.0/board.h](targets/_example/board.h) to match your module
-* you likely do not need to edit [targets/acme-corp-buzzer-v1.0/config.mk](targets/_example/config.mk),
+* copy `targets/_example/` to `targets/buzzer-v1.0/` (replacing `buzzer-v1.0` with the name of the module or series of modules)
+* edit [targets/buzzer-v1.0/board.h](targets/_example/board.h) to match your module
+* you likely do not need to edit [targets/buzzer-v1.0/config.mk](targets/_example/config.mk),
   unless using F0 chip
-* edit [targets/acme-corp-buzzer-v1.0/profile/module.c](targets/_example/profile/module.c) 
+* edit [targets/buzzer-v1.0/profile/module.c](targets/_example/profile/module.c) 
   to include your module name and used services (follow comments in `module.c`);
   see [jd_services.h](https://github.com/microsoft/jacdac-c/blob/master/services/jd_services.h)
   for list of services
-* rename `module.c` to match the type of module (eg. `servo.c`)
+* rename `module.c` to match the type of module (eg. `buzzer.c`)
 * if you have several modules with non-conflicting `board.h` definitions,
-  you can create more files under `targets/acme-corp-buzzer-v1.0/profile/`;
-  otherwise you'll need to create `targets/acme-corp-thermocouple-v1.0` or something similar
-* edit `Makefile.user` to set `TRG`, eg. `TRG = acme-corp-buzzer-v1.0 servo`
+  you can create more files under `targets/buzzer-v1.0/profile/`;
+  otherwise you'll need to create `targets/thermocouple-v1.0` or something similar
+* edit `Makefile.user` to set `TRG`, eg. `TRG = targets/buzzer-v1.0/profile/buzzer.c`
 * run `make`; this will generate a new unique identifier and place as an argument of `FIRMWARE_IDENTIFIER` macro
 * make sure to never change the firmware identifier number, as that will break future firmware updates
 
@@ -175,8 +175,8 @@ If you copy `targets/jm-*/profiles/something.c` from
 set the `FIRMWARE_IDENTIFIER` to `0` (the one in `targets/_examples` already has it set to `0`).
 This way, the build process will generate a new firmware identifier.
 
-Now, edit `DROP_TARGETS` in `Makefile` to only include your `acme-corp-buzzer-v1.0` folder
-(and in future `acme-corp-thermocouple-v1.0` etc.).
+Now, edit `DROP_TARGETS` in `Makefile` to only include your `buzzer-v1.0` folder
+(and in future `thermocouple-v1.0` etc.).
 Make sure to remove the string `acme-corp-button` from `DROP_TARGETS`.
 
 When you run `make drop` now, you should get a `.uf2` file combining firmware for all your modules.
