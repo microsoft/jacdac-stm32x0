@@ -72,6 +72,8 @@ static void setup_xfer(srv_t *state) {
             break;
         int sz = JD_FRAME_SIZE(frame);
         sz = (sz + 3) & ~3;
+        if (dst + sz > XFER_SIZE)
+            break;
         memcpy(&state->spi_bridge[dst], frame, sz);
         dst += sz;
         jd_queue_shift(state->rx_q);
