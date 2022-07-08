@@ -317,8 +317,8 @@ endif
 $(BUILT_BIN)/$(PREF)-%.elf: $(PROF_DEP)-%.o $(OBJ) Makefile $(LD_SCRIPT) $(SCRIPTS)/patch-bin.js $(FORCE)
 	@echo LD $@
 ifeq ($(OS), Windows_NT)
-	@echo $(OBJ) $< -lm > built/comp-flags.txt
-	$(V)$(CC) $(CFLAGS) $(LDFLAGS) -Wl,-Map=$@.map -o $@ @built/comp-flags.txt
+	$(V)echo $(OBJ) $< -lm > $(BUILT_BIN)/$(PREF)-flags.txt
+	$(V)$(CC) $(CFLAGS) $(LDFLAGS) -Wl,-Map=$@.map -o $@ @$(BUILT_BIN)/$(PREF)-flags.txt
 else
 	$(V)$(CC) $(CFLAGS) $(LDFLAGS) -Wl,-Map=$@.map  -o $@ $(OBJ) $< -lm
 endif
