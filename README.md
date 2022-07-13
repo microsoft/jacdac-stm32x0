@@ -79,6 +79,7 @@ version `10-2020-q4-major` or `9-2019-q4-major` (do not use other versions for n
 `C:\Program Files (x86)\GNU Tools Arm Embedded\10 2020-q4-major\bin`
 
 * You will also need to [install node.js](https://nodejs.org/en/download/) - take the Windows `.msi` 64 bit installer.
+  Node may ask you to install build tools for native npm packages - you don't need that to build this repo.
 
 If you run Git Bash again (it has to be restarted to see change in `PATH`), and type 
 `arm-none-eabi-gcc --version` you should see something about `10-2020-q4-major`,
@@ -89,7 +90,7 @@ You should see two COM ports that correspond to it in Device Manager (for exampl
 First try the lower numbered one, and if it doesn't work try the other one.
 In `Makefile.user` set `BMP_PORT = //./COM7` - make sure to add `//./`.
 
-Now, follow the usual build instructions above.
+Now, follow the usual build instructions below.
 
 Note: using WSL2 instead of the bash shell etc coming with Git 
 is not recommended since it cannot access USB for deployment and debugging.
@@ -99,7 +100,7 @@ is not recommended since it cannot access USB for deployment and debugging.
 Run `make`; you should get a successful build.
 
 Upon first run of `make`, a `Makefile.user` file will be created.
-You will want to adjust the settings in there - there are comments in there that should guide you through the process.
+You need to adjust the settings in there - there are comments in there that should guide you through the process.
 
 ## Deploying firmware
 
@@ -123,6 +124,8 @@ Aliases:
 * `make r` for `make run`
 * `make l` for `make flash-loop`
 * `make ff` for `make full-flash`
+
+When deploying for the first time on a given board, run `make ff`. Later run `make r`.
 
 Other than the building/deployment targets, the following might be of note:
 
