@@ -16,10 +16,11 @@ void pin_setup_output(int pin) {
     GPIO_TypeDef *GPIOx = PIN_PORT(pin);
     uint32_t currentpin = PIN_MASK(pin);
 
-    LL_GPIO_SetPinMode(GPIOx, currentpin, LL_GPIO_MODE_OUTPUT);
+    // Do it in the same order as LL_GPIO_Init() just in case
     LL_GPIO_SetPinSpeed(GPIOx, currentpin, LL_GPIO_SPEED_FREQ_HIGH);
-    LL_GPIO_SetPinPull(GPIOx, currentpin, LL_GPIO_PULL_NO);
     LL_GPIO_SetPinOutputType(GPIOx, currentpin, LL_GPIO_OUTPUT_PUSHPULL);
+    LL_GPIO_SetPinPull(GPIOx, currentpin, LL_GPIO_PULL_NO);
+    LL_GPIO_SetPinMode(GPIOx, currentpin, LL_GPIO_MODE_OUTPUT);
 }
 
 void pin_set_opendrain(int pin) {
@@ -43,12 +44,12 @@ void pin_setup_input(int pin, int pull) {
         return;
     GPIO_TypeDef *GPIOx = PIN_PORT(pin);
     uint32_t currentpin = PIN_MASK(pin);
-    LL_GPIO_SetPinMode(GPIOx, currentpin, LL_GPIO_MODE_INPUT);
     LL_GPIO_SetPinPull(GPIOx, currentpin,
                        pull == -1  ? LL_GPIO_PULL_DOWN
                        : pull == 1 ? LL_GPIO_PULL_UP
                        : pull == 0 ? LL_GPIO_PULL_NO
                                    : (jd_panic(), 0));
+    LL_GPIO_SetPinMode(GPIOx, currentpin, LL_GPIO_MODE_INPUT);
 }
 
 void pin_setup_analog_input(int pin) {
