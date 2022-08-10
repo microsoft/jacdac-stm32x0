@@ -105,6 +105,10 @@ int main(void) {
 
     jd_init();
 
+#if JD_USB_BRIDGE
+    usbserial_init();
+#endif
+
     // When BMP attaches, and we're in deep sleep mode, it will scan us as generic Cortex-M0.
     // The flashing scripts scans once, resets the target (using NVIC), and scans again.
     // The delay is so that the second scan detects us as the right kind of chip.

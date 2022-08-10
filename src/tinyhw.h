@@ -53,6 +53,14 @@ int disp_get_dark_level(void);
 void disp_set_brigthness(uint16_t v);
 #endif
 
+// duart.c
+typedef void (*data_cb_t)(const uint8_t *buf, unsigned size);
+void duart_init(data_cb_t rx_cb);
+void duart_start_tx(const void *data, uint32_t numbytes, cb_t done_handler);
+void duart_process(void);
+
+void usbserial_init(void);
+
 // target_utils.c
 void target_reset(void);
 RAM_FUNC

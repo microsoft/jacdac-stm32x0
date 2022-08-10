@@ -11,6 +11,7 @@
 
 #include "services/interfaces/jd_oled.h"
 #include "services/interfaces/jd_hw_pwr.h"
+#include "interfaces/jd_usb.h"
 
 void tim_init(void);
 uint64_t tim_get_micros(void);
