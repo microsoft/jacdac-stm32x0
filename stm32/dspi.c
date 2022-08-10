@@ -194,15 +194,15 @@ static void px_fill_buffer(uint16_t *dst) {
 }
 
 static void px_dma(void) {
-    if (dma_has_flag(DMA_FLAG_TC)) {
-        dma_clear_flag(DMA_FLAG_TC);
+    if (dma_has_flag(DMA_CH_TX, DMA_FLAG_TC)) {
+        dma_clear_flag(DMA_CH_TX, DMA_FLAG_TC);
         px_fill_buffer(px_state.pxscratch + (PX_SCRATCH_LEN >> 2));
     }
-    if (dma_has_flag(DMA_FLAG_HT)) {
-        dma_clear_flag(DMA_FLAG_HT);
+    if (dma_has_flag(DMA_CH_TX, DMA_FLAG_HT)) {
+        dma_clear_flag(DMA_CH_TX, DMA_FLAG_HT);
         px_fill_buffer(px_state.pxscratch);
     }
-    dma_clear_flag(DMA_FLAG_G);
+    dma_clear_flag(DMA_CH_TX, DMA_FLAG_G);
     if (px_state.pxdata_ptr == 0) {
         stop_dma();
     }
@@ -214,8 +214,8 @@ void px_tx(const void *data, uint32_t numbytes, uint8_t intensity, cb_t doneHand
     px_state.pxdata_ptr = 0;
     px_state.intensity = intensity;
 
-    dma_clear_flag(DMA_FLAG_TC);
-    dma_clear_flag(DMA_FLAG_HT);
+    dma_clear_flag(DMA_CH_TX, DMA_FLAG_TC);
+    dma_clear_flag(DMA_CH_TX, DMA_FLAG_HT);
     px_fill_buffer(px_state.pxscratch);
     px_fill_buffer(px_state.pxscratch + (PX_SCRATCH_LEN >> 2));
 
@@ -248,7 +248,7 @@ void DMA_Handler(void) {
         dma_handler();
         return;
     }
-    dma_clear_flag(DMA_FLAG_G);
+    dma_clear_flag(DMA_CH_TX, DMA_FLAG_G);
     stop_dma();
 }
 

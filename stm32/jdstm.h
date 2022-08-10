@@ -54,4 +54,27 @@ void rtc_cancel_cb(void);
 #define DMA_CLK_ENABLE() __HAL_RCC_DMA1_CLK_ENABLE()
 #endif
 
+#define DMA_FLAG_G DMA_ISR_GIF1
+#define DMA_FLAG_TC DMA_ISR_TCIF1
+#define DMA_FLAG_HT DMA_ISR_HTIF1
+#define DMA_FLAG_TE DMA_ISR_TEIF1
+
+#if defined(STM32G0) || defined(STM32WL)
+static inline void dma_clear_flag(int ch, int flag) {
+    WRITE_REG(DMA1->IFCR, flag << (ch*4));
+}
+
+static inline bool dma_has_flag(int ch, int flag) {
+    return (READ_BIT(DMA1->ISR, flag << (ch*4)) != 0);
+}
+#else
+static inline void dma_clear_flag(int ch, int flag) {
+    WRITE_REG(DMA1->IFCR, flag << ((ch - 1) * 4));
+}
+
+static inline bool dma_has_flag(int ch, int flag) {
+    return (READ_BIT(DMA1->ISR, flag << ((ch - 1) * 4)) != 0);
+}
+#endif
+
 #endif

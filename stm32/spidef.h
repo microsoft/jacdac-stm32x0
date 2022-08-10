@@ -119,28 +119,6 @@ STATIC_ASSERT(PIN_AMISO == -1);
 
 #endif
 
-#define DMA_FLAG_G DMA_ISR_GIF1
-#define DMA_FLAG_TC DMA_ISR_TCIF1
-#define DMA_FLAG_HT DMA_ISR_HTIF1
-#define DMA_FLAG_TE DMA_ISR_TEIF1
-
-#if defined(STM32G0) || defined(STM32WL)
-static inline void dma_clear_flag(int flag) {
-    WRITE_REG(DMA1->IFCR, flag << ((DMA_CH_TX)*4));
-}
-
-static inline bool dma_has_flag(int flag) {
-    return (READ_BIT(DMA1->ISR, flag << ((DMA_CH_TX)*4)) != 0);
-}
-#else
-static inline void dma_clear_flag(int flag) {
-    WRITE_REG(DMA1->IFCR, flag << ((DMA_CH_TX - 1) * 4));
-}
-
-static inline bool dma_has_flag(int flag) {
-    return (READ_BIT(DMA1->ISR, flag << ((DMA_CH_TX - 1) * 4)) != 0);
-}
-#endif
 
 static inline void spi_init0(void) {
     SPI_CLK_ENABLE();
