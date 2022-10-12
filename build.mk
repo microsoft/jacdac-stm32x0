@@ -344,11 +344,12 @@ force:
 
 targ-%:
 	$(MAKE) TARGET=$(subst targ-,,$@)
-ifeq ($(NOBL),)
 	$(MAKE) TARGET=$(subst targ-,,$@) BLUP=1
-endif
 
-drop: $(addprefix targ-,$(DROP_TARGETS))
+nobl-targ-%:
+	$(MAKE) TARGET=$(subst nobl-targ-,,$@)
+
+drop: $(addprefix nobl-targ-,$(NO_DROP_TARGETS)) $(addprefix targ-,$(DROP_TARGETS))
 	cd built; cat $(addsuffix /app-*.uf2,$(DROP_TARGETS)) > drop.uf2
 	cd built; cat $(addsuffix /blup-*.uf2,$(DROP_TARGETS)) > bootloader-update.uf2
 	@ls -l built/drop.uf2 built/bootloader-update.uf2
