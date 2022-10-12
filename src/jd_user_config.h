@@ -47,4 +47,9 @@
 #define PIN_PWR NO_PIN
 #endif
 
+#if defined(JD_CLIENT) && JD_CLIENT
+#define JD_GC_ALLOC 1
+#define JD_HW_ALLOC 1
+#endif
+
 #endif
