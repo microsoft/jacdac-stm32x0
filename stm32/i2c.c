@@ -227,7 +227,7 @@ int i2c_write_reg16(uint8_t addr, uint16_t reg, uint8_t val) {
 
 int i2c_read_reg16_buf(uint8_t addr, uint16_t reg, void *dst, unsigned len) {
     uint8_t a[] = {reg >> 8, reg & 0xff};
-    CHECK_RET(i2c_write_ex(addr, a, 2, true) < 0);
+    CHECK_RET(i2c_write_ex(addr, a, 2, true));
     return i2c_read_ex(addr, dst, len);
 }
 
