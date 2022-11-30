@@ -106,7 +106,7 @@ void LoraInfo_Init(void)
 
   if (loraInfo.Region == 0)
   {
-    jd_panic();
+    JD_PANIC();
     // APP_PRINTF("error: At least one region shall be defined in the MW: check lorawan_conf.h \r\n");
   }
 
