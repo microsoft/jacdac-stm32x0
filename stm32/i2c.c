@@ -60,7 +60,7 @@ static void setup_pin(uint8_t pin) {
     LL_GPIO_SetPinPull(PIN_PORT(pin), PIN_MASK(pin), LL_GPIO_PULL_UP);
 }
 
-void i2c_init(void) {
+int i2c_init(void) {
     setup_pin(PIN_SDA);
     setup_pin(PIN_SCL);
     LL_RCC_SetI2CClockSource(I2C_CLK_SRC);
@@ -68,6 +68,7 @@ void i2c_init(void) {
     LL_I2C_Disable(I2Cx);
     LL_I2C_SetTiming(I2Cx, I2C_TIMING);
     LL_I2C_Enable(I2Cx);
+    return 0;
 }
 
 #ifdef STM32F0

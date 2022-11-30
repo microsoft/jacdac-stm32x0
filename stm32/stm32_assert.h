@@ -6,8 +6,8 @@ extern "C" {
 #endif
 
 #ifdef USE_FULL_ASSERT
-#define assert_param(expr) ((expr) ? (void)0U : jd_panic())
-void jd_panic(void);
+#define assert_param(expr) ((expr) ? (void)0U : hw_panic())
+void hw_panic(void);
 #else
 #define assert_param(expr) ((void)0U)
 #endif

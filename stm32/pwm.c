@@ -103,7 +103,7 @@ static const struct TimDesc *lookup_tim(TIM_TypeDef *tim) {
     for (unsigned i = 0; i < sizeof(tims) / sizeof(tims[0]); ++i)
         if (tims[i].tim == tim)
             return &tims[i];
-    jd_panic();
+    JD_PANIC();
     return NULL;
 }
 
@@ -111,7 +111,7 @@ static const struct TimDesc *lookup_tim(TIM_TypeDef *tim) {
 uint8_t jd_pwm_init(uint8_t pin, uint32_t period, uint32_t duty, uint8_t prescaler) {
     const struct PinPWM *pwm = lookup_pwm(pin);
     if (!pwm)
-        jd_panic();
+        JD_PANIC();
 
     TIM_TypeDef *TIMx = pwm->tim;
 
@@ -126,7 +126,7 @@ uint8_t jd_pwm_init(uint8_t pin, uint32_t period, uint32_t duty, uint8_t prescal
         SET_BIT(RCC->APB2ENR, td->clkmask);
         (void)READ_BIT(RCC->APB2ENR, td->clkmask); // delay
     } else {
-        jd_panic();
+        JD_PANIC();
     }
 
     LL_TIM_DisableCounter(TIMx);
@@ -183,14 +183,14 @@ uint8_t jd_pwm_init(uint8_t pin, uint32_t period, uint32_t duty, uint8_t prescal
 void jd_pwm_set_duty(uint8_t pwm, uint32_t duty) {
     pwm--;
     if (pwm >= sizeof(pins) / sizeof(pins[0]))
-        jd_panic();
+        JD_PANIC();
     WRITE_REG(*(&pins[pwm].tim->CCR1 + pins[pwm].ch - 1), duty);
 }
 
 void jd_pwm_enable(uint8_t pwm, bool enabled) {
     pwm--;
     if (pwm >= sizeof(pins) / sizeof(pins[0]))
-        jd_panic();
+        JD_PANIC();
     if (enabled)
         pin_setup_output_af(pins[pwm].pin, pins[pwm].af);
     else
@@ -204,9 +204,9 @@ uint8_t encoder_init(uint8_t pinA, uint8_t pinB) {
     uint8_t idxA = jd_pwm_init(pinA, 0x10000, 0, 1) - 1;
     uint8_t idxB = jd_pwm_init(pinB, 0x10000, 0, 1) - 1;
     if (pins[idxA].tim != pins[idxB].tim)
-        jd_panic();
+        JD_PANIC();
     if (pins[idxA].ch != 1 || pins[idxB].ch != 2)
-        jd_panic();
+        JD_PANIC();
 
     TIM_TypeDef *TIMx = pins[idxA].tim;
 
@@ -219,7 +219,7 @@ uint8_t encoder_init(uint8_t pinA, uint8_t pinB) {
         SET_BIT(RCC->APBSMENR2, td->clkmask);
         (void)READ_BIT(RCC->APBSMENR2, td->clkmask); // delay
     } else {
-        jd_panic();
+        JD_PANIC();
     }
 
     LL_TIM_CC_DisableChannel(TIMx, LL_TIM_CHANNEL_CH1 | LL_TIM_CHANNEL_CH2);
@@ -249,7 +249,7 @@ uint8_t encoder_init(uint8_t pinA, uint8_t pinB) {
 uint32_t encoder_get(uint8_t pwm) {
     pwm--;
     if (pwm >= sizeof(pins) / sizeof(pins[0]))
-        jd_panic();
+        JD_PANIC();
     return LL_TIM_GetCounter(pins[pwm].tim);
 }
 

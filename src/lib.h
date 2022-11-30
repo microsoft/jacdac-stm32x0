@@ -33,7 +33,7 @@ inline int min(int v1, int v2) {
 
 #define CHECK(cond)                                                                                \
     if (!(cond))                                                                                   \
-        jd_panic()
+        JD_PANIC()
 
 
 void ns_init(void);

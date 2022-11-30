@@ -17,7 +17,7 @@ bool clk_is_pll(void);
 void clk_set_pll(int on);
 void clk_setup_pll(void);
 
-__attribute__((noreturn)) void jd_panic(void);
+__attribute__((noreturn)) void hw_panic(void);
 __attribute__((noreturn)) void target_reset(void);
 void target_wait_us(uint32_t n);
 

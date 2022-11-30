@@ -25,6 +25,6 @@ void blled_set_duty(uint32_t duty);
 
 void led_init(void);
 void led_set_value(int v);
-void jd_panic(void);
+void hw_panic(void);
 
 uint16_t crc16(const void *data, uint32_t size);

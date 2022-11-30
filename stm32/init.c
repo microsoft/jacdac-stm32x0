@@ -3,7 +3,7 @@
 void tim_update_prescaler(void);
 
 void HardFault_Handler(void) {
-    jd_panic();
+    JD_PANIC();
 }
 
 #ifndef BL

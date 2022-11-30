@@ -40,7 +40,7 @@ int32_t RBI_ConfigRFSwitch(RBI_Switch_TypeDef cfg) {
         break;
 
     default:
-        jd_panic();
+        JD_PANIC();
         break;
     }
 

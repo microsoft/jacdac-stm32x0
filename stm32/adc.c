@@ -30,7 +30,7 @@ uint16_t adc_convert(void) {
         (LL_ADC_REG_IsConversionOngoing(ADC1) == 0)) {
         LL_ADC_REG_StartConversion(ADC1);
     } else
-        jd_panic();
+        JD_PANIC();
 
 #if STM32WL
     while (LL_ADC_IsActiveFlag_EOS(ADC1) == 0)
@@ -280,7 +280,7 @@ void adc_prep_read_pin(uint8_t pin) {
     uint32_t chan = pin_channel(pin);
 
     if (chan == NO_CHANNEL)
-        jd_panic();
+        JD_PANIC();
 
     pin_setup_analog_input(pin);
 

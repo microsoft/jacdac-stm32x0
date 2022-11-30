@@ -53,7 +53,7 @@ static GPIO_TypeDef *compute_masks(int n, uint16_t *masks, const uint8_t *pins, 
     GPIO_TypeDef *port = PIN_PORT(pins[0]);
     for (int i = 0; i < n; ++i) {
         if (PIN_PORT(pins[i]) != port)
-            jd_panic();
+            JD_PANIC();
         masks[i] = PIN_MASK(pins[i]);
         *all |= masks[i];
         pin_setup_output(pins[i]);

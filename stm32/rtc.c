@@ -110,7 +110,7 @@ static void schedule_sync(ctx_t *ctx) {
 
 static void rtc_set(ctx_t *ctx, uint32_t delta_us, cb_t f) {
     if (delta_us > RTC_SECOND_IN_US)
-        jd_panic();
+        JD_PANIC();
     if (delta_us < RTC_MIN_TIME_US)
         delta_us = RTC_MIN_TIME_US;
     uint32_t delta_tick = US_TO_TICKS(delta_us);
@@ -259,9 +259,9 @@ void rtc_init() {
     // Values of 32500 and 51500 observed on the *same device* between power cycles,
     // however the value is stable between resets and while running.
     if (!(30000 <= h_ms && h_ms <= 55000))
-        jd_panic();
+        JD_PANIC();
     if (tmp > 0x7f00)
-        jd_panic();
+        JD_PANIC();
     ctx->presc = tmp;
     rtc_config(1, ctx->presc);
     LL_RTC_ALMA_Disable(RTC);

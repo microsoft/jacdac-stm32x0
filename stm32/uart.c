@@ -233,7 +233,7 @@ void uart_init_() {
 
 // static void check_idle(void) {
 //    if (LL_USART_IsEnabled(USARTx))
-//        jd_panic();
+//        JD_PANIC();
 //}
 
 int uart_wait_high() {
@@ -256,7 +256,7 @@ int uart_start_tx(const void *data, uint32_t numbytes) {
     if (LL_USART_IsEnabled(USARTx)) {
         // TX should never be already enabled though
         if (USARTx->CR1 & USART_CR1_TE)
-            jd_panic();
+            JD_PANIC();
         // we don't re-enable EXTI - the RX complete will do it
         return -1;
     }

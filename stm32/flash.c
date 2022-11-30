@@ -39,18 +39,18 @@ static void check_eop(void) {
     if (FLASH->SR & FLASH_SR_EOP)
         FLASH->SR = FLASH_SR_EOP; // OK, write to clear
     else
-        jd_panic(); // otherwise, whoops!
+        JD_PANIC(); // otherwise, whoops!
 }
 
 void flash_program(void *dst, const void *src, uint32_t len) {
 #if NEW_FLASH
     // G0/WL flash requires 64 bit writes
     if ((((uint32_t)dst) & 7) || (((uint32_t)src) & 3) || (len & 7))
-        jd_panic();
+        JD_PANIC();
 #else
     // F0 flash can handle 16 bit writes
     if ((((uint32_t)dst) & 1) || (((uint32_t)src) & 1) || (len & 1))
-        jd_panic();
+        JD_PANIC();
 #endif
 
     unlock();
@@ -64,7 +64,7 @@ void flash_program(void *dst, const void *src, uint32_t len) {
         // check if dp[0/1] == 0xffffffff
         int erased = dp[0] + 1 == 0 && dp[1] + 1 == 0;
         if (!erased && (sp[0] || sp[1]))
-            jd_panic();
+            JD_PANIC();
 
         WAIT_BUSY();
         dp[0] = sp[0];

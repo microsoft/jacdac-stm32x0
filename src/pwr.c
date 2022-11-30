@@ -8,7 +8,7 @@ bool pwr_in_pll() {
 
 static void check_overflow(uint8_t v) {
     if (target_in_irq() || v == 0xff)
-        jd_panic(); // should not be called in ISR handler
+        JD_PANIC(); // should not be called in ISR handler
 }
 
 void pwr_enter_pll() {
@@ -20,7 +20,7 @@ void pwr_enter_pll() {
 
 void pwr_leave_pll() {
     if (!pll_cnt)
-        jd_panic();
+        JD_PANIC();
     pll_cnt--;
     if (pll_cnt == 0)
         clk_set_pll(0);
@@ -33,7 +33,7 @@ void pwr_enter_tim() {
 
 void pwr_leave_tim() {
     if (!tim_cnt)
-        jd_panic();
+        JD_PANIC();
     tim_cnt--;
 }
 
@@ -49,7 +49,7 @@ void pwr_enter_no_sleep() {
 
 void pwr_leave_no_sleep() {
     if (!no_sleep_cnt)
-        jd_panic();
+        JD_PANIC();
     no_sleep_cnt--;
 }
 

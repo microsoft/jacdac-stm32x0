@@ -49,7 +49,7 @@ static void led_panic_blink(void) {
     target_wait_us(64 << 20);
 }
 
-void jd_panic(void) {
+void hw_panic(void) {
     DMESG("PANIC!");
     while (1) {
         led_panic_blink();

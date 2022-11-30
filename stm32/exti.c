@@ -93,7 +93,7 @@ void exti_set_callback(uint8_t pin, cb_t callback, uint32_t flags) {
     uint32_t extiport = 0;
 
     if (pin >> 4 > 2)
-        jd_panic();
+        JD_PANIC();
 #if defined(STM32F0) || defined(STM32WL)
     extiport = pin >> 4;
 #elif defined(STM32G0)

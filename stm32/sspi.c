@@ -97,7 +97,7 @@ void sspi_rx(void *buf0, uint32_t numbytes) {
         *(buf++) = LL_SPI_ReceiveData8(SPIx);
 
     if (buf - (uint8_t *)buf0 != (int)numbytes0)
-        hw_panic();
+        JD_PANIC();
 }
 #endif
 #endif

@@ -130,7 +130,7 @@ SysTime_t SysTimeGetMcuTime(void) {
 
     // only allow ~hour between calls
     if (delta >> 32)
-        jd_panic();
+        JD_PANIC();
 
     uint32_t subs = (uint32_t)delta / 1000;
     if (subs > 1000) {

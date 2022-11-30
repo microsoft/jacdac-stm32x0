@@ -81,7 +81,7 @@ static void tx_core(const void *data, uint32_t numbytes, cb_t doneHandler) {
     // DMESG("dspi tx");
 
     if (doneH)
-        jd_panic();
+        JD_PANIC();
     doneH = doneHandler;
 
     /* Reset the threshold bit */
@@ -105,7 +105,7 @@ void dspi_xfer(const void *data, void *rx, uint32_t numbytes, cb_t doneHandler) 
     if (rx && !data)
         data = rx;
     if (!rx)
-        jd_panic();
+        JD_PANIC();
     tx_core(data, numbytes, doneHandler);
 
     LL_DMA_ConfigAddresses(DMA1, DMA_CH_RX, (uint32_t) & (SPIx->DR), (uint32_t)rx,

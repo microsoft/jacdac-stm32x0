@@ -9,7 +9,7 @@ int main(void) {
 
     const uint32_t *sp = (const uint32_t *)bootloader;
     if (sp[0] != 0x2fd56055)
-        jd_panic(); // bad magic
+        JD_PANIC(); // bad magic
     uint32_t len = sp[1];
     sp += 4;
 

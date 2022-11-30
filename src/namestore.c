@@ -69,13 +69,13 @@ static void ns_gc(void) {
 
 void ns_init() {
     if ((uint32_t)&__etext > (uint32_t)store)
-        jd_panic();
+        JD_PANIC();
     if (store->magic != MAGIC) {
         flash_erase(store);
         store_t init = {.magic = MAGIC};
         flash_program(store, &init, sizeof(init));
         if (store->magic != MAGIC)
-            jd_panic();
+            JD_PANIC();
     }
 }
 
@@ -118,13 +118,13 @@ void ns_set(uint64_t key, const char *name) {
         flash_program(&ex->hash - 1, &z, 2);
         ex = lookup(key);
         if (ex->size != 0xff)
-            jd_panic();
+            JD_PANIC();
     }
     if (!name)
         return;
     unsigned size = (sizeof(ns_t) + strlen(name) + 2) & ~1;
     if (size > 32)
-        jd_panic();
+        JD_PANIC();
     uint8_t buf[size];
     ns_t *tmp = (ns_t *)buf;
     tmp->size = size;

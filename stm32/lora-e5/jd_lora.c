@@ -155,10 +155,10 @@ void jd_lora_process(void) {
 
 int jd_lora_send(const void *data, uint32_t datalen) {
     if (datalen > LORAWAN_APP_DATA_BUFFER_MAX_SIZE)
-        jd_panic();
+        JD_PANIC();
 
     if (target_in_irq() && !jd_lora_in_timer())
-        jd_panic();
+        JD_PANIC();
 
     UTIL_TIMER_Time_t next_tx_ms = 0;
     LmHandlerAppData_t app_data = {

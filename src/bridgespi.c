@@ -107,7 +107,7 @@ static void setup_xfer(srv_t *state) {
 // called when physical layer received a frame
 void bridge_forward_frame(jd_frame_t *frame) {
     if (is_host_frame(frame))
-        jd_panic(); // loop?
+        JD_PANIC(); // loop?
 
     srv_t *state = _state;
 

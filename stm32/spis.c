@@ -63,7 +63,7 @@ void spis_xfer(const void *txdata, void *rxdata, uint32_t numbytes, cb_t doneHan
     // DMESG("xfer %x", SPIx->SR);
 
     if (doneH)
-        hw_panic();
+        JD_PANIC();
     doneH = doneHandler;
 
     /* Reset the threshold bit */
@@ -105,7 +105,7 @@ void IRQHandler(void) {
     DMESG("SPI-S handler! %x %d/%d", (unsigned)SPIx->SR, (int)LL_DMA_GetDataLength(DMA1, DMA_CH_TX),
           (int)LL_DMA_GetDataLength(DMA1, DMA_CH_RX));
     if (!spis_error_cb)
-        hw_panic();
+        JD_PANIC();
     shutdown_dma();
     spis_error_cb();
 }
@@ -117,7 +117,7 @@ void DMA_Handler(void) {
     // DMESG("DMA-SPIS irq %x", DMA1->ISR);
 
     //    if (n++ > 10)
-    //        hw_panic();
+    //        JD_PANIC();
 
     pulse_log_pin();
 
@@ -125,7 +125,7 @@ void DMA_Handler(void) {
         pulse_log_pin();
 #if 0
         spis_log();
-        hw_panic();
+        JD_PANIC();
 #endif
         shutdown_dma();
 
@@ -145,7 +145,7 @@ void DMA_Handler(void) {
 
     if (DMA_HasFlag(DMA1, DMA_CH_RX, DMA_FLAG_ERROR) ||
         DMA_HasFlag(DMA1, DMA_CH_TX, DMA_FLAG_ERROR)) {
-        hw_panic();
+        JD_PANIC();
     }
 }
 

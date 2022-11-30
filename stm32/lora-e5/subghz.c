@@ -25,7 +25,7 @@ SUBGHZ_HandleTypeDef hsubghz;
 void MX_SUBGHZ_Init(void) {
     hsubghz.Init.BaudratePrescaler = SUBGHZSPI_BAUDRATEPRESCALER_4;
     if (HAL_SUBGHZ_Init(&hsubghz) != HAL_OK) {
-        jd_panic();
+        JD_PANIC();
     }
 }
 

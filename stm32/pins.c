@@ -36,7 +36,7 @@ void pin_set_pull(int pin, int pull) {
                        pull == PIN_PULL_DOWN   ? LL_GPIO_PULL_DOWN
                        : pull == PIN_PULL_UP   ? LL_GPIO_PULL_UP
                        : pull == PIN_PULL_NONE ? LL_GPIO_PULL_NO
-                                               : (jd_panic(), 0));
+                                               : (hw_panic(), 0));
 }
 
 void pin_setup_input(int pin, int pull) {
@@ -48,7 +48,7 @@ void pin_setup_input(int pin, int pull) {
                        pull == -1  ? LL_GPIO_PULL_DOWN
                        : pull == 1 ? LL_GPIO_PULL_UP
                        : pull == 0 ? LL_GPIO_PULL_NO
-                                   : (jd_panic(), 0));
+                                   : (hw_panic(), 0));
     LL_GPIO_SetPinMode(GPIOx, currentpin, LL_GPIO_MODE_INPUT);
 }
 
