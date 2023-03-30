@@ -11,6 +11,8 @@
 #include "stm32g0.h"
 #elif defined(STM32WL)
 #include "stm32wl.h"
+#elif defined(STM32L4)
+#include "stm32l4.h"
 #else
 #error "invalid CPU"
 #endif
@@ -59,7 +61,7 @@ void rtc_cancel_cb(void);
 #define DMA_FLAG_HT DMA_ISR_HTIF1
 #define DMA_FLAG_TE DMA_ISR_TEIF1
 
-#if defined(STM32G0) || defined(STM32WL)
+#if defined(STM32G0) || defined(STM32L)
 static inline void dma_clear_flag(int ch, int flag) {
     WRITE_REG(DMA1->IFCR, flag << (ch*4));
 }

@@ -16,6 +16,14 @@
 #define IRQHandler USART2_IRQHandler
 #define LL_DMAMUX_REQ_USARTx_RX LL_DMAMUX_REQ_USART2_RX
 #define LL_DMAMUX_REQ_USARTx_TX LL_DMAMUX_REQ_USART2_TX
+#elif USART_IDX == 4
+#define USARTx UART4
+#define IRQn UART4_IRQn
+#define IRQHandler UART4_IRQHandler
+#define LL_DMAMUX_REQ_USARTx_RX LL_DMAMUX_REQ_UART4_RX
+#define LL_DMAMUX_REQ_USARTx_TX LL_DMAMUX_REQ_UART4_TX
+//#define LL_DMAMUX_REQ_USARTx_RX 2
+//#define LL_DMAMUX_REQ_USARTx_TX 2
 #else
 #error "bad usart"
 #endif
@@ -23,6 +31,17 @@
 #ifdef STM32G0
 #define DMA_IRQn DMA1_Ch4_5_DMAMUX1_OVR_IRQn
 #define DMA_Handler DMA1_Ch4_5_DMAMUX1_OVR_IRQHandler
+#define NEW_UART 1
+#elif defined(STM32L4)
+#define DMA_IRQn DMA2_Channel3_IRQn
+#define DMA_IRQn_2 DMA2_Channel5_IRQn
+#define DMA_CH_TX LL_DMA_CHANNEL_3
+#define DMA_CH_RX LL_DMA_CHANNEL_5
+#define DMA_ISR_TC_TX DMA_ISR_TCIF3
+#define DMA_ISR_TE_TX DMA_ISR_TEIF3
+#define DMA_ISR_TC_RX DMA_ISR_TCIF5
+#define DMA_ISR_TE_RX DMA_ISR_TEIF5
+#define DMAx DMA2
 #define NEW_UART 1
 #elif defined(STM32WL)
 #define DMA_IRQn DMA1_Channel4_IRQn
@@ -32,6 +51,22 @@
 #define DMA_IRQn DMA1_Channel4_5_IRQn
 #define DMA_Handler DMA1_Channel4_5_IRQHandler
 #define NEW_UART 0
+#endif
+
+#ifndef DMA_CH_TX
+#define DMA_CH_TX LL_DMA_CHANNEL_4
+#define DMA_ISR_TC_TX DMA_ISR_TCIF4
+#define DMA_ISR_TE_TX DMA_ISR_TEIF4
+#endif
+
+#ifndef DMA_CH_RX
+#define DMA_CH_RX LL_DMA_CHANNEL_5
+#define DMA_ISR_TC_RX DMA_ISR_TCIF5
+#define DMA_ISR_TE_RX DMA_ISR_TEIF5
+#endif
+
+#ifndef DMAx
+#define DMAx DMA1
 #endif
 
 // DMA Channel 4 - TX
@@ -60,11 +95,11 @@ static void uartOwnsPin(int doesIt) {
 }
 
 void uart_disable() {
-    LL_DMA_ClearFlag_GI5(DMA1);
-    LL_DMA_DisableChannel(DMA1, LL_DMA_CHANNEL_5);
+    LL_DMA_ClearFlag_GI5(DMAx);
+    LL_DMA_DisableChannel(DMAx, DMA_CH_RX);
 
-    LL_DMA_ClearFlag_GI4(DMA1);
-    LL_DMA_DisableChannel(DMA1, LL_DMA_CHANNEL_4);
+    LL_DMA_ClearFlag_GI3(DMAx);
+    LL_DMA_DisableChannel(DMAx, DMA_CH_TX);
 
     LL_USART_Disable(USARTx);
 
@@ -73,13 +108,13 @@ void uart_disable() {
 }
 
 void DMA_Handler(void) {
-    uint32_t isr = DMA1->ISR;
+    uint32_t isr = DMAx->ISR;
 
-    // DMESG("DMA irq %x", isr);
+    // DMESG("DMA irq %x", (unsigned) isr);
 
-    if (isr & (DMA_ISR_TCIF5 | DMA_ISR_TEIF5)) {
+    if (isr & (DMA_ISR_TC_RX | DMA_ISR_TE_RX)) {
         uart_disable();
-        if (isr & DMA_ISR_TCIF5) {
+        if (isr & DMA_ISR_TC_RX) {
             // overrun?
             // DMESG("USARTx RX OK, but how?!");
             jd_rx_completed(-1);
@@ -89,12 +124,12 @@ void DMA_Handler(void) {
         }
     }
 
-    if (isr & (DMA_ISR_TCIF4 | DMA_ISR_TEIF4)) {
-        LL_DMA_ClearFlag_GI4(DMA1);
-        LL_DMA_DisableChannel(DMA1, LL_DMA_CHANNEL_4);
+    if (isr & (DMA_ISR_TC_TX | DMA_ISR_TE_TX)) {
+        LL_DMA_ClearFlag_GI3(DMAx);
+        LL_DMA_DisableChannel(DMAx, DMA_CH_TX);
 
         int errCode = 0;
-        if (isr & DMA_ISR_TCIF4) {
+        if (isr & DMA_ISR_TC_TX) {
             while (!LL_USART_IsActiveFlag_TC(USARTx))
                 ;
 // the standard BRK signal is too short - it's 10uS - to be detected as break at least on NRF52
@@ -130,8 +165,20 @@ void DMA1_Channel5_IRQHandler(void) {
 }
 #endif
 
+#ifdef STM32L4
+void DMA2_Channel3_IRQHandler(void) {
+    DMA_Handler();
+}
+void DMA2_Channel5_IRQHandler(void) {
+    DMA_Handler();
+}
+#endif
+
 static void DMA_Init(void) {
     DMA_CLK_ENABLE();
+#ifdef __HAL_RCC_DMA2_CLK_ENABLE
+    __HAL_RCC_DMA2_CLK_ENABLE();
+#endif
 
     NVIC_SetPriority(DMA_IRQn, IRQ_PRIORITY_UART);
     NVIC_EnableIRQ(DMA_IRQn);
@@ -152,6 +199,9 @@ static void USART_UART_Init(void) {
 #elif USART_IDX == 1
     LL_RCC_SetUSARTClockSource(LL_RCC_USART1_CLKSOURCE_HSI);
     __HAL_RCC_USART1_CLK_ENABLE();
+#elif USART_IDX == 4
+    LL_RCC_SetUSARTClockSource(LL_RCC_UART4_CLKSOURCE_HSI);
+    __HAL_RCC_UART4_CLK_ENABLE();
 #else
 #error "bad usart"
 #endif
@@ -167,9 +217,9 @@ static void USART_UART_Init(void) {
 
     /* USART_RX Init */
 #if NEW_UART
-    LL_DMA_SetPeriphRequest(DMA1, LL_DMA_CHANNEL_5, LL_DMAMUX_REQ_USARTx_RX);
+    LL_DMA_SetPeriphRequest(DMAx, DMA_CH_RX, LL_DMAMUX_REQ_USARTx_RX);
 #endif
-    LL_DMA_ConfigTransfer(DMA1, LL_DMA_CHANNEL_5,
+    LL_DMA_ConfigTransfer(DMAx, DMA_CH_RX,
                           LL_DMA_DIRECTION_PERIPH_TO_MEMORY | //
                               LL_DMA_PRIORITY_HIGH |          //
                               LL_DMA_MODE_NORMAL |            //
@@ -179,9 +229,9 @@ static void USART_UART_Init(void) {
                               LL_DMA_MDATAALIGN_BYTE);
     /* USART_TX Init */
 #if NEW_UART
-    LL_DMA_SetPeriphRequest(DMA1, LL_DMA_CHANNEL_4, LL_DMAMUX_REQ_USARTx_TX);
+    LL_DMA_SetPeriphRequest(DMAx, DMA_CH_TX, LL_DMAMUX_REQ_USARTx_TX);
 #endif
-    LL_DMA_ConfigTransfer(DMA1, LL_DMA_CHANNEL_4,
+    LL_DMA_ConfigTransfer(DMAx, DMA_CH_TX,
                           LL_DMA_DIRECTION_MEMORY_TO_PERIPH | //
                               LL_DMA_PRIORITY_HIGH |          //
                               LL_DMA_MODE_NORMAL |            //
@@ -195,10 +245,10 @@ static void USART_UART_Init(void) {
     NVIC_EnableIRQ(IRQn);
 
     /* Enable DMA transfer complete/error interrupts  */
-    LL_DMA_EnableIT_TC(DMA1, LL_DMA_CHANNEL_4);
-    LL_DMA_EnableIT_TE(DMA1, LL_DMA_CHANNEL_4);
-    LL_DMA_EnableIT_TC(DMA1, LL_DMA_CHANNEL_5);
-    LL_DMA_EnableIT_TE(DMA1, LL_DMA_CHANNEL_5);
+    LL_DMA_EnableIT_TC(DMAx, DMA_CH_TX);
+    LL_DMA_EnableIT_TE(DMAx, DMA_CH_TX);
+    LL_DMA_EnableIT_TC(DMAx, DMA_CH_RX);
+    LL_DMA_EnableIT_TE(DMAx, DMA_CH_RX);
 
 #if NEW_UART
     USARTx->CR1 = LL_USART_DATAWIDTH_8B | LL_USART_PARITY_NONE | LL_USART_OVERSAMPLING_16 |
@@ -247,7 +297,7 @@ int uart_wait_high() {
 }
 
 int uart_start_tx(const void *data, uint32_t numbytes) {
-    // DMESG("tx %d", numbytes);
+    // DMESG("tx %d", (int)numbytes);
     exti_disable(PIN_MASK(UART_PIN));
     exti_clear_falling(PIN_MASK(UART_PIN));
     // We assume EXTI runs at higher priority than us
@@ -284,9 +334,9 @@ int uart_start_tx(const void *data, uint32_t numbytes) {
     while (!(LL_USART_IsActiveFlag_TEACK(USARTx)))
         ;
 
-    LL_DMA_ConfigAddresses(DMA1, LL_DMA_CHANNEL_4, (uint32_t)data, (uint32_t) & (USARTx->TDR),
+    LL_DMA_ConfigAddresses(DMAx, DMA_CH_TX, (uint32_t)data, (uint32_t) & (USARTx->TDR),
                            LL_DMA_DIRECTION_MEMORY_TO_PERIPH);
-    LL_DMA_SetDataLength(DMA1, LL_DMA_CHANNEL_4, numbytes);
+    LL_DMA_SetDataLength(DMAx, DMA_CH_TX, numbytes);
     LL_USART_EnableDMAReq_TX(USARTx);
     // to here, it's about 1.3us
 
@@ -294,7 +344,7 @@ int uart_start_tx(const void *data, uint32_t numbytes) {
     target_wait_us(45);
     // The spec requires min of 50us and max of 189us.
 
-    LL_DMA_EnableChannel(DMA1, LL_DMA_CHANNEL_4);
+    LL_DMA_EnableChannel(DMAx, DMA_CH_TX);
 
     return 0;
 }
@@ -311,11 +361,11 @@ void uart_start_rx(void *data, uint32_t maxbytes) {
     while (!(LL_USART_IsActiveFlag_REACK(USARTx)))
         ;
 
-    LL_DMA_ConfigAddresses(DMA1, LL_DMA_CHANNEL_5, (uint32_t) & (USARTx->RDR), (uint32_t)data,
+    LL_DMA_ConfigAddresses(DMAx, DMA_CH_RX, (uint32_t) & (USARTx->RDR), (uint32_t)data,
                            LL_DMA_DIRECTION_PERIPH_TO_MEMORY);
-    LL_DMA_SetDataLength(DMA1, LL_DMA_CHANNEL_5, maxbytes);
+    LL_DMA_SetDataLength(DMAx, DMA_CH_RX, maxbytes);
     LL_USART_EnableDMAReq_RX(USARTx);
-    LL_DMA_EnableChannel(DMA1, LL_DMA_CHANNEL_5);
+    LL_DMA_EnableChannel(DMAx, DMA_CH_RX);
 
     exti_disable(PIN_MASK(UART_PIN));
     exti_clear_falling(PIN_MASK(UART_PIN));
@@ -325,7 +375,7 @@ void uart_start_rx(void *data, uint32_t maxbytes) {
 void IRQHandler(void) {
     // DMESG("irq handler");
     //  pulse_log_pin();
-    uint32_t dataLeft = LL_DMA_GetDataLength(DMA1, LL_DMA_CHANNEL_5);
+    uint32_t dataLeft = LL_DMA_GetDataLength(DMAx, DMA_CH_RX);
     uart_disable();
     jd_rx_completed(dataLeft);
 }

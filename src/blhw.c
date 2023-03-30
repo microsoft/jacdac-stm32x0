@@ -4,7 +4,14 @@
 #include "pinnames.h"
 
 uint64_t hw_device_id(void) {
-#ifdef STM32WL
+#ifdef STM32L4
+    static uint64_t b;
+    if (b)
+        return b;
+    const uint8_t *hp = (const uint8_t *)0x1FFF7590;
+    b = ((uint64_t)jd_hash_fnv1a(hp, 12) << 32) | ((uint64_t)jd_hash_fnv1a(hp + 1, 11));
+    return b;
+#elif defined(STM32WL)
     static uint64_t b;
     if (b)
         return b;

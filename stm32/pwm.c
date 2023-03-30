@@ -26,7 +26,7 @@ static const struct TimDesc tims[] = {
     {TIM3, 1, RCC_APB1ENR_TIM3EN},   //
     {TIM14, 1, RCC_APB1ENR_TIM14EN}, //
     {TIM16, 2, RCC_APB2ENR_TIM16EN}, //
-#elif defined(STM32WL)
+#elif defined(STM32L)
 #define APB1ENR APB1ENR1
     // TODO LPTIM...
     {TIM1, 2, RCC_APB2ENR_TIM1EN},  //
@@ -83,6 +83,11 @@ static const struct PinPWM pins[] = {
     {PA_4, 1, LL_GPIO_AF_4, TIM14}, // SND
     {PA_7, 1, LL_GPIO_AF_4, TIM14}, // servo
 #elif defined(STM32WL)
+    {PA_0, 1, LL_GPIO_AF_1, TIM2},
+    {PA_3, 4, LL_GPIO_AF_1, TIM2},
+    {PB_10, 3, LL_GPIO_AF_1, TIM2},
+// ...
+#elif defined(STM32L4)
     {PA_0, 1, LL_GPIO_AF_1, TIM2},
     {PA_3, 4, LL_GPIO_AF_1, TIM2},
     {PB_10, 3, LL_GPIO_AF_1, TIM2},
