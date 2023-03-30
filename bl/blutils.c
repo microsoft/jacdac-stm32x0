@@ -5,7 +5,7 @@ void target_wait_cycles(int n) {
     __asm__ __volatile__(".syntax unified\n"
                          "1:              \n"
                          "   subs %0, #1   \n" // subtract 1 from %0 (n)
-#if defined(STM32G0) || defined(STM32WL)
+#if defined(STM32G0) || defined(STM32L)
                          "  nop  \n"
 #endif
                          "   bne 1b       \n" // if result is not 0 jump to 1
@@ -16,7 +16,7 @@ void target_wait_cycles(int n) {
 }
 
 void target_wait_us(uint32_t n) {
-#if defined(STM32G0) || defined(STM32F0) || defined(STM32WL)
+#if defined(STM32G0) || defined(STM32F0) || defined(STM32L)
     n = n * CPU_MHZ >> 2;
 #else
 #error "define clock rate"

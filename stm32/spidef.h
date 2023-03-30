@@ -10,7 +10,7 @@
 #endif
 #elif defined(STM32F031x6) || defined(STM32F030x4) || !defined(SPI2)
 #define SPI_IDX 1
-#elif defined(STM32WL)
+#elif defined(STM32L)
 #if PIN_ASCK == PB_13
 #define SPI_IDX 2
 #else
@@ -58,7 +58,7 @@ STATIC_ASSERT(PIN_AMISO == PA_6);
 
 #elif SPI_IDX == 2
 #define SPI_CLK_ENABLE __HAL_RCC_SPI2_CLK_ENABLE
-#if defined(STM32WL)
+#if defined(STM32L)
 #define PIN_AF LL_GPIO_AF_5
 #elif defined(STM32G031xx)
 #if PIN_ASCK == PA_0
@@ -98,7 +98,7 @@ STATIC_ASSERT(PIN_AMISO == -1);
 #define DMA_IRQn DMA1_Channel1_IRQn
 #define DMA_Handler DMA1_Channel1_IRQHandler
 #endif
-#elif defined(STM32WL)
+#elif defined(STM32L)
 #define DMA_CH_TX LL_DMA_CHANNEL_1
 #define DMA_CH_RX LL_DMA_CHANNEL_2
 #define DMA_IRQn DMA1_Channel1_IRQn

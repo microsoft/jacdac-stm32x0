@@ -284,7 +284,7 @@ void px_init(int light_type) {
     if (light_type & LIGHT_TYPE_APA_MASK)
         pin_setup_output_af(PIN_ASCK, PIN_AF);
 
-#if defined(STM32G0) || defined(STM32WL)
+#if defined(STM32G0) || defined(STM32L)
     LL_DMA_SetPeriphRequest(DMA1, DMA_CH_TX, LL_DMAMUX_REQ_SPIx_TX);
 #endif
 

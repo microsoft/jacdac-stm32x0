@@ -3,7 +3,7 @@
 // (not used)
 
 // STM32G0/WL require 8-byte aligned flash writes
-#if !defined(STM32G0) && !defined(STM32WL)
+#if !defined(STM32G0) && !defined(STM32L)
 
 #define MAGIC 0xe233b285
 #define SETTINGS_SIZE 1024

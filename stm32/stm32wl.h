@@ -4,6 +4,7 @@
 #include "board.h"
 
 #define STM32WL 1
+#define STM32L 1
 
 #include "stm32wlxx_hal_rcc.h"
 

@@ -103,7 +103,8 @@ void clk_setup_pll(void) {
 #else
     LL_RCC_PLL_ConfigDomain_SYS(LL_RCC_PLLSOURCE_HSI_DIV_2, LL_RCC_PLL_MUL_12);
 #endif
-#elif defined(STM32WL)
+#elif defined(STM32L)
+    // run at 48MHz
     LL_FLASH_SetLatency(LL_FLASH_LATENCY_2);
     LL_RCC_PLL_ConfigDomain_SYS(LL_RCC_PLLSOURCE_HSI, LL_RCC_PLLM_DIV_1, 6, LL_RCC_PLLR_DIV_2);
 #else
@@ -138,7 +139,7 @@ uint32_t SystemCoreClock = HSI_MHZ * 1000000;
 #endif
 
 void clk_set_pll(int on) {
-#if defined(STM32WL) || !defined(DISABLE_PLL)
+#if defined(STM32L) || !defined(DISABLE_PLL)
     if (!on) {
         LL_RCC_SetSysClkSource(LL_RCC_SYS_CLKSOURCE_HSI);
         while (LL_RCC_GetSysClkSource() != LL_RCC_SYS_CLKSOURCE_STATUS_HSI)
@@ -169,7 +170,7 @@ void SystemInit(void) {
     LL_IOP_GRP1_EnableClock(LL_IOP_GRP1_PERIPH_GPIOA | LL_IOP_GRP1_PERIPH_GPIOB |
                             LL_IOP_GRP1_PERIPH_GPIOC);
     LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_PWR);
-#elif defined(STM32WL)
+#elif defined(STM32L)
     SCB->VTOR = FLASH_BASE; // needed?
     // LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_SYSCFG); - doesn't have?
     LL_AHB2_GRP1_EnableClock(LL_AHB2_GRP1_PERIPH_GPIOA | LL_AHB2_GRP1_PERIPH_GPIOB |

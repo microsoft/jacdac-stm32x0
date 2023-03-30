@@ -1,6 +1,6 @@
 #include "jdstm.h"
 
-#if defined(STM32G0) || defined(STM32WL)
+#if defined(STM32G0) || defined(STM32L)
 #define NEW_FLASH 1
 #else
 #define NEW_FLASH 0

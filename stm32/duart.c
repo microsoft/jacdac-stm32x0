@@ -4,7 +4,7 @@
 
 #define RX_BUFFER_SIZE 512
 
-#if defined(STM32G0) || defined(STM32WL)
+#if defined(STM32G0) || defined(STM32L)
 #define NEW_UART 1
 #else
 #error "F0 not (yet?) supported for duplex UART"
@@ -22,7 +22,7 @@
 #error "bad usart"
 #endif
 
-#if defined(STM32WL)
+#if defined(STM32L)
 #define TX_AF LL_GPIO_AF_7
 #define RX_AF LL_GPIO_AF_7
 #elif defined(STM32G0)
@@ -47,7 +47,7 @@
 #define DMA_IRQn DMA1_Channel2_3_IRQn
 #define DUART_DMA_Handler DMA1_Channel2_3_IRQHandler
 #define NEW_UART 1
-#elif defined(STM32WL)
+#elif defined(STM32L)
 #define DMA_IRQn DMA1_Channel2_IRQn
 #define DMA_IRQn_2 DMA1_Channel3_IRQn
 #define NEW_UART 1
@@ -105,7 +105,7 @@ void DUART_DMA_Handler(void) {
     }
 }
 
-#ifdef STM32WL
+#ifdef STM32L
 void DMA1_Channel2_IRQHandler(void) {
     DUART_DMA_Handler();
 }
@@ -128,7 +128,7 @@ void duart_init(data_cb_t cb) {
 
 #if DUPLEX_UART == 2
     __HAL_RCC_USART2_CLK_ENABLE();
-#ifdef STM32WL
+#ifdef STM32L
     LL_RCC_SetUSARTClockSource(LL_RCC_USART2_CLKSOURCE_HSI);
 #elif !defined(DISABLE_PLL)
 #error "PLL not supported"

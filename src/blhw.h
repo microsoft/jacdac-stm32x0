@@ -77,7 +77,7 @@ struct app_top_handlers {
 #if defined(STM32G0)
 #define OTP_DEVICE_ID_ADDR (0x1FFF7000 + 1024 - 8)
 #define APP_DEVICE_ID *(uint64_t *)OTP_DEVICE_ID_ADDR
-#elif defined(STM32WL)
+#elif defined(STM32L)
 #define APP_DEVICE_ID use hw_device_id
 #else
 #define APP_DEVICE_ID app_dev_info.device_id

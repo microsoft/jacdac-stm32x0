@@ -3,11 +3,11 @@
 
 static bool adc_calibrated;
 
-#ifdef STM32WL
+#ifdef STM32L
 #define ADC1 ADC
 #endif
 
-#if defined(STM32G0) || defined(STM32WL)
+#if defined(STM32G0) || defined(STM32L)
 #define NEW_ADC 1
 #else
 #define NEW_ADC 0
@@ -32,7 +32,7 @@ uint16_t adc_convert(void) {
     } else
         JD_PANIC();
 
-#if STM32WL
+#if STM32L
     while (LL_ADC_IsActiveFlag_EOS(ADC1) == 0)
         ;
     LL_ADC_ClearFlag_EOS(ADC1);
@@ -165,7 +165,7 @@ void adc_init_random(void) {
 
     set_temp_ref(1);
     ADC1->CFGR1 = LL_ADC_REG_OVR_DATA_OVERWRITTEN;
-#ifdef STM32WL
+#ifdef STM32L
     ADC1->CFGR2 = LL_ADC_CLOCK_SYNC_PCLK_DIV4;
 #endif
 
@@ -251,7 +251,7 @@ uint16_t adc_read_temp(void) {
     // 310 = 2.5mV/C * 100C * (1<<12) / 3300mV
     // 30/33 is because the TS_CAL1 is taken at 3.0V VCC and we run at 3.3V
     return ((130 - 30) * (r - (TS_CAL1 * 30 / 33))) / 310 + 30;
-#elif defined(STM32WL)
+#elif defined(STM32L)
     return __LL_ADC_CALC_TEMPERATURE(3300, r, LL_ADC_RESOLUTION_12B);
 #else
 #error "no temp"

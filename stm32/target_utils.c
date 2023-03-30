@@ -7,7 +7,7 @@ void target_wait_cycles(int n) {
                          "   subs %0, #1   \n" // subtract 1 from %0 (n)
 #if defined(STM32G0)
                          "  nop  \n"
-#elif defined(STM32WL)
+#elif defined(STM32L)
                          "  nop  \n"
                          "  nop  \n"
                          "  nop  \n"
@@ -22,7 +22,7 @@ void target_wait_cycles(int n) {
 void target_wait_us(uint32_t n) {
 #if defined(STM32G0) || defined(STM32F0)
     n = n * (cpu_mhz >> 2);
-#elif defined(STM32WL)
+#elif defined(STM32L)
     n = n * (cpu_mhz >> 3);
 #else
 #error "define clock rate"

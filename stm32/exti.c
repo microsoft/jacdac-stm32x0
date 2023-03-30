@@ -3,7 +3,7 @@
 static cb_t callbacks[16];
 
 static void _check_line(int ln) {
-#if defined(STM32F0) || defined(STM32WL)
+#if defined(STM32F0) || defined(STM32L)
     LL_EXTI_ClearFlag_0_31(1 << ln);
 #else
     LL_EXTI_ClearRisingFlag_0_31(1 << ln);
@@ -14,7 +14,7 @@ static void _check_line(int ln) {
 
 #if defined(STM32G0)
 #define EXTI_LINES() (EXTI->FPR1 | EXTI->RPR1)
-#elif defined(STM32WL)
+#elif defined(STM32L)
 #define EXTI_LINES() (EXTI->PR1)
 #else
 #define EXTI_LINES() (EXTI->PR)
@@ -24,7 +24,7 @@ static void _check_line(int ln) {
     if (lines & (1 << (ln)))                                                                       \
     _check_line(ln)
 
-#ifdef STM32WL
+#ifdef STM32L
 #define SINGLE(name, ln)                                                                           \
     void name(void) {                                                                              \
         rtc_sync_time();                                                                           \
@@ -94,7 +94,7 @@ void exti_set_callback(uint8_t pin, cb_t callback, uint32_t flags) {
 
     if (pin >> 4 > 2)
         JD_PANIC();
-#if defined(STM32F0) || defined(STM32WL)
+#if defined(STM32F0) || defined(STM32L)
     extiport = pin >> 4;
 #elif defined(STM32G0)
     extiport = cfgs[pin >> 4];
@@ -107,7 +107,7 @@ void exti_set_callback(uint8_t pin, cb_t callback, uint32_t flags) {
 #ifdef STM32F0
     uint32_t line = (pos >> 2) | ((pos & 3) << 18);
     LL_SYSCFG_SetEXTISource(extiport, line);
-#elif defined(STM32WL)
+#elif defined(STM32L)
     uint32_t line = (pos >> 2) | (0xF << (16 + (4 * (pos & 3))));
     LL_SYSCFG_SetEXTISource(extiport, line);
 #else
@@ -126,7 +126,7 @@ void exti_set_callback(uint8_t pin, cb_t callback, uint32_t flags) {
     NVIC_SetPriority(irq, IRQ_PRIORITY_EXTI);                                                      \
     NVIC_EnableIRQ(irq)
 
-#ifdef STM32WL
+#ifdef STM32L
     if (!NVIC_GetEnableIRQ(EXTI0_IRQn)) {
         SETUP(EXTI0_IRQn);
         SETUP(EXTI1_IRQn);

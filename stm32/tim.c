@@ -85,7 +85,7 @@ void tim_init(void) {
     LL_TIM_DisableARRPreload(TIMx);
     LL_TIM_SetClockSource(TIMx, LL_TIM_CLOCKSOURCE_INTERNAL);
     LL_TIM_SetTriggerOutput(TIMx, LL_TIM_TRGO_RESET);
-#if defined(STM32G0) || defined(STM32WL)
+#if defined(STM32G0) || defined(STM32L)
     LL_TIM_SetTriggerOutput2(TIMx, LL_TIM_TRGO2_RESET);
 #endif
     LL_TIM_DisableMasterSlaveMode(TIMx);
