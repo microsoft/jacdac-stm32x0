@@ -13,8 +13,9 @@
 #elif I2C_IDX == 2
 #define I2Cx I2C2
 #define I2C_CLK LL_APB1_GRP1_PERIPH_I2C2
-// only G0Bx and G0Cx support this - we don't really want PCLK source, so in reality only I2C1 is supported
-#define I2C_CLK_SRC LL_RCC_I2C2_CLKSOURCE_HSI 
+// only G0Bx and G0Cx support this - we don't really want PCLK source, so in reality only I2C1 is
+// supported
+#define I2C_CLK_SRC LL_RCC_I2C2_CLKSOURCE_HSI
 #endif
 
 #ifndef I2C_FAST_MODE
@@ -53,14 +54,13 @@
 #endif
 #endif
 
-
 static void setup_pin(uint8_t pin) {
     pin_setup_output_af(pin, I2C_AF);
     LL_GPIO_SetPinOutputType(PIN_PORT(pin), PIN_MASK(pin), LL_GPIO_OUTPUT_OPENDRAIN);
     LL_GPIO_SetPinPull(PIN_PORT(pin), PIN_MASK(pin), LL_GPIO_PULL_UP);
 }
 
-int i2c_init(void) {
+int i2c_init_(void) {
     setup_pin(PIN_SDA);
     setup_pin(PIN_SCL);
     LL_RCC_SetI2CClockSource(I2C_CLK_SRC);
@@ -135,6 +135,13 @@ int i2c_finish_write(bool repeated) {
     return 0;
 }
 
+#define CHECK_RET(call)                                                                            \
+    do {                                                                                           \
+        int _r = call;                                                                             \
+        if (_r < 0)                                                                                \
+            return _r;                                                                             \
+    } while (0)
+
 #define MAXREP 10000
 
 int i2c_read_ex(uint8_t addr, void *dst, unsigned len) {
@@ -164,78 +171,19 @@ int i2c_read_ex(uint8_t addr, void *dst, unsigned len) {
     return 0;
 }
 
-//
-// platform-independent code starts
-//
+int i2c_write_ex2(uint8_t device_address, const void *src, unsigned len, const void *src2,
+                  unsigned len2, bool repeated)
 
-#define CHECK_RET(call)                                                                            \
-    do {                                                                                           \
-        int _r = call;                                                                             \
-        if (_r < 0)                                                                                \
-            return _r;                                                                             \
-    } while (0)
-
-int i2c_write_ex(uint8_t addr, const void *src, unsigned len, bool repeated) {
-    CHECK_RET(i2c_setup_write(addr, len, repeated));
+{
+    CHECK_RET(i2c_setup_write(device_address, len + len2, repeated));
     const uint8_t *p = src;
     while (len--)
+        CHECK_RET(i2c_write(*p++));
+    p = src2;
+    while (len2--)
         CHECK_RET(i2c_write(*p++));
     CHECK_RET(i2c_finish_write(repeated));
     return 0;
-}
-
-// 8-bit reg addr
-int i2c_write_reg_buf(uint8_t addr, uint8_t reg, const void *src, unsigned len) {
-    CHECK_RET(i2c_setup_write(addr, len + 1, false));
-    CHECK_RET(i2c_write(reg));
-    const uint8_t *p = src;
-    while (len--)
-        CHECK_RET(i2c_write(*p++));
-    CHECK_RET(i2c_finish_write(false));
-    return 0;
-}
-
-int i2c_write_reg(uint8_t addr, uint8_t reg, uint8_t val) {
-    return i2c_write_reg_buf(addr, reg, &val, 1);
-}
-
-int i2c_read_reg_buf(uint8_t addr, uint8_t reg, void *dst, unsigned len) {
-    CHECK_RET(i2c_write_ex(addr, &reg, 1, true) < 0);
-    return i2c_read_ex(addr, dst, len);
-}
-
-int i2c_read_reg(uint8_t addr, uint8_t reg) {
-    uint8_t r = 0;
-    CHECK_RET(i2c_read_reg_buf(addr, reg, &r, 1));
-    return r;
-}
-
-// 16-bit reg addr
-int i2c_write_reg16_buf(uint8_t addr, uint16_t reg, const void *src, unsigned len) {
-    CHECK_RET(i2c_setup_write(addr, len + 2, false));
-    CHECK_RET(i2c_write(reg >> 8));
-    CHECK_RET(i2c_write(reg & 0xff));
-    const uint8_t *p = src;
-    while (len--)
-        CHECK_RET(i2c_write(*p++));
-    CHECK_RET(i2c_finish_write(false));
-    return 0;
-}
-
-int i2c_write_reg16(uint8_t addr, uint16_t reg, uint8_t val) {
-    return i2c_write_reg16_buf(addr, reg, &val, 1);
-}
-
-int i2c_read_reg16_buf(uint8_t addr, uint16_t reg, void *dst, unsigned len) {
-    uint8_t a[] = {reg >> 8, reg & 0xff};
-    CHECK_RET(i2c_write_ex(addr, a, 2, true));
-    return i2c_read_ex(addr, dst, len);
-}
-
-int i2c_read_reg16(uint8_t addr, uint16_t reg) {
-    uint8_t r = 0;
-    CHECK_RET(i2c_read_reg16_buf(addr, reg, &r, 1));
-    return r;
 }
 
 #endif
