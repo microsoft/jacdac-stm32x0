@@ -17,14 +17,21 @@
 #define LL_DMAMUX_REQ_USARTx_RX LL_DMAMUX_REQ_USART2_RX
 #define LL_DMAMUX_REQ_USARTx_TX LL_DMAMUX_REQ_USART2_TX
 #elif USART_IDX == 4
+#ifdef STM32L4
 #define USARTx UART4
 #define IRQn UART4_IRQn
 #define IRQHandler UART4_IRQHandler
+#ifdef DMAMUX1
 #define LL_DMAMUX_REQ_USARTx_RX LL_DMAMUX_REQ_UART4_RX
 #define LL_DMAMUX_REQ_USARTx_TX LL_DMAMUX_REQ_UART4_TX
-//#define LL_DMAMUX_REQ_USARTx_RX 2
-//#define LL_DMAMUX_REQ_USARTx_TX 2
 #else
+#define LL_DMAMUX_REQ_USARTx_RX LL_DMA_REQUEST_2
+#define LL_DMAMUX_REQ_USARTx_TX LL_DMA_REQUEST_2
+#endif
+#endif
+#endif
+
+#ifndef USARTx
 #error "bad usart"
 #endif
 

@@ -1,6 +1,6 @@
 #include "jdstm.h"
 
-#if JD_USB_BRIDGE
+#if JD_USB_SERIAL_ADAPTER
 
 static bool in_tx;
 
