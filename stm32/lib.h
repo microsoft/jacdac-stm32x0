@@ -6,7 +6,6 @@
 
 #include "jd_protocol.h"
 
-#include "dmesg.h"
 #include "pinnames.h"
 
 #include "services/interfaces/jd_oled.h"
@@ -18,7 +17,6 @@ uint64_t tim_get_micros(void);
 void tim_set_timer(int delta, cb_t cb);
 
 #include "tinyhw.h"
-#include "dmesg.h"
 
 #define RTC_ALRM_US 10000
 

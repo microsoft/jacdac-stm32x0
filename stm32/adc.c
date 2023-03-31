@@ -1,9 +1,10 @@
 #include "jdstm.h"
-#include "dmesg.h"
+
+#ifndef STM32L4
 
 static bool adc_calibrated;
 
-#ifdef STM32L
+#ifdef STM32WL
 #define ADC1 ADC
 #endif
 
@@ -16,14 +17,6 @@ static bool adc_calibrated;
 #if NEW_ADC
 static bool configured_fixed = false;
 #endif
-
-static void set_sampling_time(uint32_t time) {
-#if NEW_ADC
-    LL_ADC_SetSamplingTimeCommonChannels(ADC1, LL_ADC_SAMPLINGTIME_COMMON_1, time);
-#else
-    LL_ADC_SetSamplingTimeCommonChannels(ADC1, time);
-#endif
-}
 
 uint16_t adc_convert(void) {
     if ((LL_ADC_IsEnabled(ADC1) == 1) && (LL_ADC_IsDisableOngoing(ADC1) == 0) &&
@@ -99,6 +92,17 @@ static void set_channel(uint32_t chan) {
         ;
 }
 
+static void set_sampling_time(uint32_t time, uint32_t chan) {
+#ifdef STM32L4
+    LL_ADC_SetChannelSamplingTime(ADC1, chan, time);
+#elif NEW_ADC
+    LL_ADC_SetSamplingTimeCommonChannels(ADC1, LL_ADC_SAMPLINGTIME_COMMON_1, time);
+#else
+    LL_ADC_SetSamplingTimeCommonChannels(ADC1, time);
+#endif
+    set_channel(chan);
+}
+
 static void set_temp_ref(int t) {
     while (LL_ADC_IsDisableOngoing(ADC1))
         ;
@@ -124,8 +128,6 @@ uint32_t bl_adc_random_seed(void) {
 
     LL_ADC_REG_SetSequencerConfigurable(ADC1, LL_ADC_REG_SEQ_CONFIGURABLE);
 #endif
-
-    // set_sampling_time(LL_ADC_SAMPLINGTIME_1CYCLE_5); // get maximum noise
 
     ADC1->CFGR2 = LL_ADC_CLOCK_SYNC_PCLK_DIV2;
 
@@ -176,11 +178,9 @@ void adc_init_random(void) {
     LL_ADC_REG_SetSequencerConfigurable(ADC1, LL_ADC_REG_SEQ_CONFIGURABLE);
 #endif
 
-    set_sampling_time(LL_ADC_SAMPLINGTIME_1CYCLE_5); // get maximum noise
-
     ADC1->CFGR2 = LL_ADC_CLOCK_SYNC_PCLK_DIV2;
 
-    set_channel(LL_ADC_CHANNEL_TEMPSENSOR);
+    set_sampling_time(LL_ADC_SAMPLINGTIME_1CYCLE_5, LL_ADC_CHANNEL_TEMPSENSOR); // get maximum noise
 
     uint32_t h = 0x811c9dc5;
     for (int i = 0; i < 1000; ++i) {
@@ -227,12 +227,14 @@ static const uint32_t channels_PB[] = {
 #endif
 
 uint16_t adc_read_temp(void) {
-#if NEW_ADC
-    set_sampling_time(LL_ADC_SAMPLINGTIME_160CYCLES_5);
+#ifdef STM32L4
+    set_sampling_time(LL_ADC_SAMPLINGTIME_247CYCLES_5, LL_ADC_CHANNEL_TEMPSENSOR);
+#elif NEW_ADC
+    set_sampling_time(LL_ADC_SAMPLINGTIME_160CYCLES_5, LL_ADC_CHANNEL_TEMPSENSOR);
 #else
-    set_sampling_time(LL_ADC_SAMPLINGTIME_71CYCLES_5); // min. sampling time for temp is 4us
+    set_sampling_time(LL_ADC_SAMPLINGTIME_71CYCLES_5,
+                      LL_ADC_CHANNEL_TEMPSENSOR); // min. sampling time for temp is 4us
 #endif
-    set_channel(LL_ADC_CHANNEL_TEMPSENSOR);
     set_temp_ref(1);
 
     uint16_t r = adc_convert() >> 4;
@@ -285,12 +287,10 @@ void adc_prep_read_pin(uint8_t pin) {
     pin_setup_analog_input(pin);
 
 #if NEW_ADC
-    set_sampling_time(LL_ADC_SAMPLINGTIME_39CYCLES_5);
+    set_sampling_time(LL_ADC_SAMPLINGTIME_39CYCLES_5, chan);
 #else
-    set_sampling_time(LL_ADC_SAMPLINGTIME_41CYCLES_5);
+    set_sampling_time(LL_ADC_SAMPLINGTIME_41CYCLES_5, chan);
 #endif
-
-    set_channel(chan);
 }
 
 void adc_disable() {
@@ -303,3 +303,5 @@ uint16_t adc_read_pin(uint8_t pin) {
     adc_disable();
     return r;
 }
+
+#endif

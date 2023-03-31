@@ -1,8 +1,29 @@
 #pragma once
 
-#include "blhw.h"
+#include "jd_config.h"
+#include <stdint.h>
+#include <stdbool.h>
+#include "hwconfig.h"
+#include "services/interfaces/jd_pins.h"
+#include "services/interfaces/jd_flash.h"
+
 #include "services/interfaces/jd_adc.h"
 #include "jacdac/dist/c/ledstrip.h"
+
+// without #, GCC now appends "aw",@progbits'
+// with the #, GCC comments out this appended directive
+// see: https://gcc.gnu.org/legacy-ml/gcc-help/2010-09/msg00088.html
+#define RAM_FUNC __attribute__((noinline, long_call, section(".data#")))
+
+// init.c
+bool clk_is_pll(void);
+void clk_set_pll(int on);
+void clk_setup_pll(void);
+
+__attribute__((noreturn)) void hw_panic(void);
+__attribute__((noreturn)) void target_reset(void);
+void target_wait_us(uint32_t n);
+
 
 #ifndef RTC_SECOND_IN_US
 // use a little more than 10ms, so we don't have issues with wrap around

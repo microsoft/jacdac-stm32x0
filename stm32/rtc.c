@@ -36,8 +36,10 @@ static ctx_t ctx_;
 #define RTC_IRQHandler RTC_Alarm_IRQHandler
 #define EXTI_LINE LL_EXTI_LINE_17
 #define LL_EXTI_ClearRisingFlag_0_31 LL_EXTI_ClearFlag_0_31
+#ifdef STM32WL
 #define LL_PWR_ClearFlag_SB LL_PWR_ClearFlag_C1STOP_C1STB
 #define LL_PWR_IsActiveFlag_SB LL_PWR_IsActiveFlag_C1SB
+#endif
 #else
 #define EXTI_LINE LL_EXTI_LINE_17
 #define LL_EXTI_ClearRisingFlag_0_31 LL_EXTI_ClearFlag_0_31
@@ -163,9 +165,11 @@ void RTC_IRQHandler(void) {
 static void rtc_config(uint8_t p0, uint16_t p1) {
 #ifdef STM32G0
     LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_PWR | LL_APB1_GRP1_PERIPH_RTC);
-#elif defined(STM32L)
+#elif defined(STM32WL)
     LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_RTCAPB);
     // LL_C2_APB1_GRP1_EnableClock(LL_C2_APB1_GRP1_PERIPH_RTCAPB);
+#elif defined(STM32L4)
+    LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_PWR);
 #else
     LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_PWR);
 #endif
