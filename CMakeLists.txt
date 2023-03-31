@@ -8,9 +8,9 @@ add_library(jacdac-stm32 STATIC
 
 target_include_directories(jacdac-stm32 PUBLIC
     stm32
-    ${STM32_CUBE_${FAMILY}_PATH}/Drivers/STM32${FAMILY}xx_HAL_Driver/Inc
-    ${STM32_CUBE_${FAMILY}_PATH}/Drivers/CMSIS/Device/ST/STM32L4xx/Include
-    ${STM32_CUBE_${FAMILY}_PATH}/Drivers/CMSIS/Core/Include
+    ${STM32_CUBE_PATH}/Drivers/STM32${FAMILY}xx_HAL_Driver/Inc
+    ${STM32_CUBE_PATH}/Drivers/CMSIS/Device/ST/STM32L4xx/Include
+    ${STM32_CUBE_PATH}/Drivers/CMSIS/Core/Include
 )
 
 target_link_libraries(jacdac-stm32 PUBLIC
