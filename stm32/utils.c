@@ -27,6 +27,7 @@ void *memcpy(void *dst, const void *src, size_t sz) {
 }
 
 void *memset(void *dst, int v, size_t sz) {
+    JD_ASSERT(sz < 500000); // if we ever have more than 1/2M of memory on stm32...
     void *dst0 = dst;
     if (sz >= 4 && !((uintptr_t)dst & 3)) {
         size_t cnt = sz >> 2;
