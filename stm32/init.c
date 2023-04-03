@@ -175,7 +175,13 @@ void SystemInit(void) {
     // LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_SYSCFG); - doesn't have?
     LL_AHB2_GRP1_EnableClock(LL_AHB2_GRP1_PERIPH_GPIOA | LL_AHB2_GRP1_PERIPH_GPIOB |
                              LL_AHB2_GRP1_PERIPH_GPIOC);
-    // LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_PWR); - also missing
+#ifdef STM32L4
+    LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_SYSCFG);
+    LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_PWR);
+#ifdef LL_APB1_GRP1_PERIPH_RTCAPB
+    LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_RTCAPB);
+#endif
+#endif
 
     // by default MSI is used not HSI16
     LL_RCC_HSI_Enable();
@@ -188,6 +194,11 @@ void SystemInit(void) {
     LL_AHB1_GRP1_EnableClock(LL_AHB1_GRP1_PERIPH_GPIOA | LL_AHB1_GRP1_PERIPH_GPIOB |
                              LL_AHB1_GRP1_PERIPH_GPIOC | LL_AHB1_GRP1_PERIPH_GPIOF);
     LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_PWR);
+#endif
+
+#ifdef STM32L4
+    // enable FPU
+    SCB->CPACR |= ((3UL << 10 * 2) | (3UL << 11 * 2));
 #endif
 
 #ifdef BOARD_STARTUP_CODE
