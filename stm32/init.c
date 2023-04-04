@@ -190,6 +190,13 @@ void SystemInit(void) {
     LL_FLASH_SetLatency(LL_FLASH_LATENCY_2);
     while (LL_FLASH_GetLatency() != LL_FLASH_LATENCY_2)
         ;
+    LL_FLASH_EnablePrefetch();
+
+    // needed for I2C/UART, at least for now
+    LL_RCC_HSI_Enable();
+    while (!LL_RCC_HSI_IsReady())
+        ;
+
     LL_PWR_SetRegulVoltageScaling(LL_PWR_REGU_VOLTAGE_SCALE1);
     LL_RCC_MSI_Enable();
     while (LL_RCC_MSI_IsReady() == 0U)
@@ -201,6 +208,7 @@ void SystemInit(void) {
     while (LL_RCC_GetSysClkSource() != LL_RCC_SYS_CLKSOURCE_STATUS_MSI)
         ;
     clk_set_pll(0);
+
 #else
     // by default MSI is used not HSI16
     LL_RCC_HSI_Enable();

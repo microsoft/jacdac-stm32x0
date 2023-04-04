@@ -15,6 +15,8 @@ void usb_init() {
     __HAL_RCC_PWR_CLK_ENABLE();
     HAL_PWREx_EnableVddUSB();
 
+    LL_RCC_SetUSBClockSource(LL_RCC_USB_CLKSOURCE_MSI);
+
     // exti_set_callback(13, USB_HAL_GPIO_EXTI_Callback, EXTI_RISING);
 
     USBD_Init(&USBD_Device, &VCP_Desc, 0);
