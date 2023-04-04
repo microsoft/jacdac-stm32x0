@@ -37,6 +37,8 @@ cb_t tim_steal_callback(uint32_t *usec);
 void rtc_sync_time(void);
 void rtc_cancel_cb(void);
 
+void usb_init(void);
+
 #define PIN_PORT(pin) ((GPIO_TypeDef *)(GPIOA_BASE + (0x400 * (pin >> 4))))
 #define PIN_MASK(pin) (1 << ((pin)&0xf))
 

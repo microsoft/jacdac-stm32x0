@@ -129,7 +129,7 @@ void clk_setup_pll(void) {
 
 uint8_t cpu_mhz = HSI_MHZ;
 
-#if JD_LORA
+#if JD_LORA || defined(STM32L4)
 uint32_t SystemCoreClock = HSI_MHZ * 1000000;
 #define SET_MHZ(n)                                                                                 \
     cpu_mhz = (n);                                                                                 \
@@ -139,7 +139,10 @@ uint32_t SystemCoreClock = HSI_MHZ * 1000000;
 #endif
 
 void clk_set_pll(int on) {
-#if defined(STM32L) || !defined(DISABLE_PLL)
+#if defined(STM32L4)
+    SET_MHZ(PLL_MHZ);
+    tim_update_prescaler();
+#elif defined(STM32L) || !defined(DISABLE_PLL)
     if (!on) {
         LL_RCC_SetSysClkSource(LL_RCC_SYS_CLKSOURCE_HSI);
         while (LL_RCC_GetSysClkSource() != LL_RCC_SYS_CLKSOURCE_STATUS_HSI)
@@ -183,13 +186,31 @@ void SystemInit(void) {
 #endif
 #endif
 
+#ifdef STM32L4
+    LL_FLASH_SetLatency(LL_FLASH_LATENCY_2);
+    while (LL_FLASH_GetLatency() != LL_FLASH_LATENCY_2)
+        ;
+    LL_PWR_SetRegulVoltageScaling(LL_PWR_REGU_VOLTAGE_SCALE1);
+    LL_RCC_MSI_Enable();
+    while (LL_RCC_MSI_IsReady() == 0U)
+        ;
+    LL_RCC_MSI_EnableRangeSelection();
+    LL_RCC_MSI_SetRange(LL_RCC_MSIRANGE_11); // 48MHz
+    LL_RCC_MSI_SetCalibTrimming(0);
+    LL_RCC_SetSysClkSource(LL_RCC_SYS_CLKSOURCE_MSI);
+    while (LL_RCC_GetSysClkSource() != LL_RCC_SYS_CLKSOURCE_STATUS_MSI)
+        ;
+    clk_set_pll(0);
+#else
     // by default MSI is used not HSI16
     LL_RCC_HSI_Enable();
     while (!LL_RCC_HSI_IsReady())
         ;
     clk_set_pll(0);
     LL_RCC_SetClkAfterWakeFromStop(LL_RCC_STOP_WAKEUPCLOCK_HSI);
-#else
+#endif
+
+#else // STM32F0
     LL_APB1_GRP2_EnableClock(LL_APB1_GRP2_PERIPH_SYSCFG);
     LL_AHB1_GRP1_EnableClock(LL_AHB1_GRP1_PERIPH_GPIOA | LL_AHB1_GRP1_PERIPH_GPIOB |
                              LL_AHB1_GRP1_PERIPH_GPIOC | LL_AHB1_GRP1_PERIPH_GPIOF);

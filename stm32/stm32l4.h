@@ -31,7 +31,7 @@
 #include "stm32l4xx_ll_dmamux.h"
 
 
-#define HSI_MHZ 16
+#define HSI_MHZ 48 // running off MSI
 
 // run at 48 MHz for compatibility with F0
 #define PLL_MHZ 48
