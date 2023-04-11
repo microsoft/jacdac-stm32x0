@@ -52,8 +52,9 @@ static void maybe_fill_buffer(int force) {
     target_enable_irq();
 
     if (len > 0) {
-        USBD_CDC_SetTxBuffer(&USBD_Device, UserTxBuffer, len);
-        USBD_CDC_TransmitPacket(&USBD_Device);
+        if (USBD_CDC_SetTxBuffer(&USBD_Device, UserTxBuffer, len) != 0 ||
+            USBD_CDC_TransmitPacket(&USBD_Device) != 0)
+            usb_in_tx = 0;
     }
 }
 
