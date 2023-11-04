@@ -60,6 +60,11 @@ void tim_set_timer(int delta, cb_t cb) {
     if (delta == JD_MIN_MAX_SLEEP)
         delta = jd_max_sleep;
 
+    // cpu_mhz always init with HSI
+    if (cpu_mhz != HSI_MHZ){
+        delta = (delta * cpu_mhz) / HSI_MHZ;
+    }
+
     rtc_cancel_cb();
     target_disable_irq();
     timer_cb = cb;
