@@ -50,6 +50,11 @@
 #define TIMx_CLK_ENABLE __HAL_RCC_TIM16_CLK_ENABLE
 #define CHANNEL 1
 #define AF LL_GPIO_AF_2
+#elif PIN_BL_LED == PB_0
+#define TIMx TIM3
+#define TIMx_CLK_ENABLE __HAL_RCC_TIM3_CLK_ENABLE
+#define CHANNEL 3
+#define AF LL_GPIO_AF_1
 #endif
 #else
 #error "unsupported MCU"
