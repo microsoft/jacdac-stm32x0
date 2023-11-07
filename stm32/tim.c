@@ -123,8 +123,12 @@ void TIMx_IRQHandler(void) {
 }
 
 void tim_update_prescaler(void) {
+    target_disable_irq();
     LL_TIM_DisableCounter(TIMx);
     LL_TIM_SetPrescaler(TIMx, cpu_mhz - 1);
-    LL_TIM_GenerateEvent_UPDATE(TIMx);
+    uint64_t us = tim_get_micros();
+    timeoff = us - 0xffff;
+    LL_TIM_GenerateEvent_UPDATE(TIMx); // the update evt will also clear timer cnt
     LL_TIM_EnableCounter(TIMx);
+    target_enable_irq();
 }
