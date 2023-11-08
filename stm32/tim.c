@@ -124,11 +124,18 @@ void TIMx_IRQHandler(void) {
 
 void tim_update_prescaler(void) {
     target_disable_irq();
-    LL_TIM_DisableCounter(TIMx);
-    LL_TIM_SetPrescaler(TIMx, cpu_mhz - 1);
+    // first store, the time
     uint64_t us = tim_get_micros();
-    timeoff = us - 0xffff;
-    LL_TIM_GenerateEvent_UPDATE(TIMx); // the update evt will also clear timer cnt
+
+    // set the prescaler
+    LL_TIM_SetPrescaler(TIMx, cpu_mhz - 1);
+
+    // arrange for the update event to be generated very soon to load the new prescaler
+    timeoff = us - 0xfffd;
+    LL_TIM_DisableCounter(TIMx);
+    TIMx->CNT = 0xfffe;
     LL_TIM_EnableCounter(TIMx);
+    LL_TIM_ClearFlag_UPDATE(TIMx);
+
     target_enable_irq();
 }
