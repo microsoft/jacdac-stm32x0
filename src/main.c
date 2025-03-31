@@ -125,7 +125,9 @@ int main(void) {
                 startup_wait = 0;
         }
 
-        pwr_sleep();
+        #ifndef DISABLE_PWRSLEEP // Some module's can't have GPIO states floating during sleep (eg: Color module's ullumination LED)
+            pwr_sleep();
+        #endif
     }
 }
 
