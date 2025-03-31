@@ -15,6 +15,37 @@
 static volatile int64_t timeoff;
 static volatile cb_t timer_cb;
 
+/*
+ * tim_delay_us - Busy-wait delay for a specified number of microseconds.
+ *
+ * This function implements a busy-wait loop that delays execution for at least
+ * the given number of microseconds. It relies on a 64-bit microsecond timer value,
+ * which is obtained from tim_get_micros(). Since the 64-bit timer value is built
+ * from a 16-bit hardware counter extended by an offset and may be updated by an
+ * interrupt (making its access non-atomic on a 32-bit MCU), the function disables
+ * interrupts while reading the timer value to prevent it from being updated during
+ * the read operation. This ensures a consistent, atomic snapshot of the 64-bit
+ * time value.
+ *
+ * @param delay_us Number of microseconds to delay.
+ */
+void tim_delay_us(uint32_t delay_us) {
+    uint64_t start_delay_us, now_us;
+
+    // Get the starting time atomically.
+    target_disable_irq();
+    start_delay_us = tim_get_micros();
+    target_enable_irq();
+
+    // Poll until the desired delay has elapsed.
+    do {
+        // Get the current time atomically.
+        target_disable_irq();
+        now_us = tim_get_micros();
+        target_enable_irq();
+    } while ((now_us - start_delay_us) < delay_us);
+}
+
 uint64_t tim_get_micros(void) {
     while (1) {
         uint32_t v0 = TIMx->CNT;
